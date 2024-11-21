@@ -1,0 +1,226 @@
+{
+    "topics": [
+        {
+            "topic": "Framing ML Problems",
+            "subtopics": [
+                {
+                    "subtopic": "Introduction to Machine Learning in Business",
+                    "bullets": [
+                        "- Machine learning enables businesses to harness predictive analytics for decision-making.",
+                        "- Businesses can utilize machine learning for personalized recommendations and customer segmentation.",
+                        "- Machine learning applications in business include fraud detection, customer sentiment analysis, and demand forecasting."
+                    ]
+                },
+                {
+                    "subtopic": "Machine Learning Approaches",
+                    "bullets": [
+                        "- Supervised Learning",
+                        "- Unsupervised Learning",
+                        "- Semi-supervised Learning"
+                    ]
+                },
+                {
+                    "subtopic": "ML Success Metrics",
+                    "bullets": [
+                        "1. Recall: Measures the percentage of positive data points correctly predicted.",
+                        "2. Precision: Quantifies the percentage of positive predictions that were actually correct.",
+                        "3. F1 Score: Harmonic mean of precision and recall, good for balancing false positives and false negatives."
+                    ]
+                },
+                {
+                    "subtopic": "Responsible AI Practices",
+                    "bullets": [
+                        "- Ensure transparency and explainability in model decision-making.",
+                        "- Mitigate bias in data and algorithms to ensure fairness.",
+                        "- Implement robust data privacy and security measures."
+                    ]
+                }
+            ]
+        },
+        {
+            "topic": "Exploring Data and Building Data Pipelines",
+            "subtopics": [
+                {
+                    "subtopic": "Data Collection and Cleaning",
+                    "bullets": [
+                        "- Establish data constraints and validate data using TFDV",
+                        "- Optimize training data with proper dataset splitting and sampling strategies",
+                        "- Handle missing data through various techniques like removal or imputation"
+                    ]
+                },
+                {
+                    "subtopic": "Visualization Techniques",
+                    "bullets": [
+                        "- Utilize log scaling, scaling, clipping, and z-score for visualization techniques.",
+                        "- Define data constraints and validate data schema in ML pipeline.",
+                        "- Split dataset into training, test, and validation data while handling missing values."
+                    ]
+                },
+                {
+                    "subtopic": "Organizing Training Datasets",
+                    "bullets": [
+                        "- Divide dataset into Training, Validation, and Test datasets",
+                        "- Address imbalanced data through downsampling and upweighting",
+                        "- Split data based on time for clustered and online data"
+                    ]
+                },
+                {
+                    "subtopic": "TensorFlow Data Validation (TFDV)",
+                    "bullets": [
+                        "1. Produces data schema for ML pipeline understanding.",
+                        "2. Detects data skew or drift in deployed model.",
+                        "3. Built on Apache Beam SDK for pipeline processing."
+                    ]
+                }
+            ]
+        },
+        {
+            "topic": "Feature Engineering and Processing",
+            "subtopics": [
+                {
+                    "subtopic": "Feature Selection and Extraction",
+                    "bullets": [
+                        "- Use one-hot encoding for categorical features",
+                        "- Consider PCA for dimensional reduction",
+                        "- Feature crosses can be beneficial"
+                    ]
+                },
+                {
+                    "subtopic": "Dimensionality Reduction",
+                    "bullets": [
+                        "- PCA is a technique for dimensionality reduction in feature engineering.",
+                        "- Feature selection and feature crosses are important for dimensionality reduction.",
+                        "- AUC PR is more effective than AUC ROC for imbalanced classes."
+                    ]
+                },
+                {
+                    "subtopic": "Feature Engineering with BigQuery ML",
+                    "bullets": [
+                        "- Utilize data transformations like bucketing and normalization.",
+                        "- Implement feature selection techniques for dimensionality reduction.",
+                        "- Understand the importance of class imbalance and use AUC PR effectively."
+                    ]
+                },
+                {
+                    "subtopic": "Handling Categorical and Numerical Data",
+                    "bullets": [
+                        "- Use one-hot encoding for categorical data",
+                        "- Apply normalization for numerical data",
+                        "- Consider feature selection techniques for both types of data"
+                    ]
+                }
+            ]
+        },
+        {
+            "topic": "Model Training and Evaluation",
+            "subtopics": [
+                {
+                    "subtopic": "Model Training with Vertex AI",
+                    "bullets": [
+                        "- Start by preparing your training data, ensuring it is accurate and diverse.",
+                        "- Select appropriate algorithms based on your problem's characteristics and goals.",
+                        "- Regularly evaluate and tune your models to improve performance."
+                    ]
+                },
+                {
+                    "subtopic": "Hyperparameter Tuning with Vertex Vizier",
+                    "bullets": ["TERMINATE"]
+                },
+                {
+                    "subtopic": "Evaluating Model Performance",
+                    "bullets": [
+                        "- Use all available data for maximum value without privacy concerns",
+                        "- Retrain the model periodically to adjust for performance and new products",
+                        "- Incorporate product data like descriptions and images in model training"
+                    ]
+                },
+                {
+                    "subtopic": "Managing Model Versioning",
+                    "bullets": [
+                        "- Implement version control system for tracking model changes",
+                        "- Tag and document each version with changes made and results",
+                        "- Establish a review process for model updates and versions"
+                    ]
+                },
+                {
+                    "subtopic": "Cross-validation and Regularization Techniques",
+                    "bullets": ["TERMINATE"]
+                }
+            ]
+        },
+        {
+            "topic": "Deploying and Managing Models",
+            "subtopics": [
+                {
+                    "subtopic": "Deployment with Vertex AI",
+                    "bullets": [
+                        "- Use private services access to connect a managed notebooks instance to a VPC network.",
+                        "- Utilize a shared VPC network for deployment with Vertex AI.",
+                        "- Set up VPC Service Controls for controlling services available in your VPC network."
+                    ]
+                },
+                {
+                    "subtopic": "Batch and Online Predictions",
+                    "bullets": [
+                        "- Batch predictions involve processing data in large groups at once.",
+                        "- Online predictions involve making predictions in real-time as data is received.",
+                        "- When managing models, it's important to consider the scalability and reliability of both batch and online prediction methods."
+                    ]
+                },
+                {
+                    "subtopic": "Monitoring and Managing Model Drift",
+                    "bullets": ["TERMINATE"]
+                },
+                {
+                    "subtopic": "Model Interpretability and Explainability",
+                    "bullets": [
+                        "- Develop model interpretability metrics.",
+                        "- Implement explainability techniques like SHAP values.",
+                        "- Utilize visualization tools for model transparency."
+                    ]
+                },
+                {
+                    "subtopic": "A/B Testing and Rollbacks",
+                    "bullets": ["TERMINATE"]
+                }
+            ]
+        },
+        {
+            "topic": "Machine Learning Operations (MLOps)",
+            "subtopics": [
+                {
+                    "subtopic": "Introduction to MLOps",
+                    "bullets": [
+                        "- MLOps focuses on operationalizing and streamlining the machine learning lifecycle.",
+                        "- It combines DevOps principles with machine learning workflows.",
+                        "- MLOps aims to automate model deployment, monitoring, and management for efficient ML operations."
+                    ]
+                },
+                {
+                    "subtopic": "CI/CD for Machine Learning",
+                    "bullets": ["TERMINATE"]
+                },
+                {
+                    "subtopic": "Data and Model Lineage",
+                    "bullets": [
+                        "- Establish data constraints and schema validation.",
+                        "- Organize training data into subsets for testing and validation.",
+                        "- Handling missing data using appropriate techniques."
+                    ]
+                },
+                {
+                    "subtopic": "ML Pipelines on Google Cloud",
+                    "bullets": ["TERMINATE"]
+                },
+                {
+                    "subtopic": "Monitoring ML Pipelines",
+                    "bullets": [
+                        "- Set up alerts to monitor for skew and retrain your model regularly.",
+                        "- Transform data before splitting and cross-validate to ensure consistent transformations.",
+                        "- Normalize data for training and test datasets to improve model accuracy."
+                    ]
+                }
+            ]
+        }
+    ]
+}
