@@ -1,0 +1,55 @@
+{
+    "Course_Proposal_Form": {
+        "null": [
+            "Course Title: Microsoft 365 and Copilots",
+            "Organization: Intellisoft Systems",
+            "Learning Outcomes",
+            "LO1: Explore Microsoft 365 to solve and improve organizational workflows",
+            "LO2: Apply Microsoft 365 Copilots to stay updated on emerging technological trends.",
+            ".",
+            "Duration: 3 days (24 hrs),",
+            "Instructional methods (22 hrs):",
+            "Lecture (11 hrs)",
+            "Didactic Questioning",
+            "Demonstration",
+            "Practice (11 hrs)",
+            "Assessment method (2 hrs):",
+            "WA-SAQ",
+            "PP",
+            "TSC Mapping",
+            "TSC – Digital Technology Adoption and Innovation ACC-ICT-3004-1.1",
+            "K1: Relevant systems and software",
+            "K2: Organisation's processes",
+            "K3: Strengths and weaknesses of existing software and systems",
+            "K4: Emerging technological trends such as block chain, machine learning, artificial intelligence, robotic process automation and digital currency",
+            "A1 Identify issues in the existing software and systems",
+            "A2 Seek potential IT solutions to resolve issues or for systems upgrading",
+            "A3 Propose to management on suitable IT solutions for the organisation",
+            "A4 Keep up to date with new technologies and systems",
+            "Learning Units"
+        ],
+        "LU1: Fundamentals of Microsoft 365 (K1, K2, A1,A2)": [
+            "Topic 1: Fundamentals of Microsoft 365 (K1, K2, A1,A2)",
+            "Overview of Microsoft 365",
+            "Excel",
+            "Working with Charts",
+            "Managing Workbooks",
+            "Word",
+            "Formatting the Document",
+            "Using Tales in Word",
+            "Create Table of Contents",
+            "PowerPoint",
+            "Working with Text",
+            "Adding Multimedia Elements",
+            "Enhancing Presentation"
+        ],
+        "LU2: Introduction to Microsoft 365 Copilot (K3, K4, A3, A4)": [
+            "Topic 2: Introduction to Microsoft 365 Copilot (K3, K4, A3, A4)",
+            "Pros and cons of existing Microsoft 365",
+            "Introduction to Microsoft 365 Copilots",
+            "Using Copilot for Excel",
+            "Using Copilot for Words",
+            "Using Copilot for PowerPoint"
+        ]
+    }
+}
