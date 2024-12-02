@@ -212,19 +212,21 @@ def generate_brochure_wrapper(data: CourseData) -> BrochureResponse:
     shareable_link = brochure_info.get("shareable_link")
     return BrochureResponse(course_title=course_title, file_url=shareable_link)
 
+def load_google_creds():
+    # Access the escaped JSON string from Streamlit secrets
+    google_creds_str = st.secrets["GOOGLE_API_CREDS"]["installed"]
+    # Parse the JSON string back into a dictionary
+    google_creds_dict = json.loads(google_creds_str)
+    return google_creds_dict
 
 def authenticate():
     creds = None
-    # Load credentials JSON from Streamlit secrets
-    google_api_creds_json = st.secrets["GOOGLE_API_CREDS"]["installed"]
-    
-    # Parse the JSON string into a dictionary
-    creds_dict = json.loads(google_api_creds_json)
-    
-    # Write the parsed credentials to a temporary file
-    temp_file = 'google_api_creds.json'
-    with open(temp_file, 'w') as file:
-        json.dump(creds_dict, file)
+    google_creds = load_google_creds()
+
+    # Save the credentials to a temporary file for Google API compatibility
+    temp_creds_file = 'google_api_creds.json'
+    with open(temp_creds_file, 'w') as temp_file:
+        json.dump(google_creds, temp_file)
     
     try:
         if os.path.exists('token.json'):
@@ -233,16 +235,14 @@ def authenticate():
             if creds and creds.expired and creds.refresh_token:
                 creds.refresh(Request())
             else:
-                flow = InstalledAppFlow.from_client_secrets_file(temp_file, SCOPES)
+                flow = InstalledAppFlow.from_client_secrets_file(temp_creds_file, SCOPES)
                 creds = flow.run_local_server(port=0)
             
-            # Save the token for future use
-            with open('token.json', 'w') as token_file:
-                token_file.write(creds.to_json())
+            with open('token.json', 'w') as token:
+                token.write(creds.to_json())
     finally:
-        # Cleanup: Remove the temporary credentials file
-        if os.path.exists(temp_file):
-            os.remove(temp_file)
+        if os.path.exists(temp_creds_file):
+            os.remove(temp_creds_file)
 
     return creds
 
