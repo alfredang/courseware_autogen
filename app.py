@@ -3,13 +3,18 @@ import streamlit as st
 from streamlit_option_menu import option_menu
 import cp_generation as cp_generation
 import Courseware.courseware_generation as courseware_generation
+import Brochure.brochure_generation as brochure_generation
+# import Slides.slide_generation as slide_generation
+# from Slides.slide_generation import render_slide_generation_ui
+
+st.set_page_config(layout="wide")
 
 # Sidebar navigation with streamlit-option-menu
 with st.sidebar:
     selected = option_menu(
         "Tertiary Infotech",  # Title of the sidebar
-        ["Generate CP", "Generate Courseware", "Generate Assessment", "Generate Slides"],  # Options
-        icons=["file-earmark-text", "file-earmark-richtext", "clipboard-check", "file-ppt"],  # Icon names
+        ["Generate CP", "Generate Courseware", "Generate Assessment", "Generate Slides", "Generate Brochure"],  # Options
+        icons=["filetype-doc", "file-earmark-richtext", "clipboard-check", "filetype-pptx", "files-alt"],  # Icon names
         menu_icon="boxes",  # Icon for the sidebar title
         default_index=0,  # Default selected item
     )
@@ -27,6 +32,10 @@ elif selected == "Generate Assessment":
     # Add Assessment Generation-specific functionality here
 
 elif selected == "Generate Slides":
+    # slide_generation.app()  # Display Courseware Generation app
     st.title("Generate Slides")
-    st.write("This section allows you to create presentation slides.")
-    # Add Slides Generation-specific functionality here
+    st.write("This section allows you to create slides.")
+
+elif selected == "Generate Brochure":
+    brochure_generation.app() # Display Brochure Generation app
+    # Add Assessment Generation-specific functionality here

@@ -1,14 +1,32 @@
+# brochure_generation.py
+
 import os
 import re
 import autogen
+import streamlit as st
 from autogen.cache import Cache
 from typing import List, Dict, Optional
 from pydantic import BaseModel
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
+import json
+import time
+
+# Initialize session state variables
+if 'course_title' not in st.session_state:
+    st.session_state['course_title'] = None
+if 'file_url' not in st.session_state:
+    st.session_state['file_url'] = None
+if 'json_data' not in st.session_state:
+    st.session_state['json_data'] = None
 
 SCOPES = [
     'https://www.googleapis.com/auth/drive',
@@ -34,6 +52,166 @@ class CourseData(BaseModel):
     duration_hrs: str
     course_details_topics: List[CourseTopic]
     course_url: str  # Added course_url to match {Course_URL}
+
+    def to_dict(self):
+        return self.dict()
+
+class BrochureResponse(BaseModel):
+    course_title: str
+    file_url: str
+
+def scrape_course_data(url: str) -> CourseData:
+    options = webdriver.ChromeOptions()
+    options.add_argument("--headless")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    driver = webdriver.Chrome(options=options)
+    driver.set_window_size(1920, 1080)
+
+    try:
+        # Navigate to the course page
+        driver.get(url)
+        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        time.sleep(2)  # Allow time for content to load
+
+        # Extract Course Title
+        try:
+            course_title_elem = driver.find_element(By.CSS_SELECTOR, 'div.product-name h1')
+            course_title = course_title_elem.text.strip()
+        except:
+            course_title = "Not Applicable"
+
+        # Extract data from the "short-description" div
+        try:
+            short_description = driver.find_element(By.CLASS_NAME, "short-description")
+            course_description = [p.text for p in short_description.find_elements(By.TAG_NAME, "p")[:2]]
+        except:
+            course_description = ["Not Applicable"]
+
+        # Extract Learning Outcomes
+        try:
+            lo_section = short_description.find_element(By.XPATH, ".//h2[contains(text(), 'Learning Outcomes')]/following-sibling::ul[1]")
+            learning_outcomes = [li.text.strip() for li in lo_section.find_elements(By.TAG_NAME, 'li')]
+        except:
+            learning_outcomes = []
+
+        # Extract TSC Title and TSC Code
+        try:
+            skills_framework_text = driver.find_element(By.XPATH, "//h2[contains(text(), 'Skills Framework')]/following-sibling::p").text.strip()
+            match = re.search(r"guideline of\s+(.*?)\s+(\S+)\s+under", skills_framework_text)
+            tsc_title = match.group(1).strip() if match else "Not Applicable"
+            tsc_code = match.group(2).strip() if match else "Not Applicable"
+        except:
+            tsc_title, tsc_code = "Not Applicable", "Not Applicable"
+
+        # Extract WSQ Funding table
+        try:
+            wsq_funding_table = short_description.find_element(By.TAG_NAME, "table")
+            headers = ['Full Fee', 'GST', 'Baseline', 'MCES / SME']
+            funding_rows = wsq_funding_table.find_elements(By.TAG_NAME, "tr")
+            data_row = funding_rows[-1]
+            data_cells = data_row.find_elements(By.TAG_NAME, "td")
+            wsq_funding = {headers[i]: data_cells[i].text.strip() for i in range(len(headers))}
+        except:
+            wsq_funding = {"Effective Date": "Not Available", "Full Fee": "Not Available", "GST": "Not Available", "Baseline": "Not Available", "MCES / SME": "Not Available"}
+
+        # Extract TGS Reference Number
+        try:
+            sku_div = driver.find_element(By.CLASS_NAME, "sku")
+            tgs_reference_no = sku_div.text.strip().replace("Course Code:", "").strip()
+        except:
+            tgs_reference_no = "Not Applicable"
+
+        # Extract Prices
+        try:
+            price_box = driver.find_element(By.CLASS_NAME, "price-box")
+            gst_exclusive_price = price_box.find_element(By.CSS_SELECTOR, ".regular-price .price").text.strip()
+            gst_inclusive_price = price_box.find_element(By.ID, "gtP").text.strip()
+        except:
+            gst_exclusive_price, gst_inclusive_price = "Not Applicable", "Not Applicable"
+
+        # Extract Course Information (Session days, Duration hrs)
+        try:
+            course_info_div = driver.find_element(By.CLASS_NAME, "block-related")
+            course_info_list = course_info_div.find_elements(By.CSS_SELECTOR, "#bs-pav li")
+            session_days = "Not Applicable"
+            duration_hrs = "Not Applicable"
+            for item in course_info_list:
+                text = item.text.strip().split(":")
+                if len(text) == 2:
+                    key = text[0].strip()
+                    value = text[1].strip()
+                    if key == "Session (days)":
+                        session_days = value
+                    elif key == "Duration (hrs)":
+                        duration_hrs = value
+        except:
+            session_days, duration_hrs = "Not Applicable", "Not Applicable"
+
+        # Extract Topics
+        course_details_topics = []
+        try:
+            details_section = driver.find_element(By.XPATH, "//div[@class='tabs-panels']//h2[text()='Course Details']/following-sibling::div[@class='std']")
+            topics = details_section.find_elements(By.XPATH, ".//p[strong]")
+            for topic_elem in topics:
+                title = topic_elem.find_element(By.TAG_NAME, "strong").text.strip()
+                ul = topic_elem.find_element(By.XPATH, "following-sibling::*[1]")
+                subtopics = [li.text.strip() for li in ul.find_elements(By.TAG_NAME, "li")]
+                course_details_topics.append(CourseTopic(title=title, subtopics=subtopics))
+        except Exception as e:
+            print(f"Error extracting topics: {e}")
+
+        # Return scraped data as a CourseData object
+        return CourseData(
+            course_title=course_title,
+            course_description=course_description,
+            learning_outcomes=learning_outcomes,
+            tsc_title=tsc_title,
+            tsc_code=tsc_code,
+            wsq_funding=wsq_funding,
+            tgs_reference_no=tgs_reference_no,
+            gst_exclusive_price=gst_exclusive_price,
+            gst_inclusive_price=gst_inclusive_price,
+            session_days=session_days,
+            duration_hrs=duration_hrs,
+            course_details_topics=course_details_topics,
+            course_url=url
+        )
+    finally:
+        driver.quit()
+
+# Autogen setup
+doc_writer_agent = autogen.AssistantAgent(
+    name="doc_writer",
+    system_message="You are an assistant that generates brochures based on course data.",
+    llm_config={
+        "config_list": [
+            {
+                'model': st.secrets("REPLACEMENT_MODEL"),
+                'api_key': st.secrets("OPENAI_API_KEY"),
+                'tags': ['tool'],
+            },
+        ],
+        "timeout": 120,
+    },
+)
+
+user_proxy_agent = autogen.UserProxyAgent(
+    name="user_proxy",
+    human_input_mode="NEVER",
+    max_consecutive_auto_reply=5,
+    is_termination_msg=lambda msg: msg.get("content", "") and "TERMINATE" in msg["content"],
+    code_execution_config={"work_dir": "output", "use_docker": False}
+)
+
+@user_proxy_agent.register_for_execution()
+@doc_writer_agent.register_for_llm(description="Generate a structured brochure response.")
+def generate_brochure_wrapper(data: CourseData) -> BrochureResponse:
+    brochure_info = generate_brochure(data)  # Now returns a dictionary
+    course_title = brochure_info.get("course_title")
+    shareable_link = brochure_info.get("shareable_link")
+    return BrochureResponse(course_title=course_title, file_url=shareable_link)
+
 
 def authenticate():
     creds = None
@@ -157,7 +335,6 @@ def replace_placeholders_in_doc(docs_service, document_id, replacements):
     except HttpError as error:
         print(f"An error occurred during placeholder replacement: {error}")
 
-
 def generate_brochure(data: CourseData):
     creds = authenticate()
     docs_service = build('docs', 'v1', credentials=creds)
@@ -180,22 +357,7 @@ def generate_brochure(data: CourseData):
     
     # Check if a document with the same name already exists
     new_title = f"{data.course_title} Brochure"
-    existing_doc_query = f"name = '{new_title}' and mimeType='application/vnd.google-apps.document' and trashed = false"
-    existing_doc_response = drive_service.files().list(
-        q=existing_doc_query,
-        spaces='drive',
-        fields='files(id, name)',
-        pageSize=1
-    ).execute()
-    existing_docs = existing_doc_response.get('files', [])
-    
-    if existing_docs:
-        # If the document exists, get its fileId
-        new_doc_id = existing_docs[0]['id']
-        print(f"Found existing document with ID: {new_doc_id}. Overwriting...")
-    else:
-        # Otherwise, copy the template to create a new document
-        new_doc_id = copy_template(drive_service, template_id, new_title)
+    new_doc_id = copy_template(drive_service, template_id, new_title)
     
     # Build replacements
     replacements = {}
@@ -213,6 +375,7 @@ def generate_brochure(data: CourseData):
         'GST_Incl_Price': data_dict.get('gst_inclusive_price', 'Not Applicable'),
         'Duration_Hrs': data_dict.get('duration_hrs', 'Not Applicable'),
         'Session_Days': data_dict.get('session_days', 'Not Applicable'),
+        
         'Course_URL': data_dict.get('course_url', 'Not Applicable'),
         'Effective_Date': data_dict.get('wsq_funding', {}).get('Effective Date', 'Not Applicable'),
         'Full_Fee': data_dict.get('wsq_funding', {}).get('Full Fee', 'Not Applicable'),
@@ -221,318 +384,169 @@ def generate_brochure(data: CourseData):
         'MCES_SME_Price': data_dict.get('wsq_funding', {}).get('MCES / SME', 'Not Applicable'),
     }
 
-    # Debugging: Print mapping keys and values
-    print("Mapping for replacements:")
-    for key, value in mapping.items():
-        print(f"{key}: {value}")
-    
     # Handle {Course_Topics} placeholder
     course_topics = data_dict.get('course_details_topics', [])
     if course_topics:
-        topics_text = ''
-        for topic in course_topics:
-            topics_text += f"{topic['title']}\n"
-            for subtopic in topic['subtopics']:
-                topics_text += f"{subtopic}\n"
-            topics_text += '\n'
+        if len(course_topics) > 10:
+            # Only include the main topics
+            topics_text = '\n'.join([topic['title'] for topic in course_topics])
+        else:
+            # Include topics with subtopics
+            topics_text = ''
+            for topic in course_topics:
+                topics_text += f"{topic['title']}\n"
+                for subtopic in topic['subtopics']:
+                    topics_text += f"  - {subtopic}\n"
+                topics_text += '\n'
         mapping['Course_Topics'] = topics_text.strip()
     else:
         mapping['Course_Topics'] = 'Not Applicable'
-
-    # Add mapping to replacements
-    replacements.update(mapping)
-    
     # Find placeholders in the document
     placeholders = find_placeholders(docs_service, new_doc_id)
     print(f"Placeholders found in document: {placeholders}")
     
-    # Prepare replacements only for placeholders found
-    replacements = {k: v for k, v in replacements.items() if k in placeholders}
-    print("Replacements to be made:")
-    for key, value in replacements.items():
-        print(f"{key}: {value}")
-    
+    # Filter replacements for placeholders found
+    replacements = {k: v for k, v in mapping.items() if k in placeholders}
+
+    if not replacements:
+        print("No matching placeholders found. Skipping update.")
+        return new_doc_id
+
     # Replace placeholders
     replace_placeholders_in_doc(docs_service, new_doc_id, replacements)
     
-    print(f"Brochure generated successfully with document ID: {new_doc_id}")
-    return new_doc_id  # Return the document ID for further use
+    # Get the shareable link for the document
+    shareable_link = f"https://drive.google.com/file/d/{new_doc_id}/view"
 
-# Set up the agents
-llm_config = {
-    "config_list": [
-        {
-            'model': os.getenv("REPLACEMENT_MODEL"),
-            'api_key': os.getenv("TERTIARY_INFOTECH_API_KEY"),
-            'tags': ['tool'],
-        },
-    ],
-    "timeout": 120,
-}
+    return {
+        "course_title": data_dict.get('course_title', 'Unknown Course Title'),
+        "shareable_link": shareable_link
+    }
 
-doc_writer_agent = autogen.AssistantAgent(
-    name="doc_writer",
-    system_message=(
-        "You are an assistant that creates brochures by filling in placeholders in a Google Docs template. "
-        "Use the provided functions to perform tasks. Reply with TERMINATE when the task is completed."
-    ),
-    llm_config=llm_config,
-)
-
-user_proxy_agent = autogen.UserProxyAgent(
-    name="user_proxy",
-    human_input_mode="NEVER",
-    max_consecutive_auto_reply=10,
-    code_execution_config={"work_dir": "output", "use_docker": False}
-)
-
-@user_proxy_agent.register_for_execution()
-@doc_writer_agent.register_for_llm(description="Generate a brochure from CourseData.")
-def generate_brochure_wrapper(data: CourseData):
-    return generate_brochure(data)
-
-def scrape_course_data(url: str) -> CourseData:
-    from selenium import webdriver
-    from selenium.webdriver.common.by import By
-    from selenium.webdriver.support.ui import WebDriverWait
-    from selenium.webdriver.support import expected_conditions as EC
-    import re
-    from typing import List, Dict
-    import time
-
-    driver = webdriver.Chrome()
-    # Set the window size to a desktop resolution
-    driver.set_window_size(1366, 768)
-
-    # Open the course details page
-    driver.get(url)
-
-    # Scroll to the bottom to ensure all content loads
-    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-    time.sleep(2)  # wait for content to load
-
+def extract_tool_response(chat_result):
+    """
+    Extracts course title and file URL from the tool response.
+    """
     try:
-        # Wait for the page to load
-        WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.CLASS_NAME, "short-description"))
-        )
+        # Loop through the chat history to find the tool response
+        for message in chat_result.chat_history:
+            # Check if the message contains 'tool_responses'
+            if "tool_responses" in message:
+                for tool_response in message["tool_responses"]:
+                    # Extract the content of the tool response
+                    content = tool_response.get("content")
+                    
+                    # Skip empty or invalid content
+                    if not content:
+                        continue
+                    
+                    try:
+                        # Parse the JSON content
+                        parsed_content = json.loads(content)
+                        course_title = parsed_content.get("course_title", "Unknown Course Title")
+                        file_url = parsed_content.get("file_url", None)
+                        
+                        if course_title and file_url:
+                            return course_title, file_url
+                    except json.JSONDecodeError as json_error:
+                        print(f"JSON parsing error: {json_error}")
+                        continue
+    except Exception as e:
+        print(f"Error extracting tool response: {e}")
+    return None, None
 
-        # Extract Course Title
-        try:
-            course_title_elem = driver.find_element(By.CSS_SELECTOR, 'div.product-name h1')
-            course_title = course_title_elem.text.strip()
-        except:
-            course_title = "Not Applicable"
 
-        # Extract data from the "short-description" div
-        short_description = driver.find_element(By.CLASS_NAME, "short-description")
+# Streamlit app
+def app():
+    # Enable wide mode for the layout
+    st.title("📄 Brochure Generator with Autogen")
 
-        # Extract Course Description
-        course_description = [p.text for p in short_description.find_elements(By.TAG_NAME, "p")[:2]]  # First 2 paragraphs
+    # Create two columns
+    left_col, right_col = st.columns([1, 1])  # Adjust column ratio (e.g., 1:2 for a wider right column)
 
-        # Extract Learning Outcomes
-        learning_outcomes = []
-        try:
-            # Find the h2 with text 'Learning Outcomes'
-            learning_outcomes_h2 = short_description.find_element(By.XPATH, ".//h2[contains(text(), 'Learning Outcomes')]")
-            # Find the ul that follows it
-            learning_outcomes_ul = learning_outcomes_h2.find_element(By.XPATH, "./following-sibling::ul[1]")
-            # Extract the li elements
-            learning_outcomes = [li.text.strip() for li in learning_outcomes_ul.find_elements(By.TAG_NAME, 'li')]
-        except Exception:
-            # Learning Outcomes section not found
-            learning_outcomes = []
+    with left_col:
+        st.header("Instructions:")
+        st.markdown("""
+        Enter a valid course URL from the Tertiary Courses website, and click "Generate Brochure" to scrape the data and generate a brochure.
+        """)
+        
+        # URL input
+        course_url = st.text_input("Enter the Course URL:")
 
-        # Extract Skills Framework (TSC Title and TSC Code)
-        try:
-            skills_framework_text = driver.find_element(
-                By.XPATH, "//h2[contains(text(), 'Skills Framework')]/following-sibling::p"
-            ).text.strip()
-            # Extract TSC Title and TSC Code using regex
-            match = re.search(r"guideline of\s+(.*?)\s+(\S+)\s+under", skills_framework_text)
-            if match:
-                tsc_title = match.group(1).strip()
-                tsc_code = match.group(2).strip()
-            else:
-                tsc_title = "Not Applicable"
-                tsc_code = "Not Applicable"
-        except:
-            # Skills Framework section not found
-            tsc_title = "Not Applicable"
-            tsc_code = "Not Applicable"
+        if st.button("Generate Brochure"):
+            if not course_url:
+                st.error("Please provide a valid URL.")
+                return
 
-        # Extract WSQ Funding table, including Effective Date
-        wsq_funding = {}
-        try:
-            wsq_funding_table = short_description.find_element(By.TAG_NAME, "table")
-            # Extract Effective Date from the first row of the table
-            first_row = wsq_funding_table.find_element(By.XPATH, ".//tr[1]")
-            effective_date_text = first_row.text.strip()
-            match_date = re.search(r"Effective for courses starting from\s*(.*)", effective_date_text)
-            if match_date:
-                wsq_funding["Effective Date"] = match_date.group(1).strip()
-            else:
-                wsq_funding["Effective Date"] = "Not Available"
+            try:
+                # Step 1: Scrape course data
+                with st.spinner("Scraping course data..."):
+                    course_data = scrape_course_data(course_url)
+                    st.success("Course data scraped successfully!")
+                    st.session_state['course_data'] = course_data.to_dict()  # Save scraped data to session state
 
-            # Now extract the funding data
-            # Headers are manually defined due to the table's complex structure
-            headers = ['Full Fee', 'GST', 'Baseline', 'MCES / SME']
-            # The data is in the last row of the table
-            funding_rows = wsq_funding_table.find_elements(By.TAG_NAME, "tr")
-            data_row = funding_rows[-1]
-            data_cells = data_row.find_elements(By.TAG_NAME, "td")
-            if len(data_cells) == len(headers):
-                for i in range(len(headers)):
-                    wsq_funding[headers[i]] = data_cells[i].text.strip()
-            else:
-                print("Mismatch in number of headers and data cells")
-        except Exception:
-            # WSQ Funding table not found
-            wsq_funding = {'Effective Date': 'Not Available', 'Full Fee': 'Not Available', 'GST': 'Not Available', 'Baseline': 'Not Available', 'MCES / SME': 'Not Available'}
+                # Check if a brochure for the course already exists
+                with st.spinner("Checking for existing brochure in Google Drive..."):
+                    creds = authenticate()
+                    drive_service = build('drive', 'v3', credentials=creds)
+                    
+                    existing_title = f"{course_data.course_title} Brochure"
+                    query = f"name = '{existing_title}' and mimeType='application/vnd.google-apps.document' and trashed = false"
+                    response = drive_service.files().list(
+                        q=query,
+                        spaces='drive',
+                        fields='files(id, name)',
+                        pageSize=1
+                    ).execute()
+                    existing_docs = response.get('files', [])
 
-        # Extract Course Code (TGS Reference no.)
-        try:
-            sku_div = driver.find_element(By.CLASS_NAME, "sku")
-            tgs_reference_no = sku_div.text.strip().replace("Course Code:", "").strip()
-        except:
-            tgs_reference_no = "Not Applicable"
+                    if existing_docs:
+                        # If a document with the same title exists, show an alert
+                        existing_doc_id = existing_docs[0]['id']
+                        shareable_link = f"https://drive.google.com/file/d/{existing_doc_id}/view"
+                        st.warning(
+                            f"""A brochure for the course \"{course_data.course_title}\" already exists.
+                            \n[View existing brochure]({shareable_link})
+                            """
+                        )
+                        return
+                # Step 2: Display the scraped JSON
+                with right_col:
+                    st.json(st.session_state['course_data'], expanded=1)
 
-        # Extract Course Booking (GST-exclusive and GST-inclusive prices)
-        try:
-            price_box = driver.find_element(By.CLASS_NAME, "price-box")
-            gst_exclusive_price = price_box.find_element(By.CSS_SELECTOR, ".regular-price .price").text.strip()
-            gst_inclusive_price = price_box.find_element(By.ID, "gtP").text.strip()
-        except:
-            gst_exclusive_price = "Not Applicable"
-            gst_inclusive_price = "Not Applicable"
+                # Step 3: Generate brochure
+                with st.spinner("Generating brochure using Autogen..."):
+                    with Cache.disk() as cache:
+                        response = user_proxy_agent.initiate_chat(
+                            doc_writer_agent,
+                            message=f"""
+                            Please generate a brochure using the following course data: {json.dumps(st.session_state['course_data'])}
+                            Provide the shareable file link to the generated brochure.
+                            Return 'TERMINATE' once the brochure is generated.
+                            """,
+                            summary_method="reflection_with_llm",
+                            cache=cache,
+                        )
 
-        # Extract Course Information (Session days, Duration hrs)
-        session_days = "Not Applicable"
-        duration_hrs = "Not Applicable"
-        try:
-            course_info_div = driver.find_element(By.CLASS_NAME, "block-related")
-            course_info_list = course_info_div.find_elements(By.CSS_SELECTOR, "#bs-pav li")
-            for item in course_info_list:
-                text = item.text.strip().split(":")
-                if len(text) == 2:
-                    key = text[0].strip()
-                    value = text[1].strip()
-                    if key == "Session (days)":
-                        session_days = value
-                    elif key == "Duration (hrs)":
-                        duration_hrs = value
-        except:
-            pass  # Keep default values
+                # Step 4: Extract tool response
+                course_title, file_url = extract_tool_response(response)
+                if course_title and file_url:
+                    st.session_state['course_title'] = course_title
+                    st.session_state['file_url'] = file_url
+                    st.success(f"The brochure for the course \"{course_title}\" has been successfully generated.")
+                else:
+                    st.error("The tool response did not contain valid data.")
 
-        # Extract Course Details Topics
-        course_details_topics = []
-        try:
-            # Wait for the Course Details section to be present
-            course_details_section = WebDriverWait(driver, 20).until(
-                EC.presence_of_element_located(
-                    (
-                        By.XPATH,
-                        "//div[@class='tabs-panels']//h2[text()='Course Details']/following-sibling::div[@class='std']"
-                    )
-                )
+            except Exception as e:
+                st.error(f"An error occurred: {e}")
+
+        # Check if session state has a generated brochure link
+        if st.session_state['file_url']:
+            # Display link button for the brochure
+            st.link_button(
+                label="View Brochure",
+                url=st.session_state['file_url'],
+                icon=":material/description:"
             )
 
-            # Find all <p><strong>Topic X: ...</strong></p> elements
-            topic_elements = course_details_section.find_elements(By.XPATH, ".//p[strong]")
-
-            for idx, p_elem in enumerate(topic_elements):
-                strong_elem = p_elem.find_element(By.TAG_NAME, "strong")
-                # Get the topic title using textContent
-                topic_title = strong_elem.get_attribute('textContent').strip()
-                # Normalize spaces
-                topic_title = ' '.join(topic_title.split())
-
-                if topic_title.startswith('Topic'):
-                    # Get the following siblings
-                    subtopics = []
-                    next_siblings = p_elem.find_elements(By.XPATH, "following-sibling::*")
-                    for elem in next_siblings:
-                        if elem.tag_name == 'ul':
-                            subtopics.extend([li.get_attribute('textContent').strip() for li in elem.find_elements(By.TAG_NAME, "li")])
-                        elif elem.tag_name == 'p':
-                            # Check if the next <p> is another topic or "Final Assessment"
-                            try:
-                                next_strong = elem.find_element(By.TAG_NAME, "strong")
-                                next_topic_title = next_strong.get_attribute('textContent').strip()
-                                next_topic_title = ' '.join(next_topic_title.split())
-                                if next_topic_title.startswith('Topic') or "Final Assessment" in next_topic_title:
-                                    break
-                            except:
-                                continue
-                        else:
-                            continue
-                    # Exclude any subtopics that contain "Assessment"
-                    subtopics = [st for st in subtopics if "Assessment" not in st]
-                    course_topic = CourseTopic(
-                        title=topic_title,
-                        subtopics=subtopics
-                    )
-                    course_details_topics.append(course_topic)
-                else:
-                    continue  # Skip if not a topic title
-        except Exception as e:
-            print(f"Error extracting course topics: {e}")
-            course_details_topics = []
-
-        # Get course URL
-        course_url = url
-
-        # Create and return the CourseData object
-        course_data = CourseData(
-            course_title=course_title,
-            course_description=course_description,
-            learning_outcomes=learning_outcomes,
-            tsc_title=tsc_title,
-            tsc_code=tsc_code,
-            wsq_funding=wsq_funding,
-            tgs_reference_no=tgs_reference_no,
-            gst_exclusive_price=gst_exclusive_price,
-            gst_inclusive_price=gst_inclusive_price,
-            session_days=session_days,
-            duration_hrs=duration_hrs,
-            course_details_topics=course_details_topics,
-            course_url=course_url
-        )
-
-        return course_data
-
-    finally:
-        driver.quit()
-
-def main():
-    course_url = "https://www.tertiarycourses.com.sg/wsq-mastering-the-art-science-of-working-with-people-teams-using-discasiaplus.html"
-    
-    # Assuming we have a function scrape_course_data(url) -> CourseData
-    # Let's use the same CourseData class as above
-    # We'll simulate the scraping agent and get the data
-
-    # For simplicity, we'll directly call the scrape_course_data function here
-    # Ensure that scrape_course_data is imported or defined in the script
-    
-    # Scrape the course data
-    course_data = scrape_course_data(course_url)
-
-    # Now, we can pass this course_data to the doc_writer_agent via the conversation
-
-    with Cache.disk() as cache:
-        res = user_proxy_agent.initiate_chat(
-            doc_writer_agent,
-            message=f"Please generate a brochure using the following course data: {course_data.json()}",
-            summary_method="reflection_with_llm",
-            cache=cache,
-        )
-
-    # The agent will use the generate_brochure function to create the brochure
-    # The output document ID can be included in the agent's final response
-
-    # Print the final output
-    print("Agent's Response:")
-    print(res.summary)
-
-if __name__ == '__main__':
-    main()
+            
