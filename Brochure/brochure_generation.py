@@ -215,6 +215,13 @@ def generate_brochure_wrapper(data: CourseData) -> BrochureResponse:
 
 def authenticate():
     creds = None
+    # Load credentials from Streamlit secrets
+    google_api_creds_json = st.secrets["GOOGLE_API_CREDS"]
+    
+    # Write the credentials JSON to a temporary file
+    with open('google_api_creds.json', 'w') as temp_creds_file:
+        temp_creds_file.write(google_api_creds_json)
+    
     if os.path.exists('token.json'):
         creds = Credentials.from_authorized_user_file('token.json', SCOPES)
     if not creds or not creds.valid:
@@ -222,12 +229,18 @@ def authenticate():
             creds.refresh(Request())
         else:
             flow = InstalledAppFlow.from_client_secrets_file(
-                'tertiary-autogen-creds.json', SCOPES  # Replace with your client secrets file
+                'google_api_creds.json', SCOPES  # Use the temporary file
             )
             creds = flow.run_local_server(port=0)
+        # Save the token for later use
         with open('token.json', 'w') as token:
             token.write(creds.to_json())
+    
+    # Cleanup the temporary file after use
+    os.remove('google_api_creds.json')
+    
     return creds
+
 
 def copy_template(drive_service, template_id, new_title):
     try:
