@@ -234,9 +234,9 @@ def authenticate():
                 with open('client_secrets.json', 'w') as temp_file:
                     json.dump(wrapped_creds, temp_file)
 
-                # Use the temporary JSON file for the OAuth flow
+                # Use the console-based OAuth flow for environments without a local browser
                 flow = InstalledAppFlow.from_client_secrets_file('client_secrets.json', SCOPES)
-                creds = flow.run_local_server(port=0)
+                creds = flow.run_console()  # Outputs a URL to the Streamlit logs
 
                 # Remove the temporary file after use
                 os.remove('client_secrets.json')
