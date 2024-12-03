@@ -236,14 +236,7 @@ def authenticate():
 
                 # Use the console-based OAuth flow for environments without a local browser
                 flow = InstalledAppFlow.from_client_secrets_file('client_secrets.json', SCOPES)
-                auth_url, _ = flow.authorization_url(prompt='consent')
-                st.write("Please visit the following URL to authorize the app:")
-                st.write(auth_url)
-
-                auth_code = st.text_input("Enter the authorization code:")
-                if auth_code:
-                    creds = flow.fetch_token(code=auth_code)
-                    st.success("Authentication successful!")
+                creds = flow.run_local_server(port=8501)
                 # Remove the temporary file after use
                 os.remove('client_secrets.json')
 
