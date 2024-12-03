@@ -214,36 +214,12 @@ def generate_brochure_wrapper(data: CourseData) -> BrochureResponse:
 
 
 def authenticate():
+    from google.oauth2 import service_account
     creds = None
-    google_creds = dict(st.secrets["GOOGLE_API_CREDS"])  # Convert AttrDict to a standard dictionary
-
     try:
-        # Check if the token.json file exists for saved credentials
-        if os.path.exists('token.json'):
-            creds = Credentials.from_authorized_user_file('token.json', SCOPES)
-
-        # If there are no credentials or they are invalid, generate new ones
-        if not creds or not creds.valid:
-            if creds and creds.expired and creds.refresh_token:
-                creds.refresh(Request())
-            else:
-                # Wrap the dictionary under the "installed" key to match the expected structure
-                wrapped_creds = {"installed": google_creds}
-
-                # Write the wrapped credentials dictionary to a temporary JSON file
-                with open('client_secrets.json', 'w') as temp_file:
-                    json.dump(wrapped_creds, temp_file)
-
-                # Use the console-based OAuth flow for environments without a local browser
-                flow = InstalledAppFlow.from_client_secrets_file('client_secrets.json', SCOPES)
-                creds = flow.run_local_server(port=8501)
-                # Remove the temporary file after use
-                os.remove('client_secrets.json')
-
-            # Save the credentials for the next run
-            with open('token.json', 'w') as token_file:
-                token_file.write(creds.to_json())
-
+        creds = service_account.Credentials.from_service_account_info(
+        st.secrets["GOOGLE_API_CREDS"]
+        )
         return creds
 
     except Exception as e:
@@ -536,18 +512,21 @@ def app():
                     st.json(st.session_state['course_data'], expanded=1)
 
                 # Step 3: Generate brochure
-                with st.spinner("Generating brochure using Autogen..."):
-                    with Cache.disk() as cache:
-                        response = user_proxy_agent.initiate_chat(
-                            doc_writer_agent,
-                            message=f"""
-                            Please generate a brochure using the following course data: {json.dumps(st.session_state['course_data'])}
-                            Provide the shareable file link to the generated brochure.
-                            Return 'TERMINATE' once the brochure is generated.
-                            """,
-                            summary_method="reflection_with_llm",
-                            cache=cache,
-                        )
+                try:
+                    with st.spinner("Generating brochure using Autogen..."):
+                        with Cache.disk() as cache:
+                            response = user_proxy_agent.initiate_chat(
+                                doc_writer_agent,
+                                message=f"""
+                                Please generate a brochure using the following course data: {json.dumps(st.session_state['course_data'])}
+                                Provide the shareable file link to the generated brochure.
+                                Return 'TERMINATE' once the brochure is generated.
+                                """,
+                                summary_method="reflection_with_llm",
+                                cache=cache,
+                            )
+                except Exception as e:
+                    st.error(f"An error occurred: {e}")
 
                 # Step 4: Extract tool response
                 course_title, file_url = extract_tool_response(response)
