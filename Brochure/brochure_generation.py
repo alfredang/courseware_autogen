@@ -184,7 +184,14 @@ def scrape_course_data(url: str) -> CourseData:
 # Autogen setup
 doc_writer_agent = autogen.AssistantAgent(
     name="doc_writer",
-    system_message="You are an assistant that generates brochures based on course data.",
+    system_message="""
+        You are an assistant that generates brochures based on course data. 
+
+        ### Instructions:
+        "When replacing placeholders for Learning Outcomes and Course Topics, check for prefixes like '-', '*', or 'LOx:' at the start of each line, and remove them before inserting the text into the document. 
+        Do not modify the contents otherwise; only remove the prefixes.
+        Ensure that all fields, including `wsq_funding`, remain within the `data` dictionary.
+    """,
     llm_config={
         "config_list": [
             {
@@ -374,11 +381,11 @@ def generate_brochure(data: CourseData):
         'Session_Days': data_dict.get('session_days', 'Not Applicable'),
         
         'Course_URL': data_dict.get('course_url', 'Not Applicable'),
-        'Effective_Date': data_dict.get('wsq_funding', {}).get('Effective Date', 'Not Applicable'),
-        'Full_Fee': data_dict.get('wsq_funding', {}).get('Full Fee', 'Not Applicable'),
-        'GST': data_dict.get('wsq_funding', {}).get('GST', 'Not Applicable'),
-        'Baseline_Price': data_dict.get('wsq_funding', {}).get('Baseline', 'Not Applicable'),
-        'MCES_SME_Price': data_dict.get('wsq_funding', {}).get('MCES / SME', 'Not Applicable'),
+        'Effective_Date': data_dict.get('wsq_funding', {}).get('Effective Date', 'Not Applicable') if data_dict.get('wsq_funding') else 'Not Applicable',
+        'Full_Fee': data_dict.get('wsq_funding', {}).get('Full Fee', 'Not Applicable') if data_dict.get('wsq_funding') else 'Not Applicable',
+        'GST': data_dict.get('wsq_funding', {}).get('GST', 'Not Applicable') if data_dict.get('wsq_funding') else 'Not Applicable',
+        'Baseline_Price': data_dict.get('wsq_funding', {}).get('Baseline', 'Not Applicable') if data_dict.get('wsq_funding') else 'Not Applicable',
+        'MCES_SME_Price': data_dict.get('wsq_funding', {}).get('MCES / SME', 'Not Applicable') if data_dict.get('wsq_funding') else 'Not Applicable',
     }
 
     # Handle {Course_Topics} placeholder
@@ -393,7 +400,7 @@ def generate_brochure(data: CourseData):
             for topic in course_topics:
                 topics_text += f"{topic['title']}\n"
                 for subtopic in topic['subtopics']:
-                    topics_text += f"  - {subtopic}\n"
+                    topics_text += f"{subtopic}\n"
                 topics_text += '\n'
         mapping['Course_Topics'] = topics_text.strip()
     else:
@@ -522,6 +529,7 @@ def app():
                                 doc_writer_agent,
                                 message=f"""
                                 Please generate a brochure using the following course data: {json.dumps(st.session_state['course_data'])}
+                                **Do not modify the data structure or move any fields outside of the `data` dictionary.**
                                 Provide the shareable file link to the generated brochure.
                                 Return 'TERMINATE' once the brochure is generated.
                                 """,
