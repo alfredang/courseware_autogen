@@ -33,7 +33,7 @@ nest_asyncio.apply()
 dotenv.load_dotenv()
 
 # Load API key from environment
-OPENAI_API_KEY = os.getenv('PERSONAL_OAI_API_KEY')
+OPENAI_API_KEY = os.getenv('TERTIARY_INFOTECH_API_KEY')
 LLAMA_CLOUD_API_KEY = os.getenv("LLAMA_CLOUD_API_KEY")
 
 # AutoGen Configs
@@ -63,268 +63,287 @@ temperature=0.0,
 api_key=OPENAI_API_KEY,
 )
 
-def parse_fg_document(input_dir):
-    """
-    Parse a Facilitator Guide document into a structured JSON format.
-
-    Args:
-        input_dir (str): Path to the input Word document.
-
-    Returns:
-        dict: Parsed document content.
-    """
-    # Load the document
-    doc = Document(input_dir)
-
-    # Initialize containers
-    data = {
-        "Facilitator_Guide": {}
-    }
-
-    # Function to parse tables with advanced duplication check
-    def parse_table(table):
-        rows = []
-        for row in table.rows:
-            # Process each cell and ensure unique content within the row
-            cells = []
-            for cell in row.cells:
-                cell_text = cell.text.strip()
-                if cell_text not in cells:
-                    cells.append(cell_text)
-            # Ensure unique rows within the table
-            if cells not in rows:
-                rows.append(cells)
-        return rows
-
-    # Function to add text and table content to a section
-    def add_content_to_section(section_name, content):
-        if section_name not in data["Facilitator_Guide"]:
-            data["Facilitator_Guide"][section_name] = []
-        # Check for duplication before adding content
-        if content not in data["Facilitator_Guide"][section_name]:
-            data["Facilitator_Guide"][section_name].append(content)
-
-    # Variables to track the current section
-    current_section = None
-
-    # Iterate through the elements of the document
-    for element in doc.element.body:
-        if isinstance(element, CT_P):  # It's a paragraph
-            para = Paragraph(element, doc)
-            text = para.text.strip()
-            if "Course Overview" in text or "Learning Outcomes" in text or "Lesson Plan" in text or "Structure & Duration" in text:
-                # Use header content to set the current section
-                current_section = text
-            elif text:
-                add_content_to_section(current_section, text)
-        elif isinstance(element, CT_Tbl):  # It's a table
-            tbl = Table(element, doc)
-            table_content = parse_table(tbl)
-            if current_section:
-                add_content_to_section(current_section, {"table": table_content})
-
-    return data
-
-def retrieveParsedJSON(raw_data, llm_config):
-    # 1. User Proxy Agent (Provides unstructured data to the interpreter)
-    user_proxy = UserProxyAgent(
-        name="User",
-        is_termination_msg=lambda msg: msg.get("content") is not None and "TERMINATE" in msg["content"],
-        human_input_mode="NEVER",  # Automatically provides unstructured data
-        code_execution_config={"work_dir": "output", "use_docker": False} # Takes data from a directory
-    )
-
-    # 2. Interpreter Agent (Converts unstructured data into structured data)
-    interpreter = AssistantAgent(
-        name="Interpreter",
-        llm_config=llm_config,
-        system_message="""
-        You are an AI assistant that extracts specific information from a JSON object containing a Course Proposal Form. Your task is to interpret the JSON data, regardless of its structure or any irrelevant information, and extract the required information accurately.
-
-        ---
-
-        **Task:** Extract the following information from the provided JSON data:
-
-        ### **Required Information:**
-
-        - **Course_Title**
-        - **TGS_Ref_No**
-        - **TSC_Title**
-        - **TSC_Code**
-        - **Abilities**: A list of ability statements (e.g., `["A1: ...", "A2: ..."]`)
-        - **Knowledge**: A list of knowledge statements (e.g., `["K1: ...", "K2: ..."]`)
-        - **Learning_Outcomes**: A list of learning outcomes (e.g., `["LO1: ...", "LO2: ..."]`)
-        - **Course_Outline**: A list of dictionaries, each representing a Learning Unit (LU) with its topics and subtopics.
-            - Each LU should include:
-                - **Learning_Unit_Title**: Include the "LUx: " prefix.
-                - **Topics**: A list of topics covered under the LU.
-                    - For each Topic:
-                        - **Topic_Title**: Include the "Topic x: " prefix and associated K and A statements in parentheses.
-                        - **Bullet_Points**: A list of bullet points under the topic.
-        - **Assessment_Methods**: A list of assessment methods, using full terms (e.g., `["Written Assessment - Short Answer Questions (WA-SAQ)", "Case Study (CS)"]`).
-
-        ---
-
-        **Instructions:**
-
-        - **Data Parsing**: Carefully parse the JSON data to locate and extract the required information.
-
-        - **Topic Structure Parsing**:
-
-        - **Learning Units (LUs)**:
-
-            - Identify each LU in the "Learning Outcomes" section under "table".
-            - The LU title starts with `"LUx: "`, where `x` is the LU number.
-
-        - **Topics within LUs**:
-
-            - **Identify Topics**:
-
-            - Look for lines starting with `"Topic x "`, where `x` is the topic number.
-            - The topic title follows `"Topic x "`, and any associated K and A statements are in parentheses.
-            - **Example**: `"Topic 1 Introduction to Copilot for Microsoft 365 (K1, A1)"`.
-
-            - **Bullet Points**:
-
-            - The lines following the topic title are bullet points for that topic.
-            - Collect these lines until you reach the next line that starts with:
-
-                - `"Topic x "` (indicating the next topic),
-                - `"LOx – "` (indicating the Learning Outcome), or
-                - Another section header.
-
-            - **Validation**:
-
-            - Ensure all topics are extracted by checking the sequence of topic numbers.
-            - If topic numbers are skipped or duplicated, review the data carefully.
-
-        - **Learning Outcomes (LOs)**:
-
-            - The Learning Outcome starts with a line beginning with `"LOx – "`, where `x` is the LO number.
-
-        - **Knowledge (K) and Ability (A) Statements**:
-
-            - Following the LOs, K and A statements are listed, starting with `"Kx: "` and `"Ax: "`.
-
-        - **Irrelevant Data**: Ignore any irrelevant data or sections that are not needed for the extraction.
-
-        - **Consistency**: Ensure that all extracted information matches the data in the JSON input accurately.
-
-        - **Text Normalization**:
-
-            - Replace special characters:
-
-                - En dashes (–) and em dashes (—) with regular hyphens (-).
-                - Curly quotes (“ ”) with straight quotes (").
-                - Non-ASCII characters with their closest ASCII equivalents.
-
-            - This normalization should be applied to all extracted text fields to ensure consistency.
-
-        - **Formatting**:
-
-            - **Time Fields**: Include units, e.g., "14 hrs", "2 hrs".
-            - **Learning Outcomes**: Include the "LOx: " prefix.
-            - **Knowledge and Abilities**: Include numbering (e.g., "K1: ...", "A1: ...").
-            - **Topic Titles**: Include the "Topic x: " prefix and associated K and A statements in parentheses.
-
-        - **Assessment Methods**:
-
-            - If only abbreviations are provided, replace them with their full terms:
-
-                - "WA-SAQ" → "Written Assessment - Short Answer Questions (WA-SAQ)"
-                - "CS" → "Case Study (CS)"
-                - "PP" → "Practical Performance (PP)"
-                - "OQ" → "Oral Questioning (OQ)"
-                - "RP" → "Role Play (RP)"
-
-            - Use the standard assessment method abbreviations if needed.
-
-        - **Output Format**:
-
-            - Present the extracted information in a structured JSON format, using double quotes around all field names and string values.
-            - Remove any redundant or duplicate entries.
-            - Avoid any trailing commas.
-            - Ensure the JSON is well-formatted and valid.
-
-        - **Bullet Points Validation**:
-
-            - Ensure that all bullet points under each topic are fully extracted.
-            - If there is any discrepancy in the number of bullet points, re-extract them to match the source data.
-
-        - **Total Duration Validation**:
-
-            - Use the total duration specified in the data for "Total Course Duration Hours".
-            - Verify that this matches the sum of "Total Training Hours" and "Total Assessment Hours".
-            - If there is a discrepancy, use the total duration specified in the data as authoritative.
-
-        ---
-
-        **Expected Output Format**:
-
-        ```json
-        {
-            "Course_Title": "...",
-            "TGS_Ref_No": "...",
-            "TSC_Title": "...",
-            "TSC_Code": "...",
-            "Abilities": [
-                "A1: ...",
-                "A2: ...",
-                "A3: ..."
-            ],
-            "Knowledge": [
-                "K1: ...",
-                "K2: ...",
-                "K3: ..."
-            ],
-            "Learning_Outcomes": [
-                "LO1: ...",
-                "LO2: ...",
-                "LO3: ..."
-            ],
-            "Course_Outline": [
-                {
-                "Learning_Unit_Title": "LU1: ...",
-                "Topics": [
-                    {
-                    "Topic_Title": "Topic 1: ... (Kx, Ay)",
-                    "Bullet_Points": [
-                        "...",
-                        "..."
-                    ]
-                    }
-                    // Additional topics...
-                ]
-                }
-                // Additional learning units...
-            ],
-            "Assessment_Methods": [
-                "Written Assessment - Short Answer Questions (WA-SAQ)",
-                "Case Study (CS)"
-            ]
-        }
-
-    """
-    )
-    chat_result = user_proxy.initiate_chat(
-        recipient=interpreter,
-        summary_method="last_msg",
-        max_turns=3,
-        message=f"""               
-        Please extract and structure the following data: {raw_data}.
-        **Return the extracted information as a complete JSON dictionary containing the specified fields. Do not truncate or omit any data. Include all fields and their full content. Do not use '...' or any placeholders to replace data.**
-        Simply return the JSON dictionary object directly and 'TERMINATE'.
-        """
-    )
- 
-    response = chat_result.chat_history[-1].get("content", "")
-
-    return response
-
 def saveToJSON(output_path, data):
     with open(output_path, 'w', encoding='utf-8') as json_file:
         json.dump(data, json_file, ensure_ascii=False, indent=4)
+        
+# def parse_fg_document(input_dir):
+#     """
+#     Parse a Facilitator Guide document into a structured JSON format.
 
+#     Args:
+#         input_dir (str): Path to the input Word document.
+
+#     Returns:
+#         dict: Parsed document content.
+#     """
+#     # Load the document
+#     doc = Document(input_dir)
+
+#     # Initialize containers
+#     data = {
+#         "Facilitator_Guide": {}
+#     }
+
+#     # Function to parse tables with advanced duplication check
+#     def parse_table(table):
+#         rows = []
+#         for row in table.rows:
+#             # Process each cell and ensure unique content within the row
+#             cells = []
+#             for cell in row.cells:
+#                 cell_text = cell.text.strip()
+#                 if cell_text not in cells:
+#                     cells.append(cell_text)
+#             # Ensure unique rows within the table
+#             if cells not in rows:
+#                 rows.append(cells)
+#         return rows
+
+#     # Function to add text and table content to a section
+#     def add_content_to_section(section_name, content):
+#         if section_name not in data["Facilitator_Guide"]:
+#             data["Facilitator_Guide"][section_name] = []
+#         # Check for duplication before adding content
+#         if content not in data["Facilitator_Guide"][section_name]:
+#             data["Facilitator_Guide"][section_name].append(content)
+
+#     # Variables to track the current section
+#     current_section = None
+
+#     # Iterate through the elements of the document
+#     for element in doc.element.body:
+#         if isinstance(element, CT_P):  # It's a paragraph
+#             para = Paragraph(element, doc)
+#             text = para.text.strip()
+#             if "Course Overview" in text or "Learning Outcomes" in text or "Lesson Plan" in text or "Structure & Duration" in text:
+#                 # Use header content to set the current section
+#                 current_section = text
+#             elif text:
+#                 add_content_to_section(current_section, text)
+#         elif isinstance(element, CT_Tbl):  # It's a table
+#             tbl = Table(element, doc)
+#             table_content = parse_table(tbl)
+#             if current_section:
+#                 add_content_to_section(current_section, {"table": table_content})
+
+#     return data
+
+# def retrieveParsedJSON(raw_data, llm_config):
+#     # 1. User Proxy Agent (Provides unstructured data to the interpreter)
+#     user_proxy = UserProxyAgent(
+#         name="User",
+#         is_termination_msg=lambda msg: msg.get("content") is not None and "TERMINATE" in msg["content"],
+#         human_input_mode="NEVER",  # Automatically provides unstructured data
+#         code_execution_config={"work_dir": "output", "use_docker": False} # Takes data from a directory
+#     )
+
+#     # 2. Interpreter Agent (Converts unstructured data into structured data)
+#     interpreter = AssistantAgent(
+#         name="Interpreter",
+#         llm_config=llm_config,
+#         system_message="""
+#         You are an AI assistant that extracts specific information from a JSON object containing a Course Proposal Form. Your task is to interpret the JSON data, regardless of its structure or any irrelevant information, and extract the required information accurately.
+
+#         ---
+
+#         **Task:** Extract the following information from the provided JSON data:
+
+#         ### **Required Information:**
+
+#         - **Course_Title**
+#         - **TGS_Ref_No**
+#         - **TSC_Title**
+#         - **TSC_Code**
+#         - **Abilities**: A list of ability statements (e.g., `["A1: ...", "A2: ..."]`)
+#         - **Knowledge**: A list of knowledge statements (e.g., `["K1: ...", "K2: ..."]`)
+#         - **Learning_Outcomes**: A list of learning outcomes (e.g., `["LO1: ...", "LO2: ..."]`)
+#         - **Course_Outline**: A list of dictionaries, each representing a Learning Unit (LU) with its topics and subtopics.
+#             - Each LU should include:
+#                 - **Learning_Unit_Title**: Include the "LUx: " prefix.
+#                 - **Topics**: A list of topics covered under the LU.
+#                     - For each Topic:
+#                         - **Topic_Title**: Include the "Topic x: " prefix and associated K and A statements in parentheses.
+#                         - **Bullet_Points**: A list of bullet points under the topic.
+#         - **Assessment_Methods**: A list of assessment methods, using full terms (e.g., `["Written Assessment - Short Answer Questions (WA-SAQ)", "Case Study (CS)"]`).
+
+#         ---
+
+#         **Instructions:**
+
+#         - **Data Parsing**: Carefully parse the JSON data to locate and extract the required information.
+
+#         - **Topic Structure Parsing**:
+
+#         - **Learning Units (LUs)**:
+
+#             - Identify each LU in the "Learning Outcomes" section under "table".
+#             - The LU title starts with `"LUx: "`, where `x` is the LU number.
+
+#         - **Topics within LUs**:
+
+#             - **Identify Topics**:
+
+#             - Look for lines starting with `"Topic x "`, where `x` is the topic number.
+#             - The topic title follows `"Topic x "`, and any associated K and A statements are in parentheses.
+#             - **Example**: `"Topic 1 Introduction to Copilot for Microsoft 365 (K1, A1)"`.
+
+#             - **Bullet Points**:
+
+#             - The lines following the topic title are bullet points for that topic.
+#             - Collect these lines until you reach the next line that starts with:
+
+#                 - `"Topic x "` (indicating the next topic),
+#                 - `"LOx – "` (indicating the Learning Outcome), or
+#                 - Another section header.
+
+#             - **Validation**:
+
+#             - Ensure all topics are extracted by checking the sequence of topic numbers.
+#             - If topic numbers are skipped or duplicated, review the data carefully.
+
+#         - **Learning Outcomes (LOs)**:
+
+#             - The Learning Outcome starts with a line beginning with `"LOx – "`, where `x` is the LO number.
+
+#         - **Knowledge (K) and Ability (A) Statements**:
+
+#             - Following the LOs, K and A statements are listed, starting with `"Kx: "` and `"Ax: "`.
+
+#         - **Irrelevant Data**: Ignore any irrelevant data or sections that are not needed for the extraction.
+
+#         - **Consistency**: Ensure that all extracted information matches the data in the JSON input accurately.
+
+#         - **Text Normalization**:
+
+#             - Replace special characters:
+
+#                 - En dashes (–) and em dashes (—) with regular hyphens (-).
+#                 - Curly quotes (“ ”) with straight quotes (").
+#                 - Non-ASCII characters with their closest ASCII equivalents.
+
+#             - This normalization should be applied to all extracted text fields to ensure consistency.
+
+#         - **Formatting**:
+
+#             - **Time Fields**: Include units, e.g., "14 hrs", "2 hrs".
+#             - **Learning Outcomes**: Include the "LOx: " prefix.
+#             - **Knowledge and Abilities**: Include numbering (e.g., "K1: ...", "A1: ...").
+#             - **Topic Titles**: Include the "Topic x: " prefix and associated K and A statements in parentheses.
+
+#         - **Assessment Methods**:
+
+#             - If only abbreviations are provided, replace them with their full terms:
+
+#                 - "WA-SAQ" → "Written Assessment - Short Answer Questions (WA-SAQ)"
+#                 - "CS" → "Case Study (CS)"
+#                 - "PP" → "Practical Performance (PP)"
+#                 - "OQ" → "Oral Questioning (OQ)"
+#                 - "RP" → "Role Play (RP)"
+
+#             - Use the standard assessment method abbreviations if needed.
+
+#         - **Output Format**:
+
+#             - Present the extracted information in a structured JSON format, using double quotes around all field names and string values.
+#             - Remove any redundant or duplicate entries.
+#             - Avoid any trailing commas.
+#             - Ensure the JSON is well-formatted and valid.
+
+#         - **Bullet Points Validation**:
+
+#             - Ensure that all bullet points under each topic are fully extracted.
+#             - If there is any discrepancy in the number of bullet points, re-extract them to match the source data.
+
+#         - **Total Duration Validation**:
+
+#             - Use the total duration specified in the data for "Total Course Duration Hours".
+#             - Verify that this matches the sum of "Total Training Hours" and "Total Assessment Hours".
+#             - If there is a discrepancy, use the total duration specified in the data as authoritative.
+
+#         ---
+
+#         **Expected Output Format**:
+
+#         ```json
+#         {
+#             "Course_Title": "...",
+#             "TGS_Ref_No": "...",
+#             "TSC_Title": "...",
+#             "TSC_Code": "...",
+#             "Abilities": [
+#                 "A1: ...",
+#                 "A2: ...",
+#                 "A3: ..."
+#             ],
+#             "Knowledge": [
+#                 "K1: ...",
+#                 "K2: ...",
+#                 "K3: ..."
+#             ],
+#             "Learning_Outcomes": [
+#                 "LO1: ...",
+#                 "LO2: ...",
+#                 "LO3: ..."
+#             ],
+#             "Course_Outline": [
+#                 {
+#                 "Learning_Unit_Title": "LU1: ...",
+#                 "Topics": [
+#                     {
+#                     "Topic_Title": "Topic 1: ... (Kx, Ay)",
+#                     "Bullet_Points": [
+#                         "...",
+#                         "..."
+#                     ]
+#                     }
+#                     // Additional topics...
+#                 ]
+#                 }
+#                 // Additional learning units...
+#             ],
+#             "Assessment_Methods": [
+#                 "Written Assessment - Short Answer Questions (WA-SAQ)",
+#                 "Case Study (CS)"
+#             ]
+#         }
+
+#     """
+#     )
+#     chat_result = user_proxy.initiate_chat(
+#         recipient=interpreter,
+#         summary_method="last_msg",
+#         max_turns=3,
+#         message=f"""               
+#         Please extract and structure the following data: {raw_data}.
+#         **Return the extracted information as a complete JSON dictionary containing the specified fields. Do not truncate or omit any data. Include all fields and their full content. Do not use '...' or any placeholders to replace data.**
+#         Simply return the JSON dictionary object directly and 'TERMINATE'.
+#         """
+#     )
+ 
+#     response = chat_result.chat_history[-1].get("content", "")
+
+#     return response
+
+# def strip_response(response: str) -> str:
+#     """
+#     Strips triple backticks and `json` formatting hint from a response string.
+
+#     Args:
+#         response (str): The raw response encapsulated in triple backticks.
+
+#     Returns:
+#         str: The cleaned JSON string.
+#     """
+#     if response.startswith("```json") and response.endswith("```"):
+#         # Remove triple backticks and the 'json' label
+#         response = response.strip("```json").strip("```").strip()
+#     # Deserialize JSON
+#     try:
+#         return json.loads(response)
+#     except json.JSONDecodeError as e:
+#         raise ValueError(f"Error parsing JSON response: {e}")
+    
 def parse_documents(doc_paths, output_dir="./parsed_documents"):
     """
     Parse multiple PDF documents into structured nodes for RAG workflows.
@@ -370,36 +389,20 @@ def get_pdf_files(directory):
                 pdf_files.append(os.path.join(root, file))
     return pdf_files
 
-def strip_response(response: str) -> str:
-    """
-    Strips triple backticks and `json` formatting hint from a response string.
+input_fg = "./Slides/docs/FG_TGS-2024048313_Java Programming Methodologies_v2.docx"
+input_directory = "./Slides/docs/REST/"
 
-    Args:
-        response (str): The raw response encapsulated in triple backticks.
+# parsed_data = parse_fg_document(input_fg)
 
-    Returns:
-        str: The cleaned JSON string.
-    """
-    if response.startswith("```json") and response.endswith("```"):
-        # Remove triple backticks and the 'json' label
-        response = response.strip("```json").strip("```").strip()
-    # Deserialize JSON
-    try:
-        return json.loads(response)
-    except json.JSONDecodeError as e:
-        raise ValueError(f"Error parsing JSON response: {e}")
+# # Save to JSON file
+# output_file = "parsed_fg.json"
+# saveToJSON(output_file, parsed_data)
 
-input_fg = "./Slides/docs/FG_TGS-2024048313_Java Programming Methodologies_v1.docx"
-input_directory = "./Slides/documents/Java Programming/"
+# response = retrieveParsedJSON(parsed_data, llm_config)
+# context = strip_response(response)
 
-parsed_data = parse_fg_document(input_fg)
-
-# Save to JSON file
-output_file = "parsed_fg.json"
-saveToJSON(output_file, parsed_data)
-
-response = retrieveParsedJSON(parsed_data, llm_config)
-context = strip_response(response)
+with open('parsed_response.json', 'r') as f:
+    context = json.load(f)
 
 # Get all PDF files in the directory
 pdf_files = get_pdf_files(input_directory)
@@ -501,348 +504,358 @@ for lu in context["Course_Outline"]:
 
     # Append the completed learning unit data to the topics outline
     context["Topics_Outline"].append(lu_data)
+    
+saveToJSON("rag_done_output_v2.json", context)
+print(f"\n***********Generating Slide Deck for {context['Course_Title']}***********")
 
-print(f"\n***********Generating Slide Deck for {context}***********")
+# with open('rag_done_output.json', 'r') as f:
+#     context = json.load(f)
 
-# print(f"\n***********Generating Slide Deck for {context['Course_Title']}***********")
+# Create the content generator agent
+slides_writer = AssistantAgent(
+    name="Slides_Generator",
+    system_message=f"""
+    You are responsible for generating PowerPoint slides dynamically based on the provided context.
+    The `context` JSON will be included in the messages you receive.
+    
+    Instructions:
+    - Extract the `context` JSON from the incoming message.
+    - Pass the `context` as a parameter to the `generate_slides` function.
+    - Confirm completion by returning `TERMINATE`.
+    """,
+    llm_config=llm_config,
+)
 
-# # Create the content generator agent
-# slides_writer = AssistantAgent(
-#     name="Slides_Generator",
-#     system_message=f"""
-#     You are a PowerPoint slide writer.
-#     You have received a JSON object as context data: {context}.
-#     Your task is to pass this JSON object **exactly as received**, as the `context` parameter, to the `generate_slides` tool function.
+# Create the user proxy agent
+user_proxy = UserProxyAgent(
+    name="User_Proxy",
+    human_input_mode="NEVER",
+    max_consecutive_auto_reply=2,
+    # is_termination_msg=lambda x: x.get("content", "").find("TERMINATE") >= 0,
+    code_execution_config={"work_dir": "output", "use_docker": False} 
+)
 
-#     **Important Instructions:**
-#     - Do not modify or unpack the JSON object.
-#     - Pass the JSON object **directly** into the `generate_slides` function as follows:
-#       ```python
-#       generate_slides(context = context dictionary)
-#       ```
-#     - Replace `JSON_Context` with the actual JSON object received.
-#     Upon successful completion of the task, return `TERMINATE`.
-#     """,
-#     llm_config=llm_config,
-# )
+@user_proxy.register_for_execution()
+@slides_writer.register_for_llm(name="generate_slides", description="Generate the Master Slides")
+def generate_slides(context: dict) -> str:
+    """
+    Dynamically generate slides based on the passed context.
+    """
+    # Function to build replacements dictionary from JSON data
+    def build_replacements(data):
+        replacements = {}
+        for key, value in data.items():
+            placeholder = f"<{key.upper()}>"
+            replacements[placeholder] = value
+        return replacements
+    
+    # Function to replace placeholders
+    def replace_placeholder(text, replacements):
+        for placeholder, replacement in replacements.items():
+            if isinstance(replacement, dict):
+                # Skip dictionaries
+                continue
+            elif isinstance(replacement, list):
+                # Check if all items are strings
+                if all(isinstance(item, str) for item in replacement):
+                    replacement_text = "\n".join(replacement)
+                    text = text.replace(placeholder, replacement_text)
+                else:
+                    # Skip lists that contain non-string items (e.g., lists of dicts)
+                    continue
+            else:
+                text = text.replace(placeholder, str(replacement))
+        return text
 
-# # Create the user proxy agent
-# user_proxy = UserProxyAgent(
-#     name="User_Proxy",
-#     human_input_mode="NEVER",
-#     max_consecutive_auto_reply=2,
-#     # is_termination_msg=lambda x: x.get("content", "").find("TERMINATE") >= 0,
-#     code_execution_config={"work_dir": "output", "use_docker": False} 
-# )
+    # Function to add bullet points from a list to a text frame
+    def add_bullet_points(text_frame, bullet_points):
+        text_frame.clear()  # Clear any existing text
+        for point in bullet_points:
+            p = text_frame.add_paragraph()
+            p.text = point
+            p.level = 0  # Level 0 for top-level bullet points
 
-# @user_proxy.register_for_execution()
-# @slides_writer.register_for_llm(name="generate_slides", description="Generate the Master Slides")
-# def generate_slides(context: dict) -> str:
-#     # Function to replace placeholders
-#     def replace_placeholder(text, replacements):
-#         for placeholder, replacement in replacements.items():
-#             if isinstance(replacement, list):
-#                 # Check if all items are strings
-#                 if all(isinstance(item, str) for item in replacement):
-#                     replacement = "\n".join(replacement)
-#                 else:
-#                     # Skip lists with non-string items
-#                     continue
-#             elif isinstance(replacement, dict):
-#                 # Skip dictionary replacements like <COURSE_OUTLINE>
-#                 continue
-#             text = text.replace(placeholder, replacement)
-#         return text
+    def get_slide_number_placeholder_properties():
+        # Positioning and formatting based on the data provided in the images
+        position = (Cm(23.54), Cm(12.95), Cm(1.52), Cm(1.09))  # Left, Top, Width, Height in centimeters
+        font_properties = {
+            'font_size': Pt(10),
+            'font_name': "Arial",
+            'font_color': RGBColor(89, 89, 89),  # Dark Gray, Background 2
+            'alignment': 'middle',  # Middle alignment
+            'horizontal_alignment': 'right',  # Right horizontal alignment
+            'autofit': False,
+            'wrap_text': True,
+            'margins': (Cm(0.25), Cm(0.25), Cm(0.25), Cm(0.25))  # Left, Right, Top, Bottom margins in centimeters
+        }
+        return position, font_properties
 
-#     # Function to add bullet points from a list to a text frame
-#     def add_bullet_points(text_frame, bullet_points):
-#         text_frame.clear()  # Clear any existing text
-#         for point in bullet_points:
-#             p = text_frame.add_paragraph()
-#             p.text = point
-#             p.level = 0  # Level 0 for top-level bullet points
+    def move_slides(prs1, prs2, placeholder_text):
+        """Move slides from prs2 to prs1 after the placeholder slide identified by placeholder_text."""
+        placeholder_index = None
+        for idx, slide in enumerate(prs1.slides):
+            for shape in slide.shapes:
+                if shape.has_text_frame and placeholder_text in shape.text:
+                    placeholder_index = idx
+                    break
+            if placeholder_index is not None:
+                break
 
-#     def get_slide_number_placeholder_properties():
-#         # Positioning and formatting based on the data provided in the images
-#         position = (Cm(23.54), Cm(12.95), Cm(1.52), Cm(1.09))  # Left, Top, Width, Height in centimeters
-#         font_properties = {
-#             'font_size': Pt(10),
-#             'font_name': "Arial",
-#             'font_color': RGBColor(89, 89, 89),  # Dark Gray, Background 2
-#             'alignment': 'middle',  # Middle alignment
-#             'horizontal_alignment': 'right',  # Right horizontal alignment
-#             'autofit': False,
-#             'wrap_text': True,
-#             'margins': (Cm(0.25), Cm(0.25), Cm(0.25), Cm(0.25))  # Left, Right, Top, Bottom margins in centimeters
-#         }
-#         return position, font_properties
+        if placeholder_index is None:
+            print(f"Placeholder '{placeholder_text}' not found.")
+            return prs1, []
 
-#     def move_slides(prs1, prs2, placeholder_text):
-#         """Move slides from prs2 to prs1 after the placeholder slide identified by placeholder_text."""
-#         placeholder_index = None
-#         for idx, slide in enumerate(prs1.slides):
-#             for shape in slide.shapes:
-#                 if shape.has_text_frame and placeholder_text in shape.text:
-#                     placeholder_index = idx
-#                     break
-#             if placeholder_index is not None:
-#                 break
+        # Collect slides after the placeholder
+        slides_after_placeholder = [prs1.slides[i] for i in range(placeholder_index + 1, len(prs1.slides))]
 
-#         if placeholder_index is None:
-#             print(f"Placeholder '{placeholder_text}' not found.")
-#             return prs1, []
+        # Remove slides after the placeholder
+        for i in range(len(prs1.slides) - 1, placeholder_index, -1):
+            rId = prs1.slides._sldIdLst[i].rId
+            prs1.part.drop_rel(rId)
+            del prs1.slides._sldIdLst[i]
 
-#         # Collect slides after the placeholder
-#         slides_after_placeholder = [prs1.slides[i] for i in range(placeholder_index + 1, len(prs1.slides))]
+        # Insert slides from prs2 after the placeholder
+        subtopic_slides = []
+        for slide in prs2.slides:
+            new_slide = prs1.slides.add_slide(slide.slide_layout)
+            for shape in slide.shapes:
+                sp = shape.element
+                sp.getparent().remove(sp)
+                if shape.shape_type == MSO_SHAPE_TYPE.PICTURE:
+                    image_stream = BytesIO(shape.image.blob)
+                    new_slide.shapes.add_picture(
+                        image_stream,
+                        shape.left,
+                        shape.top,
+                        shape.width,
+                        shape.height
+                    )
+                else:
+                    new_shape = copy.deepcopy(shape.element)
+                    new_slide.shapes._spTree.insert_element_before(new_shape, 'p:extLst')
 
-#         # Remove slides after the placeholder
-#         for i in range(len(prs1.slides) - 1, placeholder_index, -1):
-#             rId = prs1.slides._sldIdLst[i].rId
-#             prs1.part.drop_rel(rId)
-#             del prs1.slides._sldIdLst[i]
+            try:
+                new_slide.shapes.title.text = slide.shapes.title.text
+            except AttributeError:
+                pass
 
-#         # Insert slides from prs2 after the placeholder
-#         subtopic_slides = []
-#         for slide in prs2.slides:
-#             new_slide = prs1.slides.add_slide(slide.slide_layout)
-#             for shape in slide.shapes:
-#                 sp = shape.element
-#                 sp.getparent().remove(sp)
-#                 if shape.shape_type == MSO_SHAPE_TYPE.PICTURE:
-#                     image_stream = BytesIO(shape.image.blob)
-#                     new_slide.shapes.add_picture(
-#                         image_stream,
-#                         shape.left,
-#                         shape.top,
-#                         shape.width,
-#                         shape.height
-#                     )
-#                 else:
-#                     new_shape = copy.deepcopy(shape.element)
-#                     new_slide.shapes._spTree.insert_element_before(new_shape, 'p:extLst')
+            subtopic_slides.append(new_slide)
 
-#             try:
-#                 new_slide.shapes.title.text = slide.shapes.title.text
-#             except AttributeError:
-#                 pass
+        # Re-add slides that were after the placeholder
+        for slide in slides_after_placeholder:
+            new_slide = prs1.slides.add_slide(slide.slide_layout)
+            for shape in slide.shapes:
+                sp = shape.element
+                sp.getparent().remove(sp)
+                if shape.shape_type == MSO_SHAPE_TYPE.PICTURE:
+                    image_stream = BytesIO(shape.image.blob)
+                    new_slide.shapes.add_picture(
+                        image_stream,
+                        shape.left,
+                        shape.top,
+                        shape.width,
+                        shape.height
+                    )
+                else:
+                    new_shape = copy.deepcopy(shape.element)
+                    new_slide.shapes._spTree.insert_element_before(new_shape, 'p:extLst')
 
-#             subtopic_slides.append(new_slide)
+            try:
+                new_slide.shapes.title.text = slide.shapes.title.text
+            except AttributeError:
+                pass
 
-#         # Re-add slides that were after the placeholder
-#         for slide in slides_after_placeholder:
-#             new_slide = prs1.slides.add_slide(slide.slide_layout)
-#             for shape in slide.shapes:
-#                 sp = shape.element
-#                 sp.getparent().remove(sp)
-#                 if shape.shape_type == MSO_SHAPE_TYPE.PICTURE:
-#                     image_stream = BytesIO(shape.image.blob)
-#                     new_slide.shapes.add_picture(
-#                         image_stream,
-#                         shape.left,
-#                         shape.top,
-#                         shape.width,
-#                         shape.height
-#                     )
-#                 else:
-#                     new_shape = copy.deepcopy(shape.element)
-#                     new_slide.shapes._spTree.insert_element_before(new_shape, 'p:extLst')
+        # Delete the placeholder slide
+        rId = prs1.slides._sldIdLst[placeholder_index].rId
+        prs1.part.drop_rel(rId)
+        del prs1.slides._sldIdLst[placeholder_index]
+        
+        return prs1, subtopic_slides
 
-#             try:
-#                 new_slide.shapes.title.text = slide.shapes.title.text
-#             except AttributeError:
-#                 pass
+    def generate_course_outline(prs2, context, content_slide_layout):
+        course_outline = context["<COURSE_OUTLINE>"]
+        topics_per_slide = 2
+        learning_units = course_outline
 
-#         return prs1, subtopic_slides
+        topic_entries = []
+        for lu in learning_units:
+            lu_title = lu['Learning_Unit_Title']
+            for topic in lu['Topics']:
+                topic_title = topic['Topic_Title']
+                bullet_points = topic['Bullet_Points']
+                topic_entries.append((topic_title, bullet_points))
 
-#     def generate_course_outline(prs2, context, content_slide_layout):
-#         """
-#         Generate slides for the Course Outline from the new context structure.
+        for i in range(0, len(topic_entries), topics_per_slide):
+            slide = prs2.slides.add_slide(content_slide_layout)
+            title_placeholder = slide.shapes.title
+            title_placeholder.text = "Course Outline"
 
-#         Args:
-#             prs2 (Presentation): The PowerPoint presentation object.
-#             context (dict): The parsed JSON context containing the course outline.
-#             content_slide_layout: The slide layout for content slides.
-#         """
-#         course_outline = context["<COURSE_OUTLINE>"]
-#         topics_per_slide = 2  # Number of topics per slide
+            content_placeholder = slide.placeholders[1]
+            text_frame = content_placeholder.text_frame
+            text_frame.clear()
 
-#         for learning_unit in course_outline:
-#             lu_title = learning_unit["Learning_Unit_Title"]
-#             topics = learning_unit["Topics"]
+            for entry in topic_entries[i:i + topics_per_slide]:
+                topic_title, bullet_points = entry
+                p = text_frame.add_paragraph()
+                p.text = f"{topic_title}"
+                p.font.bold = True
+                for bullet in bullet_points:
+                    sub_p = text_frame.add_paragraph()
+                    sub_p.text = bullet
+                    sub_p.level = 1
 
-#             # Group topics into slides
-#             for i in range(0, len(topics), topics_per_slide):
-#                 slide = prs2.slides.add_slide(content_slide_layout)
-#                 title_placeholder = slide.shapes.title
-#                 title_placeholder.text = "Course Outline"
+    # Function to generate topic slides
+    def generate_topics(prs2, context, content_slide_layout, title_slide_layout):
+        topics_outline = context['<TOPICS_OUTLINE>']
+        for learning_unit in topics_outline:
+            lu_title = learning_unit['learning_unit']
+            for topic in learning_unit['topics']:
+                topic_title = topic['topic_title']
+                # Add a topic slide
+                topic_slide = prs2.slides.add_slide(title_slide_layout)
+                topic_title_placeholder = topic_slide.shapes.title
+                topic_title_placeholder.text = f"{topic_title}"
 
-#                 content_placeholder = slide.placeholders[1]
-#                 text_frame = content_placeholder.text_frame
-#                 text_frame.clear()
+                for subtopic in topic['keypoints']:
+                    subtopic_title = subtopic['subtopic']
+                    # Add a subtopic slide
+                    slide = prs2.slides.add_slide(content_slide_layout)
+                    title_placeholder = slide.shapes.title
+                    title_placeholder.text = subtopic_title
 
-#                 # Add Learning Unit title as a bold header
-#                 p = text_frame.add_paragraph()
-#                 p.text = lu_title
-#                 p.font.bold = True
+                    content_placeholder = slide.placeholders[1]
+                    text_frame = content_placeholder.text_frame
+                    text_frame.clear()
 
-#                 # Add topics and bullet points
-#                 for topic in topics[i:i + topics_per_slide]:
-#                     topic_title = topic["Topic_Title"]
-#                     bullet_points = topic["Bullet_Points"]
+                    for keypoint in subtopic['keypoints']:
+                        keypoint_text = keypoint['keypoint']
+                        bullets = keypoint['bullets']
 
-#                     # Add topic title as a bold header
-#                     t_p = text_frame.add_paragraph()
-#                     t_p.text = topic_title
-#                     t_p.font.bold = True
+                        if keypoint_text == "NO CONTEXT":
+                            continue
 
-#                     # Add bullet points under the topic
-#                     for bullet in bullet_points:
-#                         sub_p = text_frame.add_paragraph()
-#                         sub_p.text = bullet
-#                         sub_p.level = 1
+                        p = text_frame.add_paragraph()
+                        p.text = keypoint_text
+                        p.font.bold = True
+                        for bullet in bullets:
+                            if bullet != "NO CONTEXT":
+                                bullet_p = text_frame.add_paragraph()
+                                bullet_p.text = bullet
 
-#     # Function to generate topic slides
-#     def generate_topics(prs2, context, content_slide_layout, title_slide_layout):
-#         for topic in context['<TOPICS_OUTLINE>']:
-#             topic_slide = prs2.slides.add_slide(title_slide_layout)
-#             topic_title_placeholder = topic_slide.shapes.title
-#             topic_title_placeholder.text = topic['topic']
-
-#             for subtopic in topic['subtopics']:
-#                 slide = prs2.slides.add_slide(content_slide_layout)
-#                 title_placeholder = slide.shapes.title
-#                 title_placeholder.text = subtopic['subtopic']
-
-#                 content_placeholder = slide.placeholders[1]
-#                 text_frame = content_placeholder.text_frame
-#                 text_frame.clear()
-
-#                 for keypoint in subtopic['keypoints']:
-#                     if keypoint['keypoint'] == "NO CONTEXT":
-#                         continue
-#                     p = text_frame.add_paragraph()
-#                     p.text = keypoint['keypoint']
-#                     p.font.bold = True
-#                     for bullet in keypoint['bullets']:
-#                         if bullet != "NO CONTEXT":
-#                             bullet_p = text_frame.add_paragraph()
-#                             bullet_p.text = bullet
-#                             bullet_p.level = 1
-
-#     # Function to update slide numbers
-#     def update_slide_numbers(presentation, subtopic_slides, slide_number_position, font_properties):
-#         for idx, slide in enumerate(presentation.slides, start=1):
-#             slide_number_placeholder = None
-#             for shape in slide.placeholders:
-#                 if shape.placeholder_format.type == PP_PLACEHOLDER.SLIDE_NUMBER:
-#                     slide_number_placeholder = shape
-#                     break
-#             if slide_number_placeholder:
-#                 slide_number_placeholder.text = str(idx)
-#             elif slide in subtopic_slides:
-#                 left, top, width, height = slide_number_position
-#                 txBox = slide.shapes.add_textbox(left, top, width, height)
-#                 tf = txBox.text_frame
-#                 p = tf.paragraphs[0]
-#                 p.text = str(idx)
-#                 font = p.font
-#                 font.size = font_properties['font_size']
-#                 font.name = font_properties['font_name']
-#                 font.color.rgb = font_properties['font_color']
-#                 tf.margin_left, tf.margin_right, tf.margin_top, tf.margin_bottom = font_properties['margins']
-#                 tf.word_wrap = font_properties['wrap_text']
+    # Function to update slide numbers
+    def update_slide_numbers(presentation, subtopic_slides, slide_number_position, font_properties):
+        for idx, slide in enumerate(presentation.slides, start=1):
+            slide_number_placeholder = None
+            for shape in slide.placeholders:
+                if shape.placeholder_format.type == PP_PLACEHOLDER.SLIDE_NUMBER:
+                    slide_number_placeholder = shape
+                    break
+            if slide_number_placeholder:
+                slide_number_placeholder.text = str(idx)
+            elif slide in subtopic_slides:
+                left, top, width, height = slide_number_position
+                txBox = slide.shapes.add_textbox(left, top, width, height)
+                tf = txBox.text_frame
+                p = tf.paragraphs[0]
+                p.text = str(idx)
+                font = p.font
+                font.size = font_properties['font_size']
+                font.name = font_properties['font_name']
+                font.color.rgb = font_properties['font_color']
+                tf.margin_left, tf.margin_right, tf.margin_top, tf.margin_bottom = font_properties['margins']
+                tf.word_wrap = font_properties['wrap_text']
                 
-#                 # Set auto_size based on font_properties['autofit']
-#                 tf.auto_size = MSO_AUTO_SIZE.NONE if not font_properties['autofit'] else MSO_AUTO_SIZE.SHAPE_TO_FIT_TEXT
+                # Set auto_size based on font_properties['autofit']
+                tf.auto_size = MSO_AUTO_SIZE.NONE if not font_properties['autofit'] else MSO_AUTO_SIZE.SHAPE_TO_FIT_TEXT
 
-#                 # Set vertical alignment to middle
-#                 tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+                # Set vertical alignment to middle
+                tf.vertical_anchor = MSO_ANCHOR.MIDDLE
 
-#                 # Set paragraph alignment to right
-#                 p.alignment = PP_ALIGN.RIGHT
+                # Set paragraph alignment to right
+                p.alignment = PP_ALIGN.RIGHT
 
-#     def remove_unused_placeholders(presentation):
-#         for slide in presentation.slides:
-#             shapes_to_remove = []
-#             for shape in slide.shapes:
-#                 if shape.is_placeholder:
-#                     # Check if the placeholder is empty
-#                     if shape.has_text_frame:
-#                         text = shape.text.strip()
-#                         if not text:
-#                             shapes_to_remove.append(shape)
-#                     elif shape.placeholder_format.type == MSO_SHAPE_TYPE.PICTURE:
-#                         # For picture placeholders, check if an image is inserted
-#                         if not shape.has_image:
-#                             shapes_to_remove.append(shape)
-#                     else:
-#                         # Other placeholder types can be checked similarly
-#                         shapes_to_remove.append(shape)
-#             # Remove the unused placeholders
-#             for shape in shapes_to_remove:
-#                 sp = shape.element
-#                 sp.getparent().remove(sp)
+    def remove_unused_placeholders(presentation):
+        for slide in presentation.slides:
+            shapes_to_remove = []
+            for shape in slide.shapes:
+                if shape.is_placeholder:
+                    # Check if the placeholder is empty
+                    if shape.has_text_frame:
+                        text = shape.text.strip()
+                        if not text:
+                            shapes_to_remove.append(shape)
+                    elif shape.placeholder_format.type == MSO_SHAPE_TYPE.PICTURE:
+                        # For picture placeholders, check if an image is inserted
+                        if not shape.has_image:
+                            shapes_to_remove.append(shape)
+                    else:
+                        # Other placeholder types can be checked similarly
+                        shapes_to_remove.append(shape)
+            # Remove the unused placeholders
+            for shape in shapes_to_remove:
+                sp = shape.element
+                sp.getparent().remove(sp)
 
-#     print("Starting generate_slides function")
-#     print(f"Received context: {context}")
+    # Main function logic
+    try:
+        # Load the PowerPoint template
+        template_path = 'Slides/templates/Non-WSQ/(Template) SG - Master Trainer Slides - Course Title - version.pptx'
+        prs1 = Presentation(template_path)
+        content_slide_layout = prs1.slide_layouts[1]
+        title_slide_layout = prs1.slide_masters[0].slide_layouts.get_by_name("SECTION_HEADER")
+        replacements = build_replacements(context)
 
-#     # Convert all keys in replacements to uppercase and wrap them with < >
-#     context = {f"<{key.upper()}>": value for key, value in context.items()}
-#     print(context)
-#     try:
-#         # Load the PowerPoint template
-#         template_path = 'Slides/templates/WSQ/(Template) WSQ - Master Trainer Slides - Course Title - version.pptx'
-#         prs1 = Presentation(template_path)  # Main presentation
+        # Step 1: Replace placeholders on existing slides
+        for slide in prs1.slides:
+            for shape in slide.shapes:
+                if shape.has_text_frame:
+                    if "<LEARNING_OUTCOMES>" in shape.text:
+                        add_bullet_points(shape.text_frame, replacements["<LEARNING_OUTCOMES>"])
+                    elif "<ASSESSMENT_METHODS>" in shape.text:
+                        add_bullet_points(shape.text_frame, replacements["<ASSESSMENT_METHODS>"])
+                    else:
+                        for paragraph in shape.text_frame.paragraphs:
+                            paragraph.text = replace_placeholder(paragraph.text, replacements)
 
-#         content_slide_layout = prs1.slide_layouts[1]
-#         title_slide_layout = prs1.slide_masters[0].slide_layouts.get_by_name("SECTION_HEADER")
+        # Step 2: Generate Course Outline Slides
+        prs2 = Presentation()
+        generate_course_outline(prs2, replacements, content_slide_layout)
 
-#         # Step 1: Replace placeholders on existing slides
-#         for slide in prs1.slides:
-#             for shape in slide.shapes:
-#                 if shape.has_text_frame:
-#                     if "<LEARNING_OUTCOMES>" in shape.text:
-#                         add_bullet_points(shape.text_frame, context["<LEARNING_OUTCOMES>"])
-#                     elif "<ASSESSMENT_METHODS>" in shape.text:
-#                         add_bullet_points(shape.text_frame, context["<ASSESSMENT_METHODS>"])
-#                     else:
-#                         for paragraph in shape.text_frame.paragraphs:
-#                             paragraph.text = replace_placeholder(paragraph.text, context)
-
-#         # Step 2: Generate Course Outline Slides
-#         prs2 = Presentation()
-#         generate_course_outline(prs2, context, content_slide_layout)
-
-#         # Insert the course outline slides after the <COURSE_OUTLINE> placeholder
-#         prs1, outline_slides = move_slides(prs1, prs2, "<COURSE_OUTLINE>")
-#         # Update slide numbers
-#         slide_number_position, font_properties = get_slide_number_placeholder_properties()
-#         update_slide_numbers(prs1, outline_slides, slide_number_position, font_properties)
+        # Insert the course outline slides after the <COURSE_OUTLINE> placeholder
+        prs1, outline_slides = move_slides(prs1, prs2, "<COURSE_OUTLINE>")
+        # Update slide numbers
+        slide_number_position, font_properties = get_slide_number_placeholder_properties()
+        update_slide_numbers(prs1, outline_slides, slide_number_position, font_properties)
 
 
-#         # Step 3: Generate Topic Slides
-#         prs2 = Presentation()  # Reset prs2 for topics
-#         generate_topics(prs2, context, content_slide_layout, title_slide_layout)
+        # Step 3: Generate Topic Slides
+        prs2 = Presentation()  # Reset prs2 for topics
+        generate_topics(prs2, replacements, content_slide_layout, title_slide_layout)
 
-#         # Insert the topic slides after the <TOPICS_OUTLINE> placeholder
-#         prs1, subtopic_slides = move_slides(prs1, prs2, "<TOPICS_OUTLINE>")
+        # Insert the topic slides after the <TOPICS_OUTLINE> placeholder
+        prs1, subtopic_slides = move_slides(prs1, prs2, "<TOPICS_OUTLINE>")
 
-#         # Update slide numbers
-#         slide_number_position, font_properties = get_slide_number_placeholder_properties()
-#         update_slide_numbers(prs1, subtopic_slides, slide_number_position, font_properties)
+        # Update slide numbers
+        slide_number_position, font_properties = get_slide_number_placeholder_properties()
+        update_slide_numbers(prs1, subtopic_slides, slide_number_position, font_properties)
 
-#         # Step 4: Remove unused placeholders
-#         remove_unused_placeholders(prs1)
+        # Step 4: Remove unused placeholders
+        remove_unused_placeholders(prs1)
 
-#         # Step 7: Save the final presentation with subtopic slides inserted
-#         prs1.save('Slides/output/autogen_output.pptx')
-#         print(f'Slides successfully generated to output path: Slides/output/autogen_output.pptx')
+        # Save final presentation
+        output_path = 'Slides/output/autogen_output.pptx'
+        prs1.save(output_path)
+        print(f"Slides successfully generated at {output_path}")
+        return output_path
 
-#     except Exception as e:
-#         print(f"Error in generate_slides: {str(e)}")
-#         raise
+    except Exception as e:
+        print(f"Error generating slides: {e}")
+        return str(e)
 
-# user_proxy.initiate_chat(
-#     slides_writer,
-#     message=f"Please generate the powerpoint slides. Return TERMINATE once the task has been completed.",
-# )
+user_proxy.initiate_chat(
+    slides_writer,
+    message=f"""
+    Please generate the PowerPoint slides using the following context:
+    {json.dumps(context)}
+    """
+)

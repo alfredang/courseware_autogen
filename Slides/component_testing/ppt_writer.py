@@ -8,22 +8,35 @@ from pptx.dml.color import RGBColor
 from io import BytesIO
 
 # Load JSON data from file
-with open('Slides/output/rag_output copy.json', 'r') as f:
+with open('rag_done_output.json', 'r') as f:
     data = json.load(f)
 
-# Load the PowerPoint template
-template_path = 'Slides/templates/WSQ/(Template) WSQ - Master Trainer Slides - Course Title - version.pptx'
-prs1 = Presentation(template_path)  # Main presentation
+# Function to build replacements dictionary from JSON data
+def build_replacements(data):
+    replacements = {}
+    for key, value in data.items():
+        placeholder = f"<{key.upper()}>"
+        replacements[placeholder] = value
+    return replacements
+
+replacements = build_replacements(data)
 
 # Function to replace placeholders
 def replace_placeholder(text, replacements):
     for placeholder, replacement in replacements.items():
-        if isinstance(replacement, list):
-            replacement = "\n".join(replacement)
         if isinstance(replacement, dict):
-            # Skip dictionary replacements like <COURSE_OUTLINE>
+            # Skip dictionaries
             continue
-        text = text.replace(placeholder, replacement)
+        elif isinstance(replacement, list):
+            # Check if all items are strings
+            if all(isinstance(item, str) for item in replacement):
+                replacement_text = "\n".join(replacement)
+                text = text.replace(placeholder, replacement_text)
+            else:
+                # Skip lists that contain non-string items (e.g., lists of dicts)
+                continue
+        else:
+            text = text.replace(placeholder, str(replacement))
     return text
 
 # Function to add bullet points from a list to a text frame
@@ -33,129 +46,6 @@ def add_bullet_points(text_frame, bullet_points):
         p = text_frame.add_paragraph()
         p.text = point
         p.level = 0  # Level 0 for top-level bullet points
-
-# Define replacements based on JSON data
-replacements = {
-    "<COURSE_TITLE>": "Java Programming Methodologies",
-    "<TGS_REF_NO>": "TGS-2024048313",
-    "<TSC_TITLE>": "Data Governance",
-    "<TSC_CODE>": "ICT-DES-4005-1.1",
-    "<ABILITIES>": [
-        "A1: Create a software design blueprint based on a broad design concept, and business and user requirements",
-        "A2: Recommend appropriate standards, methods and tools for the design of software, in line with the organisation's practice and design principles",
-        "A3: Design functional specifications of software systems to address business and user needs",
-        "A4: Evaluate trade offs from the incorporation of different elements into the design, and their impact on overall functionality, interoperability, efficiency and costs of the software",
-        "A5: Produce design documentation for complex software",
-        "A6: Review design documentations produced"
-    ],
-    "<KNOWLEDGE>": [
-        "K1: Components and requirements of a software design blueprint",
-        "K2: Software design standards, methods and tools - and their pros, cons and applications",
-        "K3: Requirements of functional specifications of software",
-        "K4: Impact of different software design elements on overall software operations and usability"
-    ],
-    "<LEARNING_OUTCOMES>": [
-        "LO1: Develop a software design blueprint based on Java programming integrating design concepts with user requirements.",
-        "LO2: Develop software design standards using Java Object Oriented Programming methodologies.",
-        "LO3: Design Java data structures and API for software systems tailored to meet business and user needs.",
-        "LO4: Evaluate the issues involved in Java applications using debugging and exception handling tools.",
-        "LO5: Produce design documentation using Java generics to ensure conformity to technical standards."
-    ],
-    "<COURSE_OUTLINE>": {
-        "Topic 1: Introduction to Java": [
-            "Editors and Tools",
-            "Basic Syntax",
-            "Language Syntax Properties",
-            "Variables & Datatypes & Literals",
-            "Operators",
-            "Autoboxing and Unboxing",
-            "Enums",
-            "Arrays",
-            "Strings",
-            "Date and Time"
-        ],
-        "Topic 2: Control Flow": [
-            "Statements, Expressions & Blocks",
-            "Flow Control statements",
-            "Ternary Operator",
-            "Loops statements",
-            "Nested Loops statements",
-            "Loop Control Statements"
-        ],
-        "Topic 3: Object Oriented Programming": [
-            "Scope",
-            "Classes & Object",
-            "Methods",
-            "Constructors",
-            "Access Modifiers",
-            "‘this’ keyword",
-            "Passing by Value",
-            "Encapsulation",
-            "Inheritance",
-            "Abstraction",
-            "Interface",
-            "Polymorphism"
-        ],
-        "Topic 4: Data Structures": [
-            "Static & Dynamic Array",
-            "N-Dimensional Array",
-            "Basic Operations on Arrays",
-            "Basic operations on Linked List",
-            "Arrays & Linked List",
-            "Types of Linked List",
-            "Stacks & Queues"
-        ],
-        "Topic 5: Developing an API": [
-            "Design the API architecture",
-            "Develop the API",
-            "Test the API",
-            "Monitor the API and iterate on feedback"
-        ],
-        "Topic 6: Debugging Java Applications": [
-            "What is Debugging?",
-            "Examining the code",
-            "Setting breakpoints",
-            "Running the program in debug mode",
-            "Analyze the program state",
-            "Step through the program",
-            "Stopping the debugging session and rerun the program"
-        ],
-        "Topic 7: Exception Handling": [
-            "Exception keywords",
-            "Nested exceptions",
-            "Throwing exceptions",
-            "Exception propagation",
-            "Throws clause",
-            "Custom exceptions",
-            "Chaining exceptions",
-            "Exceptions with polymorphism"
-        ],
-        "Topic 8: File Operations": [
-            "File paths",
-            "File metadata",
-            "Creating regular and temporary files",
-            "The try-with-resources statement",
-            "Checking if a File or Directory exists",
-            "File access modes",
-            "Reading from and writing to files"
-        ],
-        "Topic 9: Using Generics": [
-            "Generic types",
-            "Bounded type parameters",
-            "Inheritance and subtypes",
-            "Type inference",
-            "Wildcards",
-            "Restrictions"
-        ],
-        "Topic 10: Multi-threading": [
-            "Life cycle of a thread",
-            "Synchronization",
-            "Issues with Multi-threading",
-            "Interrupting Threads"
-        ]
-    },
-    "<ASSESSMENT_METHODS>": ["Written Assessment (SAQ)", "Practical Performance (PP)"]
-}
 
 def get_slide_number_placeholder_properties():
     # Positioning and formatting based on the data provided in the images
@@ -252,9 +142,17 @@ def move_slides(prs1, prs2, placeholder_text):
 def generate_course_outline(prs2, context, content_slide_layout):
     course_outline = context["<COURSE_OUTLINE>"]
     topics_per_slide = 2
-    topic_list = list(course_outline.items())
+    learning_units = course_outline
 
-    for i in range(0, len(topic_list), topics_per_slide):
+    topic_entries = []
+    for lu in learning_units:
+        lu_title = lu['Learning_Unit_Title']
+        for topic in lu['Topics']:
+            topic_title = topic['Topic_Title']
+            bullet_points = topic['Bullet_Points']
+            topic_entries.append((lu_title, topic_title, bullet_points))
+
+    for i in range(0, len(topic_entries), topics_per_slide):
         slide = prs2.slides.add_slide(content_slide_layout)
         title_placeholder = slide.shapes.title
         title_placeholder.text = "Course Outline"
@@ -263,41 +161,54 @@ def generate_course_outline(prs2, context, content_slide_layout):
         text_frame = content_placeholder.text_frame
         text_frame.clear()
 
-        for topic_title, subtopics in topic_list[i:i + topics_per_slide]:
+        for entry in topic_entries[i:i + topics_per_slide]:
+            lu_title, topic_title, bullet_points = entry
             p = text_frame.add_paragraph()
-            p.text = topic_title
+            p.text = f"{lu_title} - {topic_title}"
             p.font.bold = True
-            for subtopic in subtopics:
+            for bullet in bullet_points:
                 sub_p = text_frame.add_paragraph()
-                sub_p.text = subtopic
+                sub_p.text = bullet
                 sub_p.level = 1
 
 # Function to generate topic slides
 def generate_topics(prs2, data, content_slide_layout, title_slide_layout):
-    for topic in data['topics']:
-        topic_slide = prs2.slides.add_slide(title_slide_layout)
-        topic_title_placeholder = topic_slide.shapes.title
-        topic_title_placeholder.text = topic['topic']
+    topics_outline = data['Topics_Outline']
+    for learning_unit in topics_outline:
+        lu_title = learning_unit['learning_unit']
+        for topic in learning_unit['topics']:
+            topic_title = topic['topic_title']
+            # Add a topic slide
+            topic_slide = prs2.slides.add_slide(title_slide_layout)
+            topic_title_placeholder = topic_slide.shapes.title
+            topic_title_placeholder.text = f"{lu_title}\n{topic_title}"
 
-        for subtopic in topic['subtopics']:
-            slide = prs2.slides.add_slide(content_slide_layout)
-            title_placeholder = slide.shapes.title
-            title_placeholder.text = subtopic['subtopic']
+            for subtopic in topic['keypoints']:
+                subtopic_title = subtopic['subtopic']
+                # Add a subtopic slide
+                slide = prs2.slides.add_slide(content_slide_layout)
+                title_placeholder = slide.shapes.title
+                title_placeholder.text = subtopic_title
 
-            content_placeholder = slide.placeholders[1]
-            text_frame = content_placeholder.text_frame
-            text_frame.clear()
+                content_placeholder = slide.placeholders[1]
+                text_frame = content_placeholder.text_frame
+                text_frame.clear()
 
-            for keypoint in subtopic['keypoints']:
-                if keypoint['keypoint'] == "NO CONTEXT":
-                    continue
-                p = text_frame.add_paragraph()
-                p.text = keypoint['keypoint']
-                p.font.bold = True
-                for bullet in keypoint['bullets']:
-                    if bullet != "NO CONTEXT":
-                        bullet_p = text_frame.add_paragraph()
-                        bullet_p.text = bullet
+                for keypoint in subtopic['keypoints']:
+                    keypoint_text = keypoint['keypoint']
+                    bullets = keypoint['bullets']
+
+                    if keypoint_text == "NO CONTEXT":
+                        continue
+
+                    p = text_frame.add_paragraph()
+                    p.text = keypoint_text
+                    p.font.bold = True
+                    for bullet in bullets:
+                        if bullet != "NO CONTEXT":
+                            bullet_p = text_frame.add_paragraph()
+                            bullet_p.text = bullet
+
 
 # Function to update slide numbers
 def update_slide_numbers(presentation, subtopic_slides, slide_number_position, font_properties):
