@@ -80,7 +80,7 @@ def main():
     You are to return your output in a JSON structure as seen in the examples below.
     Ensure that all LOs are addressed.
     Limit word length for all bulleted points to one sentence, not more than 30 words.
-    The Marking Process should consist of 3 different evaluations.
+    The Marking Process should consist of 3 different evaluations, keep it concise with not more than 6 words.
 
     Practical Performance (PP) Example:
     A practical Performance (PP) assessment will provide direct evidence of whether candidates have acquired the competency for the ability statements by solving a scenario-based problem. 
@@ -92,10 +92,10 @@ def main():
     •	For LO3: Candidates will develop a multimedia PowerPoint presentation with design and content enhancements assisted by Copilot.
     Manner of Submission:
     •	Candidates will submit their Excel workbooks, Word documents, and PowerPoint presentations, as well as any additional supporting documentation that details how they utilized Microsoft 365 tools and Copilot features to enhance productivity. This includes annotated screenshots or documentation showing Copilot's contributions to task completion.
-    Marking Process: Assessors will evaluate practical submissions based on a rubric that considers:
-    •	Effectiveness in Using Copilot: How well Copilot features were utilized to improve productivity, such as providing insights, automation, and streamlining content generation.
-    •	Quality of Outputs: The relevance, accuracy, and comprehensiveness of content produced in Excel, Word, and PowerPoint.
-    •	Efficiency and Customization: How effectively candidates customized their tools to suit specific productivity needs, such as modifying Excel toolbars, or using features like hyperlinks and Quick Access Toolbar customizations.
+    Marking Process:
+    •	Effectiveness in Using Copilot.
+    •	Quality of Outputs.
+    •	Efficiency and Customization.
     Retention Period:
     •	All submitted evidence, including Excel workbooks, Word documents, PowerPoint presentations, and assessment records, will be retained for 3 years to ensure compliance with institutional policies and for auditing purposes.
 
@@ -110,9 +110,9 @@ def main():
     •	For LO4: Candidates will submit a strategic plan detailing how they developed and scaled design thinking methodologies across the organization.
     Manner of Submission: Candidates will submit their case study reports and any additional supporting documents to the assessors electronically via the designated learning management system.
     Marking Process:  Assessors will evaluate the practical submissions based on a rubric that considers:
-    •	Integration of Methodologies: The effective use of Agile and design thinking in combination with Generative AI to foster innovation.
-    •	Stakeholder Analysis: The thoroughness of synthesizing stakeholder inputs and accurately rep-resenting user needs.
-    •	Project Leadership and Tools: The ability to lead projects with appropriate project manage-ment tools and the strategic use of Generative AI for enhancing productivity and collaboration.
+    •	Integration of Methodologies.
+    •	Stakeholder Analysis.
+    •	Project Leadership and Tools.
     Retention Period: All submitted case study reports and accompanying documentation will be retained for 3 years to ensure compliance with institutional policies and for auditing purposes.
 
     **Your response must be ONLY the JSON structure, formatted exactly as per the example below, enclosed in a code block (i.e., triple backticks ```). Do not include any additional text or explanations outside the JSON code block. Do not include any headings or introductions. Just output the JSON code block.**
@@ -134,15 +134,13 @@ def main():
             "This includes annotated screenshots or documentation showing Copilot's contributions to task completion."
         ],
         "marking_process": [
-            "Effectiveness in Using Copilot: How well Copilot features were utilized to improve productivity, such as providing insights, automation, and streamlining content generation.",
-            "Quality of Outputs: The relevance, accuracy, and comprehensiveness of content produced in Excel, Word, and PowerPoint.",
-            "Efficiency and Customization: How effectively candidates customized their tools to suit specific productivity needs, such as modifying Excel toolbars, or using features like hyperlinks and Quick Access Toolbar customizations."
+            "Effectiveness in Using Copilot.",
+            "Quality of Outputs.",
+            "Efficiency and Customization."
         ],
         "retention_period": "All submitted evidence, including Excel workbooks, Word documents, PowerPoint presentations, and assessment records, will be retained for 3 years to ensure compliance with institutional policies and for auditing purposes."
         }}
     }}
-    }}
-
 
     """
 

@@ -106,6 +106,9 @@ def process_placeholder(value):
     import re
     items = []
     
+    # Define the phrases to be bolded
+    bold_phrases = ["Performance Gaps:", "Attributes Gained:", "Post-Training Benefits to Learners:"]
+    
     # If value is a list, process each entry in the list
     if isinstance(value, list):
         for idx, entry in enumerate(value):
@@ -125,7 +128,6 @@ def process_placeholder(value):
                         items.append({'type': 'bullets', 'content': bullet_points})
                         bullet_points = []
                     # Do not add empty paragraph for spacing
-                    # (Removed the line that adds an empty paragraph)
                     
                 elif line.startswith('•'):
                     # Bullet point
@@ -134,8 +136,8 @@ def process_placeholder(value):
                         current_paragraph = []
                     bullet_points.append(line.lstrip('•').strip())
                     
-                elif re.match(r'^LU\d+:\s', line):
-                    # LU title
+                elif re.match(r'^LU\d+:\s', line) or line in bold_phrases:
+                    # LU title or specific bold phrases
                     if current_paragraph:
                         items.append({'type': 'paragraph', 'content': ' '.join(current_paragraph)})
                         current_paragraph = []
@@ -144,8 +146,6 @@ def process_placeholder(value):
                         bullet_points = []
                     # Add the line as a bold paragraph
                     items.append({'type': 'bold_paragraph', 'content': line})
-                    # Do not add a blank line after the LU title
-                    # (Removed the line that adds an empty paragraph)
                     
                 else:
                     # Regular line
@@ -161,9 +161,6 @@ def process_placeholder(value):
             if bullet_points:
                 items.append({'type': 'bullets', 'content': bullet_points})
                 bullet_points = []
-                
-            # Do not add extra blank lines between entries
-            # (Removed the lines that add empty paragraphs between entries)
                 
     else:
         # Handle single string value (e.g., Conclusion)
@@ -183,13 +180,23 @@ def process_placeholder(value):
                     items.append({'type': 'bullets', 'content': bullet_points})
                     bullet_points = []
                 # Do not add empty paragraph for spacing
-                # (Removed the line that adds an empty paragraph)
                 
             elif line.startswith('•'):
                 if current_paragraph:
                     items.append({'type': 'paragraph', 'content': ' '.join(current_paragraph)})
                     current_paragraph = []
                 bullet_points.append(line.lstrip('•').strip())
+                
+            elif line in bold_phrases:
+                # Specific bold phrases
+                if current_paragraph:
+                    items.append({'type': 'paragraph', 'content': ' '.join(current_paragraph)})
+                    current_paragraph = []
+                if bullet_points:
+                    items.append({'type': 'bullets', 'content': bullet_points})
+                    bullet_points = []
+                # Add the line as a bold paragraph
+                items.append({'type': 'bold_paragraph', 'content': line})
                 
             else:
                 if bullet_points:
