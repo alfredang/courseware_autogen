@@ -16,3 +16,6 @@ google-api-python-client==1.7.9
 google-auth-httplib2==0.0.3
 google-auth-oauthlib==0.4.0
 llama-parse==0.5.14
+llama-index==0.12.1
+llama-index-llms-openai==0.3.1
+llama-index-multi-modal-llms-openai==0.3.0
