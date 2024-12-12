@@ -1,11 +1,10 @@
 import os
 import re
 import json
-from Assessment.utils.pydantic_models import CaseStudy, CaseStudyQuestion, FacilitatorGuideExtraction
+from Assessment.utils.pydantic_models import FacilitatorGuideExtraction
 from autogen import AssistantAgent, UserProxyAgent
 from autogen.cache import Cache
 from llama_index.llms.openai import OpenAI
-from IPython.display import display, Markdown
 
 def generate_cs(extracted_data, index, llm_config):
     openai_api_key = llm_config["config_list"][0]["api_key"]
@@ -89,7 +88,7 @@ def generate_cs(extracted_data, index, llm_config):
 
     # Autogen setup
     qa_generation_agent = AssistantAgent(
-        name="Question Answer Generator",
+        name="question_answer_generator",
         system_message=f"""
         You are an expert educator in '{extracted_data.course_title}'. You will create scenario-based case study question-answer pairs based on course data.
         The data will include:
@@ -111,7 +110,7 @@ def generate_cs(extracted_data, index, llm_config):
                 "questions": [
                 {{
                     "question_statement": "<question_text>",
-                    "answer": "<answer_text>",
+                    "answer": "[<list_of_answer_text>]",
                     "ability_id": ["<list_of_ability_ids>"]
                 }},
                 ...

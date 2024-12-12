@@ -2,12 +2,12 @@ from llama_index.llms.openai import OpenAI
 from Assessment.utils.pydantic_models import FacilitatorGuideExtraction
 from autogen import AssistantAgent, UserProxyAgent
 from autogen.cache import Cache
-from typing import List
 import json
 import re
 
 def generate_saq(extracted_data, index, llm_config):
     openai_api_key = llm_config["config_list"][0]["api_key"]
+
     system_prompt = """\
     You are a content retrieval assistant. Your role is to retrieve topic content that aligns strictly with the specified Knowledge Statement.
 
@@ -34,7 +34,6 @@ def generate_saq(extracted_data, index, llm_config):
     1. The retrieved content aligned with the Knowledge Statement.
     2. A list of verbatim extracted segments that directly support the retrieved content, each labeled with the topic and document it belongs to.
     """
-
     ks_generation_llm = OpenAI(model="gpt-4o-mini", api_key=openai_api_key, system_prompt=system_prompt)
     ks_generation_query_engine = index.as_query_engine(
         similarity_top_k=10,
@@ -54,7 +53,7 @@ def generate_saq(extracted_data, index, llm_config):
 
     # Autogen setup
     qa_generation_agent = AssistantAgent(
-        name="Question Answer Generator",
+        name="question_answer_generator",
         system_message=f"""
         You are an expert educator in '{extracted_data.course_title}'. You will create knowledge-based scenario question-answer pairs based on course data.
         
@@ -66,7 +65,11 @@ def generate_saq(extracted_data, index, llm_config):
         2. Each question should be aligned with the knowledge statement and provide an opportunity to demonstrate understanding of the content. 
         3. Each answer should clearly and concisely address the question while demonstrating understanding of the knowledge statement.
         4. Ensure all keys and values are double-quoted in the JSON output.
-        5. Return the output in JSON format with the following structure:
+        5. Your output format for answers:
+            \n- Use bullet points for answers.
+            \n- If possible, provide multiple concise points for each answer to cover the breadth of the topic.
+            \n- Ensure clarity, conciseness, and relevance to the Knowledge Statement.\n
+        6. Return the output in JSON format with the following structure:
             import
             ```json
             {{
@@ -77,7 +80,7 @@ def generate_saq(extracted_data, index, llm_config):
                     "scenario": "<scenario_here>",
                     "question_statement": "<question_text>",
                     "knowledge_id": "<knowledge_id>",
-                    "answer": "<answer_text>"
+                    "answer": ["<list_of_answer_text>"],              
                 }},
                 ...
                 ]
@@ -95,17 +98,19 @@ def generate_saq(extracted_data, index, llm_config):
         chat_result = user_proxy_agent.initiate_chat(
             qa_generation_agent,
             message=f"""
-            Please generate the questions and answer using the following course title:'{extracted_data.course_title}', assessment_duration:'{assessment_duration}', and topic contents:{retrieved_content}
-            Phrase your question in accordance with the Bloom's Taxonomy Level: {extracted_data.tsc_proficiency_level}
-            Bloom's Taxonomy Level Information:
+            Please generate the questions and answers using the following course title: '{extracted_data.course_title}', 
+            assessment duration: '{assessment_duration}', and topic contents: {retrieved_content}.
+            Ensure suggestive answers are provided as bullet points, concise and practical, covering key aspects of the knowledge statement.
+            Phrase questions in alignment with Bloom's Taxonomy Level: {extracted_data.tsc_proficiency_level}.
+            Bloom's Taxonomy Levels:
                 Level 1: Remembering
                 Level 2: Understanding
                 Level 3: Applying
                 Level 4: Analyzing
                 Level 5: Evaluating
                 Level 6: Creating
-            Return the question and answer as a complete JSON dictionary containing the specified fields.
-            RETURN 'TERMINATE' once the generation is done.
+            Return the output in JSON format with answers as bullet points.
+            RETURN 'TERMINATE' once the generation is complete.
             """,
             summary_method="reflection_with_llm",
             cache=cache,
@@ -146,8 +151,8 @@ def retrieve_content_for_knowledge_statement(extracted_data: FacilitatorGuideExt
                 topic_name = topic.name
                 # Query the index to retrieve topic content for this Knowledge Statement
                 response = engine.query(
-                    + f"Retrieve the most relevant inline segments aligned to Knowledge Statement: {knowledge_statement}\n"
-                    + f"From the given Topic: {topic_name}"        
+                    f"Retrieve the most relevant inline segments aligned to Knowledge Statement: {knowledge_statement}\n"
+                    f"From the given Topic: {topic_name}"        
                 )
                 # Add the structured data using Pydantic model
                 try:
