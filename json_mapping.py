@@ -115,7 +115,7 @@ def map_values(mapping_source, ensemble_output, research_output):
 
     # Iterate through the performance analysis
     for key, value in research_output["Performance Analysis"].items():
-        if key == "Performance gaps":
+        if key == "Performance Gaps":
             performance_analysis += f"{key}:\n"
             if isinstance(value, list):
                 for item in value:
@@ -127,7 +127,7 @@ def map_values(mapping_source, ensemble_output, research_output):
     performance_analysis += "Through targeted training programs, learners will gain the following attributes to address the identified performance gaps after the training:\n\n"
 
     for key, value in research_output["Performance Analysis"].items():
-        if key == "Attributes gained":
+        if key == "Attributes Gained":
             performance_analysis += f"{key}:\n"
             if isinstance(value, list):
                 for item in value:
@@ -148,7 +148,7 @@ def map_values(mapping_source, ensemble_output, research_output):
                 performance_analysis += f"•\t{value.strip()}\n"
             performance_analysis += "\n"
 
-    mapping_source["#Placeholder[1]"] = [performance_analysis.strip()]  
+    mapping_source["#Placeholder[1]"] = [performance_analysis.strip()]
 
     if "Sequencing Explanation" in research_output["Sequencing Analysis"]:
         mapping_source["#Rationale[0]"] = [research_output["Sequencing Analysis"]["Sequencing Explanation"]]

@@ -703,10 +703,13 @@ The json mapping guideline list is as follows:
 
     }},
     "Performance Analysis": {{
-        "Performance gaps": [
+        "Performance Gaps": [
 
         ],
-        "Attributes gained": [
+        "Attributes Gained": [
+
+        ],
+        "Post-Training Benefits to Learners": [
 
         ]
     }},
