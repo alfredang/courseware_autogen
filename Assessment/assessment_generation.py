@@ -24,6 +24,9 @@ from Assessment.utils.agentic_PP import generate_pp
 from Assessment.utils.agentic_SAQ import generate_saq
 from Assessment.utils.pydantic_models import FacilitatorGuideExtraction
 
+################################################################################
+# 1. Initialize all required session_state keys at the very top of the script.
+################################################################################
 if 'index' not in st.session_state:
     st.session_state['index'] = None
 if 'fg_data' not in st.session_state:
@@ -38,6 +41,8 @@ if 'cs_output' not in st.session_state:
     st.session_state['cs_output'] = None
 if 'generated_files' not in st.session_state:
     st.session_state['generated_files'] = {}
+if "old_multimodal_value" not in st.session_state:
+    st.session_state["old_multimodal_value"] = False
 
 def parse_fg(fg_path, OPENAI_API_KEY, LLAMA_API_KEY):
     client = OpenAI(api_key=OPENAI_API_KEY)
@@ -118,13 +123,13 @@ def parse_slides(slides_path, LLAMA_CLOUD_API_KEY, OPENAI_API_KEY, is_multimodal
 
     if is_multimodal:
         slides_parser = LlamaParse(
-        result_type="markdown",
-        use_vendor_multimodal_model=True,
-        vendor_multimodal_model_name="openai-gpt-4o-mini",
-        vendor_multimodal_api_key=OPENAI_API_KEY,
-        verbose=True,
-        fast_mode=True,
-        num_workers=8,
+            result_type="markdown",
+            use_vendor_multimodal_model=True,
+            vendor_multimodal_model_name="openai-gpt-4o-mini",
+            vendor_multimodal_api_key=OPENAI_API_KEY,
+            verbose=True,
+            fast_mode=True,
+            num_workers=8,
         )
         md_json_objs = slides_parser.get_json_result(slides_path)
         md_json_list = md_json_objs[0]["pages"]
@@ -146,6 +151,7 @@ def parse_slides(slides_path, LLAMA_CLOUD_API_KEY, OPENAI_API_KEY, is_multimodal
             return index        
     else:
         documents = LlamaParse(result_type="markdown").load_data(slides_path)
+        
         def get_page_nodes(docs, separator="\n---\n"):
             nodes = []
             for doc in docs:
@@ -157,28 +163,35 @@ def parse_slides(slides_path, LLAMA_CLOUD_API_KEY, OPENAI_API_KEY, is_multimodal
                     )
                     nodes.append(node)
             return nodes
+
         page_nodes = get_page_nodes(documents, separator="\n---\n")
 
         # --- 3. Parse Markdown structure with MarkdownElementNodeParser ---
-        # This creates a hierarchical parse of tables, headings, lists, etc.
         node_parser = MarkdownElementNodeParser(
-            llm=llama_openai(model_name="gpt-4o-mini"),  # or "gpt-4o-mini" if available
+            llm=llama_openai(model_name="gpt-4o-mini"),
             num_workers=8,
             include_metadata=True
         )
-        # node_parser expects Document objects
         parsed_nodes = node_parser.get_nodes_from_documents(documents)
         base_nodes, objects = node_parser.get_nodes_and_objects(parsed_nodes)
 
         # --- 4. Combine raw page nodes + structured parse nodes ---
-        # This approach stores both the “raw markdown text” nodes and the “parsed objects”
-        # in a single index to allow flexible retrieval strategies.
         combined_nodes = base_nodes + objects + page_nodes
 
         # --- 5. Create a VectorStoreIndex ---
-        # By default, VectorStoreIndex is built on these combined nodes.
         index = VectorStoreIndex(nodes=combined_nodes)
         return index
+
+def _ensure_list(answer):
+    """
+    Returns a list regardless of whether 'answer' is originally a list, string, or None.
+    """
+    if isinstance(answer, list):
+        return answer
+    elif isinstance(answer, str):
+        # Wrap the string in a list so Jinja loops or docxtpl loops won't break
+        return [answer]
+    return []
 
 def generate_documents(context: dict, assessment_type: str, output_dir: str) -> dict:
     """
@@ -192,6 +205,7 @@ def generate_documents(context: dict, assessment_type: str, output_dir: str) -> 
     Returns:
     - dict: Paths to the generated documents (question and answer papers).
     """
+
     # Ensure the output directory exists
     os.makedirs(output_dir, exist_ok=True)
 
@@ -199,24 +213,40 @@ def generate_documents(context: dict, assessment_type: str, output_dir: str) -> 
     TEMPLATES = {
         "QUESTION": f"Assessment/Templates/(Template) {assessment_type} - Course Title - v1.docx",
         "ANSWER": f"Assessment/Templates/(Template) Answer to {assessment_type} - Course Title - v1.docx"
-        }
+    }
 
     qn_template = TEMPLATES["QUESTION"]
     ans_template = TEMPLATES["ANSWER"]
     question_doc = DocxTemplate(qn_template)
     answer_doc = DocxTemplate(ans_template)
-    
+
+    # Prepare context for the answer paper:
+    # Convert each question's 'answer' to a list if it's a string or None
+    answer_context = {
+        **context,
+        "questions": [
+            {
+                **question,
+                "answer": _ensure_list(question.get("answer"))
+            }
+            for question in context.get("questions", [])
+        ]
+    }
+
     # Prepare context for the question paper by creating a copy of the context without answers
     question_context = {
         **context,
         "questions": [
-            {**question, "answer": None} for question in context.get("questions", [])
+            {
+                **question,
+                "answer": None
+            }
+            for question in context.get("questions", [])
         ]
     }
 
-
     # Render both templates
-    answer_doc.render(context)  # Render with answers
+    answer_doc.render(answer_context)  # Render with answers
     question_doc.render(question_context)  # Render without answers
 
     # Create temporary files for the question and answer documents
@@ -239,19 +269,19 @@ def generate_documents(context: dict, assessment_type: str, output_dir: str) -> 
 
 # Streamlit app
 def app():
-    # Enable wide mode for the layout
+    # Title
     st.title("📄 Assessment Generator")
-
     st.write("Upload your Facilitator Guide (.docx) and Trainer Slide Deck (.pdf) to generate assessments.")
 
     # File upload
     fg_doc_file = st.file_uploader("Upload Facilitator Guide (.docx)", type=["docx"])
     slide_deck_file = st.file_uploader("Upload Trainer Slide Deck (.pdf)", type=["pdf"])
     
+    # Read secrets
     OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
     LLAMA_API_KEY = st.secrets["LLAMA_CLOUD_API_KEY"]
 
-    llm_config={
+    llm_config = {
         "config_list": [
             {
                 'model': "gpt-4o-mini",
@@ -260,6 +290,7 @@ def app():
         ],
         "timeout": 300,
     }
+
     # Assessment type selection
     st.write("Select the type of assessment to generate:")
     saq = st.checkbox("Short Answer Questions (SAQ)")
@@ -272,17 +303,21 @@ def app():
     if pp:
         selected_types.append("PP")
     if cs:
-        selected_types.append("CS") 
+        selected_types.append("CS")
 
-    is_multimodal = st.toggle("Enable Multimodal RAG", False)
+    # Toggle for Multimodal RAG
+    old_multimodal_value = st.session_state.get("old_multimodal_value")
+    current_multimodal_value = st.toggle("Enable Multimodal RAG", value=old_multimodal_value)
 
-    if is_multimodal:
+    if current_multimodal_value:
         st.warning("⚠️ Multimodal RAG may take longer to process.")
+
     # Button to generate assessments
     if st.button("Generate Assessments"):
+        # Reset any previous generation each time the button is clicked
         st.session_state['generated_files'] = {}
         st.session_state['processing_done'] = False
-        st.session_state['index'] = None
+
         # Validity checks
         if not fg_doc_file:
             st.error("❌ Please upload the Facilitator Guide (.docx) file.")
@@ -293,6 +328,11 @@ def app():
         else:
             st.success("✅ All inputs are valid. Proceeding with assessment generation...")
             
+            # If the toggle changed, reset the index so we can parse slides anew
+            if current_multimodal_value != st.session_state["old_multimodal_value"]:
+                st.session_state["index"] = None
+            st.session_state["old_multimodal_value"] = current_multimodal_value
+
             # Save uploaded files
             fg_filepath = utils.save_uploaded_file(fg_doc_file, "data")
             slides_filepath = utils.save_uploaded_file(slide_deck_file, "data")
@@ -313,7 +353,12 @@ def app():
             try:
                 with st.spinner("Parsing Slide Deck..."):
                     if not st.session_state['index']:
-                        st.session_state['index'] = parse_slides(slides_filepath, LLAMA_API_KEY, OPENAI_API_KEY, is_multimodal)
+                        st.session_state['index'] = parse_slides(
+                            slides_filepath,
+                            LLAMA_API_KEY,
+                            OPENAI_API_KEY,
+                            current_multimodal_value
+                        )
                     index = st.session_state['index']
                     st.success("✅ Successfully parsed the Slide Deck.")
             except Exception as e:
@@ -328,31 +373,33 @@ def app():
                             print("### GENERATING SAQ ASSESSMENT ###")
                             saq_context = generate_saq(parsed_fg, index, llm_config)
                             files = generate_documents(
-                                context=saq_context, 
-                                assessment_type=assessment_type,
-                                output_dir="output"
-                            )
-                            st.session_state['generated_files'][assessment_type] = files
-                        elif assessment_type == "PP":
-                            print("### GENERATING PP ASSESSMENT ###")
-                            pp_context = generate_pp(parsed_fg, index, llm_config)
-                            files = generate_documents(
-                                context=pp_context, 
-                                assessment_type=assessment_type,
-                                output_dir="output"
-                            )
-                            st.session_state['generated_files'][assessment_type] = files
-                        elif assessment_type == "CS":
-                            print("### GENERATING CS ASSESSMENT ###")
-                            cs_context = generate_cs(parsed_fg, index, llm_config)
-                            files = generate_documents(
-                                context=cs_context, 
+                                context=saq_context,
                                 assessment_type=assessment_type,
                                 output_dir="output"
                             )
                             st.session_state['generated_files'][assessment_type] = files
 
-                    if st.session_state['generated_files']:
+                        elif assessment_type == "PP":
+                            print("### GENERATING PP ASSESSMENT ###")
+                            pp_context = generate_pp(parsed_fg, index, llm_config)
+                            files = generate_documents(
+                                context=pp_context,
+                                assessment_type=assessment_type,
+                                output_dir="output"
+                            )
+                            st.session_state['generated_files'][assessment_type] = files
+
+                        elif assessment_type == "CS":
+                            print("### GENERATING CS ASSESSMENT ###")
+                            cs_context = generate_cs(parsed_fg, index, llm_config)
+                            files = generate_documents(
+                                context=cs_context,
+                                assessment_type=assessment_type,
+                                output_dir="output"
+                            )
+                            st.session_state['generated_files'][assessment_type] = files
+
+                    if st.session_state.get('generated_files'):
                         st.session_state['processing_done'] = True
                         st.success("✅ Successfully generated assessments. Output files saved in the 'output' directory.")
                     else:
@@ -361,19 +408,19 @@ def app():
                 st.error(f"Error generating assessments: {e}")
 
     # Download section
-    if st.session_state['processing_done']:
+    if st.session_state.get('processing_done'):
         st.header("Download Generated Documents")
 
         # Iterate over all generated assessments
-        for assessment_type, file_paths in st.session_state['generated_files'].items():
+        for assessment_type, file_paths in st.session_state.get('generated_files').items():
             q_path = file_paths['QUESTION']
             a_path = file_paths['ANSWER']
-            course_title = file_paths.get("course_title", "CourseTitle")
+            course_title = dict(st.session_state['fg_data']).get("course_title", "Course Title")
 
             if os.path.exists(q_path):
                 with open(q_path, "rb") as f:
                     file_bytes = f.read()
-                q_file_name = f"{assessment_type} {course_title} - v1.docx"
+                q_file_name = f"{assessment_type} - {course_title} - v1.docx"
                 st.download_button(
                     label=f"Download {assessment_type} Questions",
                     data=file_bytes,
