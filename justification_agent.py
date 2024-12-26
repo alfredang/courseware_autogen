@@ -199,8 +199,11 @@ def main():
                 
                 # Type of Evidence
                 phrasing += "Type of Evidence:\n"
-                for lo, evidence in method_data['evidence'].items():
-                    phrasing += f"•\tFor {lo}: {evidence}\n"
+                if isinstance(method_data['evidence'], dict):
+                    for lo, evidence in method_data['evidence'].items():
+                        phrasing += f"•\tFor {lo}: {evidence}\n"
+                else:
+                    phrasing += f"•\t{method_data['evidence']}\n"
                 
                 # Manner of Submission
                 phrasing += "Manner of Submission:\n"
@@ -218,8 +221,7 @@ def main():
                 # No. of Role Play Scripts (specific to Role Play)
                 if method_key == "role_play" and "no_of_scripts" in method_data:
                     phrasing += f"No. of Role Play Scripts:\n•\t{method_data['no_of_scripts']}\n"
-
-
+                
                 phrasing_list.append(phrasing)
                 break  # Exit after finding the first present method since only one will be there
 
