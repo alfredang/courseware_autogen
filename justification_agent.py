@@ -155,6 +155,24 @@ def main():
         }}
     }}
 
+    However, in the case of Role Play assessment, you are to format it as follows:
+    "assessment_methods": {{
+        "role_play": {{
+        "name": "Role Play (RP)",
+        "description": "Role Play assessments allow learners to demonstrate their ability to apply learned concepts in simulated real-world interactions, focusing on the practical application of sales closure skills.",
+        "focus": "Role Play assessments allow learners to demonstrate their ability to apply learned concepts in simulated real-world interactions, focusing on the practical application of sales closure skills.",
+        "evidence": "Role play",
+        "submission": "Assessor will evaluate the candidate using an observation checklist for the role play.",
+        "marking_process": [
+            "Effectiveness of sales recommendations.",
+            "Application of sales techniques.",
+            "Presentation of follow-up steps and metrics."
+        ],
+        "retention_period": "3 years",
+        "no_of_scripts": "To ensure fairness among learners, a minimum of two distinct role-play scripts or scenarios will be pre-pared for this assessment"
+        }}
+    }}
+
     """
 
     assessment_justification_agent_chat = user_proxy.initiate_chat(
@@ -190,13 +208,18 @@ def main():
                     phrasing += f"•\t{submission}\n"
                 
                 # Marking Process
-                phrasing += "Marking Process: Assessors will evaluate the submissions based on a rubric that considers:\n"
+                phrasing += "Marking Process: \n"
                 for criteria in method_data['marking_process']:
                     phrasing += f"•\t{criteria}\n"
                 
                 # Retention Period
                 phrasing += f"Retention Period:\n•\t{method_data['retention_period']}\n"
                 
+                # No. of Role Play Scripts (specific to Role Play)
+                if method_key == "role_play" and "no_of_scripts" in method_data:
+                    phrasing += f"No. of Role Play Scripts:\n•\t{method_data['no_of_scripts']}\n"
+
+
                 phrasing_list.append(phrasing)
                 break  # Exit after finding the first present method since only one will be there
 
