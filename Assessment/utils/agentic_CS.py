@@ -1,10 +1,11 @@
 import os
 import re
 import json
+import pprint
 from Assessment.utils.pydantic_models import FacilitatorGuideExtraction
 from autogen import AssistantAgent, UserProxyAgent
 from autogen.cache import Cache
-from llama_index.llms.openai import OpenAI
+from llama_index.llms.openai import OpenAI as llama_openai
 
 def generate_cs(extracted_data, index, llm_config):
     openai_api_key = llm_config["config_list"][0]["api_key"]
@@ -33,7 +34,7 @@ def generate_cs(extracted_data, index, llm_config):
     - Do not invent abilities or knowledge outside the scope of the LO and its associated abilities.
     """
 
-    scenario_llm = OpenAI(model="gpt-4o-mini", api_key=openai_api_key, system_prompt=system_prompt)
+    scenario_llm = llama_openai(model="gpt-4o-mini", api_key=openai_api_key, system_prompt=system_prompt)
 
     scenario_query_engine = index.as_query_engine(
         similarity_top_k=10,
@@ -44,46 +45,45 @@ def generate_cs(extracted_data, index, llm_config):
     scenario = generate_case_study_scenario(extracted_data, scenario_query_engine)
 
     system_prompt = """\
-    You are a content retrieval assistant. Your role is to retrieve topic content that aligns strictly with the specified Learning Outcome (LO) and its associated abilities.
+    You are an instructional design assistant tasked with generating concise, realistic, and practical scenario-based question-answer pairs for educational purposes.
 
     Your role:
-    1. Restrict your retrieval strictly to the specified topic provided in the query.
-    2. Retrieve content from the topic that directly aligns with the provided Learning Outcome (LO) and its abilities.
-    3. If no specific content directly aligns with the Learning Outcome or abilities, provide a general summary of the topic instead.
-    4. Include any example/usecase code or equations relevant to the topic or subtopics.
-    5. Prioritize retrieving content that are practical.
-    6. Identify and extract the exact inline segments from the provided documents that directly correspond to the content used to generate the summary. The extracted segments must be verbatim snippets from the documents, ensuring a word-for-word match with the text in the provided documents.
+    1. **Generate a real-world scenario** for the given Course Title and Learning Outcome (LO). The scenario must:
+    - Be concise (2 paragraphs) while clearly describing the organizational challenges or context.
+    - Align directly with the Learning Outcome and be applicable to the associated abilities.
+    - Highlight specific organizational data, challenges, and objectives to ensure relevance and practicality.
 
-    Ensure that:
-    - (Important) Each retrieved segment is an exact match to a part of the document and is fully contained within the document text.
-    - The relevance of each segment to the Learning Outcome or abilities is clear and directly supports the summary provided.
-    - (Important) If you didn't use the specific document or topic, do not mention it.
-    - If no relevant information is found for the Learning Outcome, clearly state this and provide a general topic summary instead.
+    2. Use only the information relevant to the specified Learning Unit, Learning Outcome, and its abilities. Do not include information from unrelated topics.
 
-    Restrictions:
-    - Do not include content from other topics or slides outside the specified topic.
-    - Each retrieved segment must explicitly belong to the given topic.
-    - Avoid including assumptions or content outside the scope of the Learning Outcome and abilities.
+    3. Ensure that:
+    - Each scenario and question-answer pair is realistic, aligned to Bloom's Taxonomy level for the LO, and practically applicable.
+    - If no relevant content exists, create a general scenario that remains educationally valuable and tied to the broader course theme.
 
-    You must always provide:
-    1. The retrieved content aligned with the Learning Outcome and abilities.
-    2. A list of verbatim extracted segments that directly support the retrieved content, each labeled with the topic and document it belongs to.
+    **Output Format:**
+    - Tase study scenario have to be at least 500 words long.
+    - You will output your response in the following format. For example:
+    TechFusion, a leading software solutions provider, has been approached by a global bank to develop a new mobile banking application. The bank wants to offer its customers a seamless, secure, and intuitive banking experience on their smartphones. Given the competitive landscape, the bank emphasizes the need for rapid delivery without compromising on quality. TechFusion has recently adopted Agile methodologies with Scrum and DevOps practices and sees this project as an opportunity to showcase its capabilities in these areas.
+
+    **Restrictions:**
+    - Do not include content from other topics or unrelated slides.
+    - Do not invent abilities or knowledge outside the scope of the LO and its associated abilities.
     """
 
-    lo_retriever_llm = OpenAI(model="gpt-4o-mini", api_key=openai_api_key, system_prompt=system_prompt)
+    lo_retriever_llm = llama_openai(model="gpt-4o-mini", api_key=openai_api_key, system_prompt=system_prompt)
     qa_generation_query_engine = index.as_query_engine(
         similarity_top_k=10,
         llm=lo_retriever_llm,
         response_mode="compact",
     )
     retrieved_content = retrieve_content_for_learning_outcomes(extracted_data, qa_generation_query_engine)
-    
+    pprint.pprint(retrieved_content)
+
     user_proxy_agent = UserProxyAgent(
         name="user_proxy",
         human_input_mode="NEVER",
         max_consecutive_auto_reply=5,
         is_termination_msg=lambda msg: msg.get("content", "") and "TERMINATE" in msg["content"],
-        code_execution_config={"work_dir": "output", "use_docker": False}
+        code_execution_config={"work_dir": "output", "use_docker": False, "response_format": {"type": "json_object"}}
     )
 
     # Autogen setup
@@ -99,8 +99,13 @@ def generate_cs(extracted_data, index, llm_config):
         1. Use the provided scenario and retrieved content to generate one question-and-answer pairs per one learning outcome.
         2. Each question should be aligned with the learning outcome and abilities implied by the retrieved content and the Bloom's Taxonomy Level.
         3. The answer should demonstrate mastery of the abilities and address the scenario context.
-        4. Ensure all keys and values are double-quoted in the JSON output.
-        5. Return the output in JSON format with the following structure:
+        4. The **answer** must be in a **case study solution style**: a detailed solution or approach addressing the scenario's key challenges.
+            - Explain what to do, why it matters, and any recommended tools or methods.
+            - Provide a short rationale (“why”) for each recommended action, tying it back to the scenario’s goals.
+            - If any part of an answer cannot be found in the retrieved content, explicitly state that 'The retrieved content does not include that (information).'
+
+        5. Ensure all keys and values are double-quoted in the JSON string output.
+        6. Return the output in JSON string format with the following structure:
             import
             ```json
             {{
@@ -122,7 +127,7 @@ def generate_cs(extracted_data, index, llm_config):
     )
     assessment_duration = ""
     for assessment in extracted_data.assessments:
-        if "PP" in assessment.code:
+        if "CS" in assessment.code:
             assessment_duration = assessment.duration
 
     with Cache.disk() as cache:
@@ -138,7 +143,7 @@ def generate_cs(extracted_data, index, llm_config):
                 Level 4: Analyzing
                 Level 5: Evaluating
                 Level 6: Creating
-            Return the question and answer as a complete JSON dictionary containing the specified fields.
+            Return the question and answer as a JSON string containing the specified fields.
             RETURN 'TERMINATE' once the generation is done.
             """,
             summary_method="reflection_with_llm",
@@ -155,6 +160,7 @@ def generate_cs(extracted_data, index, llm_config):
             json_str = json_match.group(1)
             context = json.loads(json_str)
             print(f"CONTEXT JSON MAPPING: \n\n{context}")
+        pprint.pprint(f"CS cost: {chat_result.cost}")
     except json.JSONDecodeError as e:
         print(f"Error parsing context JSON: {e}")
 

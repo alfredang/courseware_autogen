@@ -1,10 +1,11 @@
 import os
 import re
 import json
+import pprint
 from Assessment.utils.pydantic_models import FacilitatorGuideExtraction
 from autogen import AssistantAgent, UserProxyAgent
 from autogen.cache import Cache
-from llama_index.llms.openai import OpenAI
+from llama_index.llms.openai import OpenAI as llama_openai
 
 def generate_pp(extracted_data, index, llm_config):
     openai_api_key = llm_config["config_list"][0]["api_key"]
@@ -23,8 +24,8 @@ def generate_pp(extracted_data, index, llm_config):
     - Each scenario and question-answer pair is realistic, aligned to Bloom's Taxonomy level for the LO, and practically applicable.
     - If no relevant content exists, create a general scenario that remains educationally valuable and tied to the broader course theme.
 
-    **Output Format:**
-    - Tase study scenario have to be at least 500 words long.
+    4. **Output Format:**
+    - The practical performance scenario have to be at least 500 words long.
     - You will output your response in the following format. For example:
     TechFusion, a leading software solutions provider, has been approached by a global bank to develop a new mobile banking application. The bank wants to offer its customers a seamless, secure, and intuitive banking experience on their smartphones. Given the competitive landscape, the bank emphasizes the need for rapid delivery without compromising on quality. TechFusion has recently adopted Agile methodologies with Scrum and DevOps practices and sees this project as an opportunity to showcase its capabilities in these areas.
 
@@ -33,7 +34,7 @@ def generate_pp(extracted_data, index, llm_config):
     - Do not invent abilities or knowledge outside the scope of the LO and its associated abilities.
     """
 
-    scenario_llm = OpenAI(model="gpt-4o-mini", api_key=openai_api_key, system_prompt=system_prompt)
+    scenario_llm = llama_openai(model="gpt-4o-mini", api_key=openai_api_key, system_prompt=system_prompt)
 
     scenario_query_engine = index.as_query_engine(
         similarity_top_k=10,
@@ -68,13 +69,13 @@ def generate_pp(extracted_data, index, llm_config):
     You must always provide:
     1. The retrieved content aligned with the Learning Outcome and abilities.
     2. A list of verbatim extracted segments that directly support the retrieved content, each labeled with the topic and document it belongs to.
-    """ 
+    """
 
-    lo_retriever_llm = OpenAI(model="gpt-4o-mini", api_key=openai_api_key, system_prompt=system_prompt)
+    lo_retriever_llm = llama_openai(model="gpt-4o-mini", api_key=openai_api_key, system_prompt=system_prompt)
     qa_generation_query_engine = index.as_query_engine(
         similarity_top_k=10,
         llm=lo_retriever_llm,
-        response_mode="compact",
+        response_mode="tree_summarize",
     )
     retrieved_content = retrieve_content_for_learning_outcomes(extracted_data, qa_generation_query_engine)
     
@@ -83,7 +84,7 @@ def generate_pp(extracted_data, index, llm_config):
         human_input_mode="NEVER",
         max_consecutive_auto_reply=5,
         is_termination_msg=lambda msg: msg.get("content", "") and "TERMINATE" in msg["content"],
-        code_execution_config={"work_dir": "output", "use_docker": False}
+        code_execution_config={"work_dir": "output", "use_docker": False, "response_format": {"type": "json_object"}}
     )
 
     # Autogen setup
@@ -96,31 +97,39 @@ def generate_pp(extracted_data, index, llm_config):
         - Retrieved content aligned with learning outcomes and abilities
 
         ### Instructions:
-        1. Use the provided scenario and retrieved content to generate one question-and-answer pair per learning outcome.
-        2. Each question must:
-            - Be aligned with the scenario context and practical skills relevant to the abilities.
-            - End with the statement: "Take snapshots of your ... at each step and paste them below."
-        3. Each answer must:
-            - Begin with: "The snapshot should include: ".
-            - Specify only practical steps that test the learner's skills (e.g., commands, setups, or tool usage).
-            - Avoid any form of writing, documenting, or analytical description beyond the practical steps.
-        4. Ensure all keys and values are double-quoted in the JSON output.
-        5. Return the output in JSON format with the following structure:
-            ```json
-            {{
-                "course_title": "<course_title_here>",
-                "duration": "<assessment_duration_here>",
-                "scenario": "<scenario_here>",
-                "questions": [
-                    {{
-                        "question_statement": "<question_text>",
-                        "answer": ["<list_of_answer_text>"],
-                        "ability_id": ["<list_of_ability_ids>"]
-                    }},
-                    ...
-                ]
-            }}
-            ```
+        1. Use the provided scenario and retrieved content to generate **one practical question-answer pair per learning outcome.**
+
+        2. **Question Requirements:**
+        - Each question must describe a hands-on task or practical activity related to the scenario.
+        - Ensure the task can be performed based on the scenario's context without assuming learners have additional information.
+        - For coding courses, specify programming tasks with clear starting points. For non-coding courses, describe actions such as planning, decision-making, evaluating data, or implementing processes.
+        - Ensure the question ends with "Take snapshots of your commands at each step and paste them below."
+
+        3. **Answer Requirements:**
+        - **Provide the exact solutions** (e.g., final code, commands, outputs, or tangible deliverables) rather than describing how to capture the snapshots.
+        - If there is relevant text or direct quotes from the retrieved content, include them verbatim with proper citations, for example, "(Source: [retrieved_content_reference])".
+        - Each answer should contain only the final (correct) output or solution. Avoid step-by-step instructions on capturing or documenting the process.
+        - If any part of an answer cannot be found in the retrieved content, explicitly state that 'The retrieved content does not include that (information).'
+
+        4. Structure the final output in valid JSON with the following format:
+        
+        ```json
+        {{
+            "course_title": "<course_title_here>",
+            "duration": "<assessment_duration_here>",
+            "scenario": "<scenario_here>",
+            "questions": [
+                {{
+                    "question_statement": "<question_text>",
+                    "answer": ["<list_of exact final solutions or outputs>"],
+                    "ability_id": ["<list_of_ability_ids>"]
+                }},
+                ...
+            ]
+        }}
+        ```
+        5. Ensure the generated practical tasks align strictly with the retrieved content and abilities. If there is relevant text or direct quotes from the retrieved content, include them verbatim. Use a format like “(Source: [retrieved_content_reference])” where needed.
+        6. Return the JSON between triple backticks followed by 'TERMINATE'.
         """,
         llm_config=llm_config,
     )
@@ -161,6 +170,7 @@ def generate_pp(extracted_data, index, llm_config):
             json_str = json_match.group(1)
             context = json.loads(json_str)
             print(f"CONTEXT JSON MAPPING: \n\n{context}")
+        pprint.pprint(f"PP cost: {chat_result.cost}")
     except json.JSONDecodeError as e:
         print(f"Error parsing context JSON: {e}")
 
