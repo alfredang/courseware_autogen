@@ -63,7 +63,7 @@ def main():
     Topics Covered: {ensemble_output.get('Assessment Methods', {}).get('Course Outline', [])}
     Assessment Methods: {ensemble_output.get('Assessment Methods', {}).get('Assessment Methods', [])}
 
-    The Written Assessment or WA-SAQ will always be present in Assessment Methods, you may ignore that. Your focus is on justifying either the Case Study, Practical Performance or Oral Questioning, whichever is applicable.
+    The Written Assessment or WA-SAQ will always be present in Assessment Methods, you may ignore that. Your focus is on justifying either the Case Study, Practical Performance, Oral Questioning, or Role Play, whichever is applicable.
     Your justification must only be for one method at a time, do not mix up both.
 
     Provide justifications for why the assessment method aligns with the course learning outcomes and topics.
@@ -109,11 +109,24 @@ def main():
     •	For LO3: Candidates will lead an innovation project using Agile and design thinking approaches.
     •	For LO4: Candidates will submit a strategic plan detailing how they developed and scaled design thinking methodologies across the organization.
     Manner of Submission: Candidates will submit their case study reports and any additional supporting documents to the assessors electronically via the designated learning management system.
-    Marking Process:  Assessors will evaluate the practical submissions based on a rubric that considers:
+    Marking Process:
     •	Integration of Methodologies.
     •	Stakeholder Analysis.
     •	Project Leadership and Tools.
     Retention Period: All submitted case study reports and accompanying documentation will be retained for 3 years to ensure compliance with institutional policies and for auditing purposes.
+
+    Role Play (RP) example:
+    Role Play assessments allow learners to demonstrate their ability to apply learned concepts in simulated real-world interactions, focusing on the practical application of sales closure skills.
+
+    Type of Evidence: Role Play
+    Manner of Submission: Assessor will evaluate the candidate using an observation checklist for the role play.
+    Marking Process:
+    •	Effectiveness of sales recommendations.
+    •	Application of sales techniques.
+    •	Presentation of follow-up steps and metrics.
+    Retention Period: 3 years.
+    No. of Role Play Scripts: To ensure fairness among learners, a minimum of two distinct role-play scripts or scenarios will be prepared for this assessment
+
 
     **Your response must be ONLY the JSON structure, formatted exactly as per the example below, enclosed in a code block (i.e., triple backticks ```). Do not include any additional text or explanations outside the JSON code block. Do not include any headings or introductions. Just output the JSON code block.**
     "assessment_methods": {{

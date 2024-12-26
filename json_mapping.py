@@ -373,7 +373,8 @@ def map_values(mapping_source, ensemble_output, research_output):
             "Written Assessment": "WA-SAQ",
             "Practical Performance": "PP",
             "Case Study": "CS",
-            "Oral Questioning": "OQ"
+            "Oral Questioning": "OQ",
+            "Role Play": "RP"
         }
 
         # Normalize assessment methods to their abbreviated forms
@@ -385,7 +386,8 @@ def map_values(mapping_source, ensemble_output, research_output):
             "PP": "Practical Performance",
             "CS": "Case Study",
             "OQ": "Oral Questioning",
-            "Written Assessment - Short-Answer Questions (WA-SAQ) - Individual, Summative, Open book": "Written Assessment - Short-Answer Questions"
+            "Written Assessment - Short-Answer Questions (WA-SAQ) - Individual, Summative, Open book": "Written Assessment - Short-Answer Questions",
+            "RP": "Role Play"
         }
 
         # Create a list that combines the full names with their short forms
@@ -421,7 +423,7 @@ def map_values(mapping_source, ensemble_output, research_output):
             if lu_data.get('A_codes'):
                 # Dynamically determine which method is used for A's
                 # Check which methods are available for abilities
-                available_methods = [method for method in ['PP', 'CS', 'OQ'] if method in normalized_assessment_methods]
+                available_methods = [method for method in ['PP', 'CS', 'OQ', 'RP'] if method in normalized_assessment_methods]
                 if available_methods:
                     methods_in_lu.append(available_methods[0])  # Use the first available method
 
@@ -455,7 +457,7 @@ def map_values(mapping_source, ensemble_output, research_output):
                 method_durations_per_lu[lu_key][method] = duration_per_lu
 
         # Define the method order to ensure "Written Assessment" comes first
-        method_order = ['WA-SAQ', 'PP', 'CS', 'OQ']
+        method_order = ['WA-SAQ', 'PP', 'CS', 'OQ', 'RP']
 
         # Map durations per method per LU into #ADuration[n]
         for i, lu_key in enumerate([f"LU{idx+1}" for idx in range(num_lus)]):
