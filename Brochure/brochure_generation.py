@@ -565,3 +565,4 @@ def app():
             )
 
             
+# should we create a service account using alfred's account on GCP? seems like we need it to automate anything regarding google drives and its associated folders
