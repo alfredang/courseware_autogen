@@ -164,7 +164,7 @@ def main():
         "description": "Role Play assessments allow learners to demonstrate their ability to apply learned concepts in simulated real-world interactions, focusing on the practical application of sales closure skills.",
         "focus": "Role Play assessments allow learners to demonstrate their ability to apply learned concepts in simulated real-world interactions, focusing on the practical application of sales closure skills.",
         "evidence": "Role play",
-        "submission": "Assessor will evaluate the candidate using an observation checklist for the role play.",
+        "submission": ["Assessor will evaluate the candidate using an observation checklist for the role play."],
         "marking_process": [
             "Effectiveness of sales recommendations.",
             "Application of sales techniques.",
@@ -179,11 +179,10 @@ def main():
     "assessment_methods": {{
         "oral_questioning": {{
         "name": "Oral Questioning (OQ)",
-        "description": "Role Play assessments allow learners to demonstrate their ability to apply learned concepts in simulated real-world interactions, focusing on the practical application of sales closure skills.",
-        "focus": "Role Play assessments allow learners to demonstrate their ability to apply learned concepts in simulated real-world interactions, focusing on the practical application of sales closure skills.",
+        "description": "Oral Questioning assessments allow candidates to demonstrate their understanding of concepts through verbal responses, focusing on the practical application of sales closure skills.",
         "evidence": {{
             "LO1": "Candidates will discuss methods for maintaining accurate records and monitoring client satisfaction.",
-            "LO2": "For LO1: Candidates will respond to questions demonstrating their understanding of customer communication techniques and preferences.",
+            "LO2": "Candidates will respond to questions demonstrating their understanding of customer communication techniques and preferences.",
         }},
         "submission": "Candidates will verbally respond to assessors during a structured questioning session.",
         "marking_process": [
