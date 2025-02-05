@@ -169,6 +169,11 @@ def generate_learning_guide(context, name_of_organisation, llm_config):
             }
         ]
     )
+    print("\n\n########################### LG AUTOGEN COST #############################")
+    for i, chat_res in enumerate(chat_results):
+        print(f"*****{i}th chat*******:")
+        print("Conversation cost: ", chat_res.cost)
+    print("########################### LG AUTOGEN COST #############################\n\n")
 
     # Extract the output path from the last agent
     lg_output_path = None

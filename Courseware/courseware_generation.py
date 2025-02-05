@@ -254,6 +254,17 @@ def app():
             gen_config_list = [{"model": GENERATION_MODEL_NAME,"api_key": OPENAI_API_KEY}]
             rep_config_list = [{"model": REPLACEMENT_MODEL_NAME,"api_key": OPENAI_API_KEY}]
 
+            config_list_deepseek ={
+                "config_list":[
+                    {
+                        "model": "deepseek/deepseek-r1",
+                        "base_url": "https://openrouter.ai/api/v1",
+                        "api_key": os.getenv("openrouter_api_key"),  # or omit if set in environment
+                        "price": [0.00055, 0.00219],
+                    },
+                ],
+                "cache_seed": None,  # Disable caching.
+            }
             llm_config = {"config_list": gen_config_list, "timeout": 360}
             rep_config = {"config_list": rep_config_list, "timeout": 360}
 
@@ -270,10 +281,10 @@ def app():
                 name="Interpreter",
                 llm_config=llm_config,
                 system_message="""
-                You are an AI assistant that helps extract specific information from a JSON object containing a Course Proposal Form. Your task is to interpret the JSON data, regardless of its structure, and extract the required information accurately.
+                You are an AI assistant that helps extract specific information from a JSON object containing a Course Proposal Form (CP). Your task is to interpret the JSON data, regardless of its structure, and extract the required information accurately.
 
                 ---
-
+                
                 **Task:** Extract the following information from the provided JSON data:
 
                 ### Part 1: Particulars of Course
@@ -282,7 +293,7 @@ def app():
                 - Course Title
                 - TSC Title
                 - TSC Code
-                - Total Training Hours (sum of Classroom facilitation, Workplace learning: On-the-Job (OJT), Practicum, Practical, E-learning: Synchronous and Asynchronous), formatted with units (e.g., "30 hrs", "1 hr")
+                - Total Training Hours (calculated as the sum of Classroom Facilitation, Workplace Learning: On-the-Job (OJT), Practicum, Practical, E-learning: Synchronous and Asynchronous), formatted with units (e.g., "30 hrs", "1 hr")
                 - Total Assessment Hours, formatted with units (e.g., "2 hrs")
                 - Total Course Duration Hours, formatted with units (e.g., "42 hrs")
 
@@ -294,119 +305,67 @@ def app():
                 - Learning Unit Title (include the "LUx: " prefix)
                 - Topics Covered Under Each LU:
                 - For each Topic:
-                    - **Topic_Title** (include the "Topic x: " prefix and associated K and A statements in parentheses)
-                    - **Bullet_Points** (list of bullet points under the topic)
-                - Learning Outcomes (LOs)
-                - Numbering and Description for the "K" (Knowledge) Statements (as a list of dictionaries with "K_number" and "Description")
-                - Numbering and Description for the "A" (Ability) Statements (as a list of dictionaries with "A_number" and "Description")
-                - **Assessment_Methods** (list of assessment methods abbreviation, e.g., ["WA-SAQ", "CS"])
-                - **Instructional_Methods** (list of instructional methods)
+                    - **Topic_Title** (include the "Topic x: " prefix and the associated K and A statements in parentheses)
+                    - **Bullet_Points** (a list of bullet points under the topic)
+                - Learning Outcomes (LOs) (include the "LOx: " prefix for each LO)
+                - Numbering and Description for the "K" (Knowledge) Statements (as a list of dictionaries with keys "K_number" and "Description")
+                - Numbering and Description for the "A" (Ability) Statements (as a list of dictionaries with keys "A_number" and "Description")
+                - **Assessment_Methods** (a list of assessment method abbreviations; e.g., ["WA-SAQ", "CS"])
+                - **Instructional_Methods** (a list of instructional method abbreviations or names)
 
                 ### Part E: Details of Assessment Methods Proposed
 
-                - For each Assessment Method:
-                - **Assessment_Method**
+                For each Assessment Method in the CP, extract:
+                - **Assessment_Method** (always use the full term, e.g., "Written Assessment - Short Answer Questions", "Practical Performance", "Case Study", "Oral Questioning", "Role Play")
+                - **Method_Abbreviation** (if provided in parentheses or generated according to the rules)
                 - **Total_Delivery_Hours** (formatted with units, e.g., "1 hr")
-                - **Assessor_to_Candidate_Ratio**
+                - **Assessor_to_Candidate_Ratio** (a list of minimum and maximum ratios, e.g., ["1:3 (Min)", "1:5 (Max)"])
+                
+                **Additionally, if the CP explicitly provides the following fields, extract them. Otherwise, do not include them in the final output:**
+                - **Type_of_Evidence**  
+                - For PP and CS assessment methods, the evidence may be provided as a dictionary where keys are LO identifiers (e.g., "LO1", "LO2", "LO3") and values are the corresponding evidence text. In that case, convert the dictionary into a list of dictionaries with keys `"LO"` and `"Evidence"`.  
+                - If the evidence is already provided as a list (for example, a list of strings or a list of dictionaries), keep it as is.
+                - **Manner_of_Submission** (as a list, e.g., ["Submission 1", "Submission 2"])
+                - **Marking_Process** (as a list, e.g., ["Process 1", "Process 2"])
+                - **Retention_Period** (formatted with units, e.g., "3 years")
+                - **No_of_Role_Play_Scripts** (only if the assessment method is Role Play and this information is provided)
 
                 ---
-
+                
                 **Instructions:**
-
+                
                 - Carefully parse the JSON data and locate the sections corresponding to each part.
                 - Even if the JSON structure changes, use your understanding to find and extract the required information.
-                - Ensure that the `Topic_Title` includes the "Topic x: " prefix and the associated K and A statements in parentheses as they appear in the course proposal.
-                - For Learning Outcomes (LOs), always include the "LOx: " prefix (where x is the number) at the beginning of each LO. For example, "LO1: Evaluate organisational needs for integrating cloud solutions with existing systems."
-                - Present the extracted information in a structured JSON format, where keys correspond to the placeholders needed for placeholder replacement in a Word document.
-                - Ensure all extracted information is accurate and matches the data in the JSON input.
-                - **Time fields** should include units, e.g., "40 hrs", "1 hr", "2 hrs".
-                - `Assessment_Methods` should be a list of methods.
-                - In `Assessment_Methods_Details`, separate each assessment method with its own `Assessor_to_Candidate_Ratio` and `Total_Delivery_Hours`.
-                - **Ensure that the sum of `Total_Delivery_Hours` for all assessment methods equals the `Total_Assessment_Hours`.**
-                - **If individual `Total_Delivery_Hours` for assessment methods are not specified in the data, divide the `Total_Assessment_Hours` equally among the assessment methods.**
-                - Do not include any extraneous information.
-                
-                **Text Normalization:**
-                - When extracting text, especially for assessment methods and other fields, normalize the text by replacing special characters:
-                - Replace en dashes (–) with regular hyphens (-)
-                - Replace em dashes (—) with regular hyphens (-)
-                - Replace curly quotes (" ") with straight quotes (")
-                - Replace other non-ASCII characters with their closest ASCII equivalents
-                - This normalization should be applied to all extracted text fields to ensure consistency and avoid encoding issues.
+                - Ensure that the `Topic_Title` includes the "Topic x: " prefix and the associated K and A statements in parentheses exactly as they appear.
+                - For Learning Outcomes (LOs), always include the "LOx: " prefix (where x is the number).
+                - Present the extracted information in a structured JSON format where keys correspond exactly to the placeholders required for the Word document template.
+                - Ensure all extracted information is normalized by:
+                    - Replacing en dashes (–) and em dashes (—) with hyphens (-)
+                    - Converting curly quotes (“ ”) to straight quotes (")
+                    - Replacing other non-ASCII characters with their closest ASCII equivalents.
+                - **Time fields** must include units (e.g., "40 hrs", "1 hr", "2 hrs").
+                - For `Assessment_Methods`, always use the abbreviations (e.g., WA-SAQ, PP, CS, OQ, RP) as per the following rules:
+                    1. Use the abbreviation provided in parentheses if available.
+                    2. Otherwise, generate an abbreviation by taking the first letters of the main words (ignoring articles/prepositions) and join with hyphens.
+                    3. For methods containing "Written Assessment", always prefix with "WA-".
+                    4. If duplicate or multiple variations exist, use the standard abbreviation.
+                - **Important:** Verify that the sum of `Total_Delivery_Hours` for all assessment methods equals the `Total_Assessment_Hours`. If individual delivery hours for assessment methods are not specified, divide the `Total_Assessment_Hours` equally among them.
+                - For bullet points in each topic, ensure that the number of bullet points exactly matches those in the CP. Re-extract if discrepancies occur.
+                - Do not include any extraneous information or duplicate entries.
 
-                **Additional Validation:**
-                1. Calculate Total Training Hours as the sum of all course components (Classroom facilitation, OJT, Practicum, Practical, E-learning Synchronous, E-learning Asynchronous).
-                2. Use the Assessment hours as provided in the form for Total Assessment Hours.
-                3. Use the Total Duration as specified in the form for Total Course Duration Hours.
-                4. Verify that the Total Course Duration Hours matches the sum of Total Training Hours and Total Assessment Hours.
-                5. If there's a discrepancy, use the Total Duration specified in the form as the authoritative Total Course Duration Hours
-                6. **Bullet Points Validation:**
-                   - Compare the number of bullet points extracted for each topic against the source data
-                   - If any discrepancy is found, re-extract the bullet points for that topic
-                   - Only proceed when all bullet points for all topics are fully extracted
-                   - Example: For a topic like "Governance" with 12 bullet points in source, ensure exactly 12 bullet points are extracted:
-                     ```
-                     "Bullet_Points": [
-                         "Organizational Strategy, Goals, and Objectives",
-                         "Organizational Structure, Roles and Responsibilities",
-                         "Organizational Culture",
-                         "Policies and Standards",
-                         "Business Processes",
-                         "Organizational Assets",
-                         "Enterprise Risk Management and Risk Management Framework",
-                         "Three Lines of Defense",
-                         "Risk Profile",
-                         "Risk Appetite and Risk Tolerance",
-                         "Legal, Regulatory and Contractual Requirements",
-                         "Professional Ethics of Risk Management"
-                     ]
-                     ```
-                     
-                ** Output Format**
-                - Use double quotes around all field names and string values.
-                - Remove any redundant or duplicate entries within the dictionary.
-                - Avoid any trailing commas, particularly at the end of arrays or objects.
-                - For `Assessment_Methods_Details`, ensure no duplicate assessment entries and verify the total structure aligns with the specified format.
-                - Before finalizing, double-check and reformat the dictionary if necessary to prevent any parsing errors on the receiving end.
+                **Final Output Format:**
 
-                **Assessment Method Abbreviation Rules:**
-                When processing assessment methods, follow these rules to generate the Method_Abbreviation:
+                Return a JSON dictionary object with the following structure (use double quotes for all field names and string values):
 
-                1. Standard Assessment Method Abbreviations:
-                - Written Assessment - Short Answer Questions → WA-SAQ
-                - Practical Performance → PP
-                - Case Study → CS
-                - Oral Questioning → OQ
-                - Role Play → RP
-
-                2. For any other assessment method:
-                a. If the abbreviation is provided in parentheses, use that abbreviation
-                    Example: "Practical Performance (PP)" → "PP"
-                
-                b. If no abbreviation is provided, create one by:
-                    - Taking the first letter of each main word (excluding articles and prepositions)
-                    - Joining the letters with hyphens for multi-word methods
-                    Example: "Technical Documentation Review" → "TDR"
-
-                3. Special Cases:
-                - If the method includes "Written Assessment", always prefix with "WA-"
-                - If multiple variations of the same method exist, use the standard abbreviation
-                    Example: "Practice Performance", "Practical Performance Assessment" → both use "PP"
-
-                **Output Format Update:**
-                In the Assessment_Methods_Details section, always include both the full name and abbreviation
-
-                Return a JSON dictionary object with the following structure:
-                import
                 ```json
                 {
-                    "Date":"...",
-                    "Year":"...",
+                    "Date": "...",
+                    "Year": "...",
                     "Name_of_Organisation": "...",
                     "Course_Title": "...",
                     "TSC_Title": "...",
                     "TSC_Code": "...",
-                    "Total_Training_Hours": "...",  // e.g., "38 hrs" 
+                    "Total_Training_Hours": "...",  // e.g., "38 hrs"
                     "Total_Assessment_Hours": "...",  // e.g., "2 hrs"
                     "Total_Course_Duration_Hours": "...",  // e.g., "40 hrs"
                     "Learning_Units": [
@@ -414,45 +373,60 @@ def app():
                             "LU_Title": "...",
                             "Topics": [
                                 {
-                                    "Topic_Title": "Topic x: ... (Kx, Ax)",  // Include the "Topic x: " prefix
+                                    "Topic_Title": "Topic x: ... (Kx, Ax)",
                                     "Bullet_Points": ["...", "..."]
-                                },
-                                // Additional Topics
+                                }
+                                // Additional topics
                             ],
-                            "LO": "LOx: ...", // Include the "LOx: " prefix
+                            "LO": "LOx: ...",
                             "K_numbering_description": [
                                 {
                                     "K_number": "K1",
                                     "Description": "..."
-                                },
+                                }
                                 // Additional K statements
                             ],
                             "A_numbering_description": [
                                 {
                                     "A_number": "A1",
                                     "Description": "..."
-                                },
+                                }
                                 // Additional A statements
                             ],
-                            "Assessment_Methods": ["...", "..."],  // List of methods, Always use abbreviations e.g., WA-SAQ, PP, CS, OQ, RP
-                            "Instructional_Methods": ["...", "..."]  // List of methods
-                        },
-                        // Additional LUs
+                            "Assessment_Methods": ["...", "..."],
+                            "Instructional_Methods": ["...", "..."]
+                        }
+                        // Additional Learning Units
                     ],
                     "Assessment_Methods_Details": [
                         {
-                            "Assessment_Method": "...", // Always use full term e.g., Written Assessment - Short-Answer Questions (WA-SAQ), Practical Performance (PP), Case Study (CS), Oral Questioning (OQ) 
-                            "Method_Abbreviation": ""...", // Abbreviation of Assessment Method e.g., WA-SAQ, PP, CS, OQ, RP
+                            "Assessment_Method": "...", // Full term
+                            "Method_Abbreviation": "...", // e.g., WA-SAQ, PP, CS, OQ, RP
                             "Total_Delivery_Hours": "...",  // e.g., "1 hr"
-                            "Assessor_to_Candidate_Ratio": "["...", "..."] // List of min and max ratios e.g., ["1:3 (Min)", "1:5 (Max)"]
-                        },
-                        // Additional methods
+                            "Assessor_to_Candidate_Ratio": ["...", "..."],
+                            "Evidence": [ 
+                                // For PP and CS, if evidence is provided as a dictionary, convert it to a list of dictionaries:
+                                // Example:
+                                // { "LO": "LO1", "Evidence": "Candidates will create an Excel workbook..." },
+                                // { "LO": "LO2", "Evidence": "Candidates will use Microsoft Word to create..." }
+                                // Otherwise, if provided as a list, include it as is.
+                            ],
+                            "Submission": ["..."],  // Include only if present in the CP
+                            "Marking_Process": ["..."],  // Include only if present in the CP
+                            "Retention_Period": "...",  // Include only if present in the CP
+                            "No_of_Scripts": "..."  // Include only if the method is Role Play and present in the CP
+                        }
+                        // Additional assessment methods
                     ]
                 }
                 ```
-                """,
-            )
 
+                Please ensure that the fields **Type_of_Evidence**, **Manner_of_Submission**, **Marking_Process**, **Retention_Period**, and **No_of_Role_Play_Scripts** are extracted only if they exist in the CP; otherwise, omit these keys from the final JSON output.
+
+                TERMINATE
+                """
+            )
+            
             agent_tasks = {
                 "interpreter": f"""
                 Please extract and structure the following data: {raw_data}.
@@ -464,24 +438,20 @@ def app():
             try:
                 with st.spinner('Extracting Information from Course Proposal...'):
                     # Run the interpreter agent conversation
-                    chat_results = user_proxy.initiate_chats(
-                        [
-                            {
-                                "chat_id": 1,
-                                "recipient": interpreter,
-                                "message": agent_tasks["interpreter"],
-                                "silent": False,
-                                "summary_method": "last_msg",
-                                "max_turns": 2
-                            }
-                        ]
+                    chat_result = user_proxy.initiate_chat(
+                        interpreter,
+                        message=agent_tasks["interpreter"],
+                        max_turns=1  # to avoid infinite loop
                     )
+                    print("\n\n########################### INTERPRETER AUTOGEN COST #############################")
+                    print(chat_result.cost)
+                    print("########################### INTERPRETER AUTOGEN COST #############################\n\n")
             except Exception as e:
                 st.error(f"Error extracting Course Proposal: {e}")
 
             # Extract the final context dictionary from the agent's response
             try:
-                last_message_content = chat_results[-1].chat_history[-1].get("content", "")
+                last_message_content = chat_result.chat_history[-1].get("content", "")
                 if not last_message_content:
                     st.error("No content found in the agent's last message.")
                     return
@@ -493,7 +463,6 @@ def app():
                 if json_match:
                     json_str = json_match.group(1)
                     context = json.loads(json_str)
-                    print(f"CONTEXT JSON MAPPING: \n\n{context}")
                 else:
                     # Try extracting any JSON present in the content
                     json_pattern_alt = re.compile(r'(\{.*\})', re.DOTALL)
@@ -501,7 +470,6 @@ def app():
                     if json_match_alt:
                         json_str = json_match_alt.group(1)
                         context = json.loads(json_str)
-                        print(f"CONTEXT JSON MAPPING: \n\n{context}")
                     else:
                         st.error("No JSON found in the agent's response.")
                         return
@@ -509,8 +477,10 @@ def app():
                 st.error(f"Error parsing context JSON: {e}")
                 return
 
+
             # After obtaining the context
             if context:
+                # st.json(context)
                 # Run web_scrape function to get TGS Ref No and UEN
                 try:
                     with st.spinner('Retrieving TGS Ref No and UEN...'):
@@ -518,7 +488,7 @@ def app():
                         if isinstance(web_scrape_result, dict):
                             # Update context with web_scrape_result
                             context.update(web_scrape_result)
-                        else:
+                        else:   
                             st.warning(f"Web scrape result: {web_scrape_result}")
                     st.session_state['context'] = context  # Store context in session state
                 except Exception as e:

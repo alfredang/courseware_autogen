@@ -211,6 +211,11 @@ def generate_facilitators_guide(context, name_of_organisation, llm_config, sfw_d
             }
         ]
     )
+    print("\n\n########################### FG AUTOGEN COST #############################")
+    for i, chat_res in enumerate(chat_results):
+        print(f"*****{i}th chat*******:")
+        print("Conversation cost: ", chat_res.cost)
+    print("########################### FG AUTOGEN COST #############################\n\n")
 
     fg_output_path = None
     for chat_res in chat_results:

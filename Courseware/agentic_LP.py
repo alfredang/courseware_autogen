@@ -129,6 +129,11 @@ def generate_lesson_plan(context, name_of_organisation, llm_config):
         max_turns=3
     )
 
+
+    print("\n\n########################### LP AUTOGEN COST #############################")
+    print(chat_results.cost)
+    print("########################### LP AUTOGEN COST #############################\n\n")
+
     # Extract the output path from the last agent
     lp_output_path = None
 

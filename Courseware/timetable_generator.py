@@ -218,18 +218,17 @@ def generate_timetable(context, num_of_days, llm_config):
         4. Include the word 'json' in your response.
     """
 
-    chat_results = user_proxy.initiate_chats(
-        [
-            {
-                "chat_id": 1,
-                "recipient": timetable_generator_agent,
-                "message": agent_task,
-                "silent": False,
-                "summary_method": "last_msg",
-                "max_turns": 1
-            }
-        ]
+    chat_result = user_proxy.initiate_chat(
+        timetable_generator_agent,
+        message=agent_task,
+        max_turns=1,
+        silent=False,
+        summary_method="last_msg"
     )
+
+    print("\n\n########################### TIMETABLE AUTOGEN COST #############################")
+    print(chat_result.cost)
+    print("########################### TIMETABLE AUTOGEN COST #############################\n\n")
 
     timetable_response = timetable_generator_agent.last_message()["content"]
 
