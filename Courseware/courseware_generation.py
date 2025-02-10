@@ -1,45 +1,47 @@
+#############################
 # courseware_generation.py
-
+#############################
 from Courseware.agentic_LG import generate_learning_guide
 from Courseware.agentic_AP import generate_assessment_plan
-from Courseware.agentic_FG import generate_facilitators_guide
-from Courseware.agentic_LP import generate_lesson_plan
 from Courseware.timetable_generator import generate_timetable
+from Courseware.agentic_LP import generate_lesson_plan
+from Courseware.agentic_FG import generate_facilitators_guide
+import os
+import re
+import json 
+import time
+import asyncio
 from datetime import datetime
-from autogen import UserProxyAgent, AssistantAgent
-from bs4 import BeautifulSoup
+import streamlit as st
+import urllib.parse
+from selenium import webdriver
 from docx import Document
+from docx.text.paragraph import Paragraph
 from docx.oxml.text.paragraph import CT_P
 from docx.oxml.table import CT_Tbl
 from docx.table import Table
-from docx.text.paragraph import Paragraph
 from selenium import webdriver
+from bs4 import BeautifulSoup
+from pydantic import BaseModel, Field, ValidationError, field_validator
+from typing import List, Optional
+from autogen_agentchat.agents import AssistantAgent, CodeExecutorAgent
+from autogen_agentchat.conditions import TextMentionTermination, MaxMessageTermination
+from autogen_agentchat.messages import TextMessage
+from autogen_agentchat.ui import Console
+from autogen_core import CancellationToken
+from autogen_ext.code_executors.local import LocalCommandLineCodeExecutor
+from autogen_agentchat.teams import RoundRobinGroupChat
+from autogen_ext.models.openai import OpenAIChatCompletionClient
 
-import os
-import dotenv
-import requests
-import json
-import re
-import streamlit as st
-import urllib.parse
-import time
-
-
-# Initialize session state variables
-if 'processing_done' not in st.session_state:
-    st.session_state['processing_done'] = False
+if 'context' not in st.session_state:
+    st.session_state['context'] = None
 if 'lg_output' not in st.session_state:
     st.session_state['lg_output'] = None
 if 'ap_output' not in st.session_state:
     st.session_state['ap_output'] = None
-if 'lp_output' not in st.session_state:
-    st.session_state['lp_output'] = None
-if 'fg_output' not in st.session_state:
-    st.session_state['fg_output'] = None
-if 'context' not in st.session_state:
-    st.session_state['context'] = None
+if 'asr_output' not in st.session_state:
+    st.session_state['asr_output'] = None
 
-# Function to save uploaded files
 def save_uploaded_file(uploaded_file, save_dir):
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
@@ -48,60 +50,105 @@ def save_uploaded_file(uploaded_file, save_dir):
         f.write(uploaded_file.getbuffer())
     return file_path
 
-# Step 1: Parse the CP document
-def parse_cp_document(input_dir):
-    # Load the document
-    doc = Document(input_dir)
+############################################################
+# 1. Pydantic Models
+############################################################
+class Topic(BaseModel):
+    Topic_Title: str
+    Bullet_Points: List[str]
 
-    # Initialize containers
-    data = {
-        "Course_Proposal_Form": {}
-    }
+class KDescription(BaseModel):
+    K_number: str
+    Description: str
 
-    # Function to parse tables with advanced duplication check
+class ADescription(BaseModel):
+    A_number: str
+    Description: str
+
+class LearningUnit(BaseModel):
+    LU_Title: str
+    Topics: List[Topic]
+    LO: str
+    K_numbering_description: List[KDescription]
+    A_numbering_description: List[ADescription]
+    Assessment_Methods: List[str]
+    Instructional_Methods: List[str]
+
+class EvidenceDetail(BaseModel):
+    LO: str
+    Evidence: str
+
+class AssessmentMethodDetail(BaseModel):
+    Assessment_Method: str
+    Method_Abbreviation: str
+    Total_Delivery_Hours: str
+    Assessor_to_Candidate_Ratio: List[str]
+    Evidence: Optional[List[EvidenceDetail]] = None
+    Submission: Optional[List[str]] = None
+    Marking_Process: Optional[List[str]] = None
+    Retention_Period: Optional[str] = None
+
+class CourseData(BaseModel):
+    Date: str 
+    Year: str
+    Name_of_Organisation: str
+    Course_Title: str
+    TSC_Title: str
+    TSC_Code: str
+    Total_Training_Hours: str 
+    Total_Assessment_Hours: str 
+    Total_Course_Duration_Hours: str 
+    Learning_Units: List[LearningUnit]
+    Assessment_Methods_Details: List[AssessmentMethodDetail]
+
+class Session(BaseModel):
+    Time: str
+    Instructions: str  # For activities, include only the activity header here.
+    Instructional_Methods: str
+    Resources: str
+
+class DayLessonPlan(BaseModel):
+    Day: str
+    Sessions: List[Session]
+
+class LessonPlan(BaseModel):
+    lesson_plan: List[DayLessonPlan]
+
+############################################################
+# 2. Course Proposal Document Parsing
+############################################################
+def parse_cp_document(input_file):
+    doc = Document(input_file)
+    data = {"Course_Proposal_Form": {}}
+
     def parse_table(table):
-        rows = []
-        for row in table.rows:
-            # Process each cell and ensure unique content within the row
-            cells = []
-            for cell in row.cells:
-                cell_text = cell.text.strip()
-                if cell_text not in cells:
-                    cells.append(cell_text)
-            # Ensure unique rows within the table
-            if cells not in rows:
-                rows.append(cells)
-        return rows
+        return [[cell.text.strip() for cell in row.cells] for row in table.rows]
 
-    # Function to add text and table content to a section
     def add_content_to_section(section_name, content):
         if section_name not in data["Course_Proposal_Form"]:
             data["Course_Proposal_Form"][section_name] = []
-        # Check for duplication before adding content
         if content not in data["Course_Proposal_Form"][section_name]:
             data["Course_Proposal_Form"][section_name].append(content)
 
-    # Variables to track the current section
     current_section = None
-
-    # Iterate through the elements of the document
     for element in doc.element.body:
-        if isinstance(element, CT_P):  # It's a paragraph
+        if isinstance(element, CT_P):  
             para = Paragraph(element, doc)
             text = para.text.strip()
             if text.startswith("Part"):
-                current_section = text  # Get the part name (e.g., Part 1, Part 2)
+                current_section = text
             elif text:
                 add_content_to_section(current_section, text)
-        elif isinstance(element, CT_Tbl):  # It's a table
+        elif isinstance(element, CT_Tbl):  
             tbl = Table(element, doc)
-            table_content = parse_table(tbl)
             if current_section:
-                add_content_to_section(current_section, {"table": table_content})
+                add_content_to_section(current_section, {"table": parse_table(tbl)})
 
     return data
 
-# Web scraping function integrated directly
+############################################################
+# 2. Web Scrape TGS and UEN information from MySkillsFuture portal
+############################################################
 def web_scrape(course_title: str, name_of_org: str) -> str:
     # Format the course title for the URL
     formatted_course_title = urllib.parse.quote(course_title)
@@ -169,6 +216,105 @@ def web_scrape(course_title: str, name_of_org: str) -> str:
     finally:
         driver.quit()
 
+
+async def interpret_cp(raw_data: dict, model_clent: OpenAIChatCompletionClient) -> dict:
+        # Interpreter Agent with structured output enforcement
+    interpreter = AssistantAgent(
+        name="Interpreter",
+        model_client=model_clent,
+        system_message=f"""
+        You are an AI assistant that helps extract specific information from a JSON object containing a Course Proposal Form (CP). Your task is to interpret the JSON data, regardless of its structure, and extract the required information accurately.
+
+        ---
+        
+        **Task:** Extract the following information from the provided JSON data:
+
+        ### Part 1: Particulars of Course
+
+        - Name of Organisation
+        - Course Title
+        - TSC Title
+        - TSC Code
+        - Total Training Hours (calculated as the sum of Classroom Facilitation, Workplace Learning: On-the-Job (OJT), Practicum, Practical, E-learning: Synchronous and Asynchronous), formatted with units (e.g., "30 hrs", "1 hr")
+        - Total Assessment Hours, formatted with units (e.g., "2 hrs")
+        - Total Course Duration Hours, formatted with units (e.g., "42 hrs")
+
+        ### Part 3: Curriculum Design
+
+        From the Learning Units and Topics Table:
+
+        For each Learning Unit (LU):
+        - Learning Unit Title (include the "LUx: " prefix)
+        - Topics Covered Under Each LU:
+        - For each Topic:
+            - **Topic_Title** (include the "Topic x: " prefix and the associated K and A statements in parentheses)
+            - **Bullet_Points** (a list of bullet points under the topic)
+        - Learning Outcomes (LOs) (include the "LOx: " prefix for each LO)
+        - Numbering and Description for the "K" (Knowledge) Statements (as a list of dictionaries with keys "K_number" and "Description")
+        - Numbering and Description for the "A" (Ability) Statements (as a list of dictionaries with keys "A_number" and "Description")
+        - **Assessment_Methods** (a list of assessment method abbreviations; e.g., ["WA-SAQ", "CS"])
+        - **Instructional_Methods** (a list of instructional method abbreviations or names)
+
+        ### Part E: Details of Assessment Methods Proposed
+
+        For each Assessment Method in the CP, extract:
+        - **Assessment_Method** (always use the full term, e.g., "Written Assessment - Short Answer Questions", "Practical Performance", "Case Study", "Oral Questioning", "Role Play")
+        - **Method_Abbreviation** (if provided in parentheses or generated according to the rules)
+        - **Total_Delivery_Hours** (formatted with units, e.g., "1 hr")
+        - **Assessor_to_Candidate_Ratio** (a list of minimum and maximum ratios, e.g., ["1:3 (Min)", "1:5 (Max)"])
+        
+        **Additionally, if the CP explicitly provides the following fields, extract them. Otherwise, do not include them in the final output:**
+        - **Type_of_Evidence**  
+        - For PP and CS assessment methods, the evidence may be provided as a dictionary where keys are LO identifiers (e.g., "LO1", "LO2", "LO3") and values are the corresponding evidence text. In that case, convert the dictionary into a list of dictionaries with keys `"LO"` and `"Evidence"`.  
+        - If the evidence is already provided as a list (for example, a list of strings or a list of dictionaries), keep it as is.
+        - **Manner_of_Submission** (as a list, e.g., ["Submission 1", "Submission 2"])
+        - **Marking_Process** (as a list, e.g., ["Process 1", "Process 2"])
+        - **Retention_Period**: **Extract the complete retention description exactly as provided in the CP.** 
+        - **No_of_Role_Play_Scripts** (only if the assessment method is Role Play and this information is provided)
+
+        ---
+        
+        **Instructions:**
+        
+        - Carefully parse the JSON data and locate the sections corresponding to each part.
+        - Even if the JSON structure changes, use your understanding to find and extract the required information.
+        - Ensure that the `Topic_Title` includes the "Topic x: " prefix and the associated K and A statements in parentheses exactly as they appear.
+        - For Learning Outcomes (LOs), always include the "LOx: " prefix (where x is the number).
+        - Present the extracted information in a structured JSON format where keys correspond exactly to the placeholders required for the Word document template.
+        - Ensure all extracted information is normalized by:
+            - Replacing en dashes (–) and em dashes (—) with hyphens (-)
+            - Converting curly quotes (“ ”) to straight quotes (")
+            - Replacing other non-ASCII characters with their closest ASCII equivalents.
+        - **Time fields** must include units (e.g., "40 hrs", "1 hr", "2 hrs").
+        - For `Assessment_Methods`, always use the abbreviations (e.g., WA-SAQ, PP, CS, OQ, RP) as per the following rules:
+            1. Use the abbreviation provided in parent  heses if available.
+            2. Otherwise, generate an abbreviation by taking the first letters of the main words (ignoring articles/prepositions) and join with hyphens.
+            3. For methods containing "Written Assessment", always prefix with "WA-".
+            4. If duplicate or multiple variations exist, use the standard abbreviation.
+        - **Important:** Verify that the sum of `Total_Delivery_Hours` for all assessment methods equals the `Total_Assessment_Hours`. If individual delivery hours for assessment methods are not specified, divide the `Total_Assessment_Hours` equally among them.
+        - For bullet points in each topic, ensure that the number of bullet points exactly matches those in the CP. Re-extract if discrepancies occur.
+        - Do not include any extraneous information or duplicate entries.
+
+        Generate structured output matching this schema:
+        {json.dumps(CourseData.model_json_schema(), indent=2)}
+        """,
+    )
+
+    agent_task = f"""
+    Please extract and structure the following data: {raw_data}.
+    **Return the extracted information as a complete JSON dictionary containing the specified fields. Do not truncate or omit any data. Include all fields and their full content. Do not use '...' or any placeholders to replace data.**
+    Simply return the JSON dictionary object directly.
+    """
+
+    # Process sample input
+    response = await interpreter.on_messages(
+        [TextMessage(content=agent_task, source="user")], CancellationToken()
+    )
+
+    context = json.loads(response.chat_message.content)
+    return context
+
+# Streamlit App
 def app():
     # Streamlit UI components
     st.title("Courseware Document Generator")
@@ -221,9 +367,10 @@ def app():
     # Step 4: Generate Documents
     if st.button("Generate Documents"):
         if cp_file is not None and selected_org:
-            # Save the uploaded CP file
-            # cp_input_dir = save_uploaded_file(cp_file, 'input/CP')
-            # st.success(f"CP document saved to {cp_input_dir}")
+
+            OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
+            GENERATION_MODEL_NAME = st.secrets["GENERATION_MODEL"]
+            REPLACEMENT_MODEL_NAME = st.secrets["REPLACEMENT_MODEL"]
 
             # Step 1: Parse the CP document
             raw_data = parse_cp_document(cp_file)
@@ -235,252 +382,51 @@ def app():
             raw_data["Date"] = current_date
             raw_data["Year"] = year
 
-            # Load environment variables
-            dotenv.load_dotenv()
-
-            # Load API key from environment
-            # OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
-            OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
-            GENERATION_MODEL_NAME = st.secrets["GENERATION_MODEL"]
-            REPLACEMENT_MODEL_NAME = st.secrets["REPLACEMENT_MODEL"]
-
             if not OPENAI_API_KEY:
                 raise ValueError("OPENAI_API_KEY not found in environment variables.")
             if not GENERATION_MODEL_NAME:
                 raise ValueError("MODEL_NAME not found in environment variables.")
             if not REPLACEMENT_MODEL_NAME:
                 raise ValueError("MODEL_NAME not found in environment variables.")
-            
-            gen_config_list = [{"model": GENERATION_MODEL_NAME,"api_key": OPENAI_API_KEY}]
-            rep_config_list = [{"model": REPLACEMENT_MODEL_NAME,"api_key": OPENAI_API_KEY}]
 
-            config_list_deepseek ={
-                "config_list":[
-                    {
-                        "model": "deepseek/deepseek-r1",
-                        "base_url": "https://openrouter.ai/api/v1",
-                        "api_key": os.getenv("openrouter_api_key"),  # or omit if set in environment
-                        "price": [0.00055, 0.00219],
-                    },
-                ],
-                "cache_seed": None,  # Disable caching.
-            }
-            llm_config = {"config_list": gen_config_list, "timeout": 360}
-            rep_config = {"config_list": rep_config_list, "timeout": 360}
-
-            # 1. User Proxy Agent (Provides unstructured data to the interpreter)
-            user_proxy = UserProxyAgent(
-                name="User",
-                is_termination_msg=lambda msg: msg.get("content") is not None and "TERMINATE" in msg["content"],
-                human_input_mode="NEVER",  # Automatically provides unstructured data
-                code_execution_config={"work_dir": "output", "use_docker": False} # Takes data from a directory
+            deepseek_struct_model_client = OpenAIChatCompletionClient(
+                model="deepseek-chat",
+                base_url="https://api.deepseek.com",
+                response_format=CourseData,  # Structured output currently unavailable for DeepSeek
+                temperature=0,
+                api_key=st.secrets["DEEPSEEK_API_KEY"],
+                model_capabilities={
+                    "vision": False,
+                    "function_calling": True,
+                    "json_output": True,
+                },
             )
 
-            # 2. Interpreter Agent (Converts unstructured data into structured data)
-            interpreter = AssistantAgent(
-                name="Interpreter",
-                llm_config=llm_config,
-                system_message="""
-                You are an AI assistant that helps extract specific information from a JSON object containing a Course Proposal Form (CP). Your task is to interpret the JSON data, regardless of its structure, and extract the required information accurately.
-
-                ---
-                
-                **Task:** Extract the following information from the provided JSON data:
-
-                ### Part 1: Particulars of Course
-
-                - Name of Organisation
-                - Course Title
-                - TSC Title
-                - TSC Code
-                - Total Training Hours (calculated as the sum of Classroom Facilitation, Workplace Learning: On-the-Job (OJT), Practicum, Practical, E-learning: Synchronous and Asynchronous), formatted with units (e.g., "30 hrs", "1 hr")
-                - Total Assessment Hours, formatted with units (e.g., "2 hrs")
-                - Total Course Duration Hours, formatted with units (e.g., "42 hrs")
-
-                ### Part 3: Curriculum Design
-
-                From the Learning Units and Topics Table:
-
-                For each Learning Unit (LU):
-                - Learning Unit Title (include the "LUx: " prefix)
-                - Topics Covered Under Each LU:
-                - For each Topic:
-                    - **Topic_Title** (include the "Topic x: " prefix and the associated K and A statements in parentheses)
-                    - **Bullet_Points** (a list of bullet points under the topic)
-                - Learning Outcomes (LOs) (include the "LOx: " prefix for each LO)
-                - Numbering and Description for the "K" (Knowledge) Statements (as a list of dictionaries with keys "K_number" and "Description")
-                - Numbering and Description for the "A" (Ability) Statements (as a list of dictionaries with keys "A_number" and "Description")
-                - **Assessment_Methods** (a list of assessment method abbreviations; e.g., ["WA-SAQ", "CS"])
-                - **Instructional_Methods** (a list of instructional method abbreviations or names)
-
-                ### Part E: Details of Assessment Methods Proposed
-
-                For each Assessment Method in the CP, extract:
-                - **Assessment_Method** (always use the full term, e.g., "Written Assessment - Short Answer Questions", "Practical Performance", "Case Study", "Oral Questioning", "Role Play")
-                - **Method_Abbreviation** (if provided in parentheses or generated according to the rules)
-                - **Total_Delivery_Hours** (formatted with units, e.g., "1 hr")
-                - **Assessor_to_Candidate_Ratio** (a list of minimum and maximum ratios, e.g., ["1:3 (Min)", "1:5 (Max)"])
-                
-                **Additionally, if the CP explicitly provides the following fields, extract them. Otherwise, do not include them in the final output:**
-                - **Type_of_Evidence**  
-                - For PP and CS assessment methods, the evidence may be provided as a dictionary where keys are LO identifiers (e.g., "LO1", "LO2", "LO3") and values are the corresponding evidence text. In that case, convert the dictionary into a list of dictionaries with keys `"LO"` and `"Evidence"`.  
-                - If the evidence is already provided as a list (for example, a list of strings or a list of dictionaries), keep it as is.
-                - **Manner_of_Submission** (as a list, e.g., ["Submission 1", "Submission 2"])
-                - **Marking_Process** (as a list, e.g., ["Process 1", "Process 2"])
-                - **Retention_Period** (formatted with units, e.g., "3 years")
-                - **No_of_Role_Play_Scripts** (only if the assessment method is Role Play and this information is provided)
-
-                ---
-                
-                **Instructions:**
-                
-                - Carefully parse the JSON data and locate the sections corresponding to each part.
-                - Even if the JSON structure changes, use your understanding to find and extract the required information.
-                - Ensure that the `Topic_Title` includes the "Topic x: " prefix and the associated K and A statements in parentheses exactly as they appear.
-                - For Learning Outcomes (LOs), always include the "LOx: " prefix (where x is the number).
-                - Present the extracted information in a structured JSON format where keys correspond exactly to the placeholders required for the Word document template.
-                - Ensure all extracted information is normalized by:
-                    - Replacing en dashes (–) and em dashes (—) with hyphens (-)
-                    - Converting curly quotes (“ ”) to straight quotes (")
-                    - Replacing other non-ASCII characters with their closest ASCII equivalents.
-                - **Time fields** must include units (e.g., "40 hrs", "1 hr", "2 hrs").
-                - For `Assessment_Methods`, always use the abbreviations (e.g., WA-SAQ, PP, CS, OQ, RP) as per the following rules:
-                    1. Use the abbreviation provided in parentheses if available.
-                    2. Otherwise, generate an abbreviation by taking the first letters of the main words (ignoring articles/prepositions) and join with hyphens.
-                    3. For methods containing "Written Assessment", always prefix with "WA-".
-                    4. If duplicate or multiple variations exist, use the standard abbreviation.
-                - **Important:** Verify that the sum of `Total_Delivery_Hours` for all assessment methods equals the `Total_Assessment_Hours`. If individual delivery hours for assessment methods are not specified, divide the `Total_Assessment_Hours` equally among them.
-                - For bullet points in each topic, ensure that the number of bullet points exactly matches those in the CP. Re-extract if discrepancies occur.
-                - Do not include any extraneous information or duplicate entries.
-
-                **Final Output Format:**
-
-                Return a JSON dictionary object with the following structure (use double quotes for all field names and string values):
-
-                ```json
-                {
-                    "Date": "...",
-                    "Year": "...",
-                    "Name_of_Organisation": "...",
-                    "Course_Title": "...",
-                    "TSC_Title": "...",
-                    "TSC_Code": "...",
-                    "Total_Training_Hours": "...",  // e.g., "38 hrs"
-                    "Total_Assessment_Hours": "...",  // e.g., "2 hrs"
-                    "Total_Course_Duration_Hours": "...",  // e.g., "40 hrs"
-                    "Learning_Units": [
-                        {
-                            "LU_Title": "...",
-                            "Topics": [
-                                {
-                                    "Topic_Title": "Topic x: ... (Kx, Ax)",
-                                    "Bullet_Points": ["...", "..."]
-                                }
-                                // Additional topics
-                            ],
-                            "LO": "LOx: ...",
-                            "K_numbering_description": [
-                                {
-                                    "K_number": "K1",
-                                    "Description": "..."
-                                }
-                                // Additional K statements
-                            ],
-                            "A_numbering_description": [
-                                {
-                                    "A_number": "A1",
-                                    "Description": "..."
-                                }
-                                // Additional A statements
-                            ],
-                            "Assessment_Methods": ["...", "..."],
-                            "Instructional_Methods": ["...", "..."]
-                        }
-                        // Additional Learning Units
-                    ],
-                    "Assessment_Methods_Details": [
-                        {
-                            "Assessment_Method": "...", // Full term
-                            "Method_Abbreviation": "...", // e.g., WA-SAQ, PP, CS, OQ, RP
-                            "Total_Delivery_Hours": "...",  // e.g., "1 hr"
-                            "Assessor_to_Candidate_Ratio": ["...", "..."],
-                            "Evidence": [ 
-                                // For PP and CS, if evidence is provided as a dictionary, convert it to a list of dictionaries:
-                                // Example:
-                                // { "LO": "LO1", "Evidence": "Candidates will create an Excel workbook..." },
-                                // { "LO": "LO2", "Evidence": "Candidates will use Microsoft Word to create..." }
-                                // Otherwise, if provided as a list, include it as is.
-                            ],
-                            "Submission": ["..."],  // Include only if present in the CP
-                            "Marking_Process": ["..."],  // Include only if present in the CP
-                            "Retention_Period": "...",  // Include only if present in the CP
-                            "No_of_Scripts": "..."  // Include only if the method is Role Play and present in the CP
-                        }
-                        // Additional assessment methods
-                    ]
-                }
-                ```
-
-                Please ensure that the fields **Type_of_Evidence**, **Manner_of_Submission**, **Marking_Process**, **Retention_Period**, and **No_of_Role_Play_Scripts** are extracted only if they exist in the CP; otherwise, omit these keys from the final JSON output.
-
-                TERMINATE
-                """
+            openai_struct_model_client = OpenAIChatCompletionClient(
+                model=GENERATION_MODEL_NAME,
+                response_format=CourseData,  # Structured output config
+                temperature=0,
+                api_key=OPENAI_API_KEY
             )
-            
-            agent_tasks = {
-                "interpreter": f"""
-                Please extract and structure the following data: {raw_data}.
-                **Return the extracted information as a complete JSON dictionary containing the specified fields. Do not truncate or omit any data. Include all fields and their full content. Do not use '...' or any placeholders to replace data.**
-                Simply return the JSON dictionary object directly and 'TERMINATE'.
-                """
-            }
 
-            try:
-                with st.spinner('Extracting Information from Course Proposal...'):
-                    # Run the interpreter agent conversation
-                    chat_result = user_proxy.initiate_chat(
-                        interpreter,
-                        message=agent_tasks["interpreter"],
-                        max_turns=1  # to avoid infinite loop
-                    )
-                    print("\n\n########################### INTERPRETER AUTOGEN COST #############################")
-                    print(chat_result.cost)
-                    print("########################### INTERPRETER AUTOGEN COST #############################\n\n")
-            except Exception as e:
-                st.error(f"Error extracting Course Proposal: {e}")
+            timetable_openai_struct_model_client = OpenAIChatCompletionClient(
+                model=GENERATION_MODEL_NAME,
+                response_format=LessonPlan,  # Structured output config
+                temperature=0,
+                api_key=OPENAI_API_KEY
+            )
 
-            # Extract the final context dictionary from the agent's response
-            try:
-                last_message_content = chat_result.chat_history[-1].get("content", "")
-                if not last_message_content:
-                    st.error("No content found in the agent's last message.")
-                    return
-                # Clean the content to ensure it's in the expected format
-                last_message_content = last_message_content.strip()
-                # Extract JSON from triple backticks
-                json_pattern = re.compile(r'```json\s*(\{.*?\})\s*```', re.DOTALL)
-                json_match = json_pattern.search(last_message_content)
-                if json_match:
-                    json_str = json_match.group(1)
-                    context = json.loads(json_str)
-                else:
-                    # Try extracting any JSON present in the content
-                    json_pattern_alt = re.compile(r'(\{.*\})', re.DOTALL)
-                    json_match_alt = json_pattern_alt.search(last_message_content)
-                    if json_match_alt:
-                        json_str = json_match_alt.group(1)
-                        context = json.loads(json_str)
-                    else:
-                        st.error("No JSON found in the agent's response.")
-                        return
-            except json.JSONDecodeError as e:
-                st.error(f"Error parsing context JSON: {e}")
-                return
+            openai_model_client = OpenAIChatCompletionClient(
+                model=REPLACEMENT_MODEL_NAME,
+                temperature=0,
+                api_key=OPENAI_API_KEY
+            )
 
+            context = asyncio.run(interpret_cp(raw_data=raw_data, model_clent=openai_struct_model_client))
 
             # After obtaining the context
             if context:
-                # st.json(context)
+                st.json(context)
                 # Run web_scrape function to get TGS Ref No and UEN
                 try:
                     with st.spinner('Retrieving TGS Ref No and UEN...'):
@@ -493,29 +439,30 @@ def app():
                     st.session_state['context'] = context  # Store context in session state
                 except Exception as e:
                     st.error(f"Error in web scraping: {e}")
-                    return
 
                 # Generate Learning Guide
                 if generate_lg:
                     try:
                         with st.spinner('Generating Learning Guide...'):
-                            lg_output = generate_learning_guide(context, selected_org, llm_config)
+                            lg_output = asyncio.run(generate_learning_guide(context, selected_org, openai_model_client))
                         st.success(f"Learning Guide generated: {lg_output}")
                         st.session_state['lg_output'] = lg_output  # Store output path in session state
-           
                     except Exception as e:
                         st.error(f"Error generating Learning Guide: {e}")
 
                 # Generate Assessment Plan
                 if generate_ap:
                     try:
-                        with st.spinner('Generating Assessment Plan...'):
-                            ap_output = generate_assessment_plan(context, selected_org, rep_config)
+                        with st.spinner('Generating Assessment Plan and Assessment Summary Record...'):
+                            ap_output, asr_output = asyncio.run(generate_assessment_plan(context, selected_org, openai_model_client))
                         st.success(f"Assessment Plan generated: {ap_output}")
+                        st.success(f"Assessment Summary Record generated: {asr_output}")
+
                         st.session_state['ap_output'] = ap_output  # Store output path in session state
-   
+                        st.session_state['asr_output'] = asr_output  # Store output path in session state
+
                     except Exception as e:
-                        st.error(f"Error generating Assessment Plan: {e}")
+                        st.error(f"Error generating Assessment Documents: {e}")
 
                 # Check if any documents require the timetable
                 needs_timetable = (generate_lp or generate_fg)
@@ -526,7 +473,7 @@ def app():
                         with st.spinner("Generating Timetable..."):
                             hours = int(''.join(filter(str.isdigit, context["Total_Course_Duration_Hours"])))
                             num_of_days = hours / 8
-                            timetable_data = generate_timetable(context, num_of_days, llm_config)
+                            timetable_data = asyncio.run(generate_timetable(context, num_of_days, timetable_openai_struct_model_client))
                             context['lesson_plan'] = timetable_data['lesson_plan']
                         st.session_state['context'] = context  # Update context in session state
                     except Exception as e:
@@ -537,7 +484,7 @@ def app():
                 if generate_lp:
                     try:
                         with st.spinner("Generating Lesson Plan..."):
-                            lp_output = generate_lesson_plan(context, selected_org, rep_config)
+                            lp_output = asyncio.run(generate_lesson_plan(context, selected_org, openai_model_client))
                         st.success(f"Lesson Plan generated: {lp_output}")
                         st.session_state['lp_output'] = lp_output  # Store output path in session state
                         # Read the file and provide a download button
@@ -549,7 +496,7 @@ def app():
                 if generate_fg:
                     try:
                         with st.spinner("Generating Facilitator's Guide..."):
-                            fg_output = generate_facilitators_guide(context, selected_org, rep_config)
+                            fg_output = asyncio.run(generate_facilitators_guide(context, selected_org, openai_model_client))
                         st.success(f"Facilitator's Guide generated: {fg_output}")
                         st.session_state['fg_output'] = fg_output  # Store output path in session state
 

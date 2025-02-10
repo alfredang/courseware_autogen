@@ -1,16 +1,18 @@
 # agentic_LP.py
 import os
-import dotenv
 import re
 import tempfile
 import streamlit as st
-from autogen import UserProxyAgent, AssistantAgent
+import json
+from autogen_agentchat.agents import AssistantAgent
+from autogen_core import CancellationToken
+from autogen_agentchat.messages import TextMessage
 from PIL import Image
 from docx.shared import Inches
 from docxtpl import DocxTemplate, InlineImage
 
 
-def generate_lesson_plan(context, name_of_organisation, llm_config):
+async def generate_lesson_plan(context, name_of_organisation, model_client):
     """
     Generate a Lesson Plan document based on the provided Course Proposal (CP) document.
 
@@ -22,45 +24,6 @@ def generate_lesson_plan(context, name_of_organisation, llm_config):
         str: Path to the generated Lesson Plan document.
     """
 
-    LP_TEMPLATE_DIR = "Courseware/input/Template/LP_TGS-Ref-No_Course-Title_v1.docx" 
-
-    # Ensure 'lesson_plan' exists in context
-    if 'lesson_plan' not in context:
-        raise ValueError("Lesson plan not found in context. Ensure it is generated before calling this function.")
-
-    # 1. User Proxy Agent (Provides unstructured data to the interpreter)
-    user_proxy = UserProxyAgent(
-        name="User",
-        is_termination_msg=lambda msg: msg.get("content") is not None and "TERMINATE" in msg["content"],
-        human_input_mode="NEVER",  # Automatically provides unstructured data
-        code_execution_config={"work_dir": "output", "use_docker": False} # Takes data from a directory
-    )
-
-    # LP Template Agent
-    lp_assistant = AssistantAgent(
-        name="LP_Template_Agent",
-        system_message="""
-        You are responsible for generating the LP document using the collected data.
-        
-        **Key Responsibilities:**
-        1. **Document Generation:**
-            - **Receive the updated JSON dictionary containing all the course information.**
-            - **Call the `generate_document` function using only the `context` arguments. Do not pass any additional arguments.**
-            - **Verify the document was actually generated successfully.**
-            - **If generation fails, retry once with corrected parameters.**
-
-        **Example function call:**
-        ```python
-        generate_document(context=json context)
-        ```
-
-        **Do not proceed until you have confirmed successful document generation.**
-        """,
-        llm_config=llm_config,
-    )
-
-    @user_proxy.register_for_execution()
-    @lp_assistant.register_for_llm(name="generate_document", description="Generate the Lesson Plan document")
     def generate_document(context: dict) -> str:
         doc = DocxTemplate(LP_TEMPLATE_DIR)
         
@@ -97,6 +60,7 @@ def generate_lesson_plan(context, name_of_organisation, llm_config):
 
         # Add the logo to the context
         context['company_logo'] = logo_image
+        context['Name_of_Organisation'] = name_of_organisation
 
         doc.render(context)
         # Use a temporary file to save the document
@@ -105,6 +69,36 @@ def generate_lesson_plan(context, name_of_organisation, llm_config):
             output_path = tmp_file.name  # Get the path to the temporary file
 
         return output_path  # Return the path to the temporary file
+
+    LP_TEMPLATE_DIR = "Courseware/input/Template/LP_TGS-Ref-No_Course-Title_v1.docx" 
+
+    # Ensure 'lesson_plan' exists in context
+    if 'lesson_plan' not in context:
+        raise ValueError("Lesson plan not found in context. Ensure it is generated before calling this function.")
+
+    # LP Template Agent
+    lp_assistant = AssistantAgent(
+        name="LP_Template_Agent",
+        model_client=model_client,
+        tools=[generate_document],
+        system_message="""
+        You are responsible for generating the LP document using the collected data.
+        
+        **Key Responsibilities:**
+        1. **Document Generation:**
+            - **Receive the updated JSON dictionary containing all the course information.**
+            - **Call the `generate_document` function using only the `context` arguments. Do not pass any additional arguments.**
+            - **Verify the document was actually generated successfully.**
+            - **If generation fails, retry once with corrected parameters.**
+
+        **Example function call:**
+        ```python
+        generate_document(context=json context)
+        ```
+
+        **Do not proceed until you have confirmed successful document generation.**
+        """,
+    )
 
     agent_task = f"""
         1. Take the complete dictionary provided:
@@ -120,35 +114,17 @@ def generate_lesson_plan(context, name_of_organisation, llm_config):
         5. Return 'TERMINATE' when the task is done.
         """
     
-    # Run the agent conversation
-    chat_results = user_proxy.initiate_chat(
-        recipient=lp_assistant,
-        message=agent_task,
-        silent=False,
-        summary_method="last_msg",
-        max_turns=3
+     # Process sample input
+    response = await lp_assistant.on_messages(
+        [TextMessage(content=agent_task, source="user")], CancellationToken()
     )
 
+    print(response.chat_message.content)
 
-    print("\n\n########################### LP AUTOGEN COST #############################")
-    print(chat_results.cost)
-    print("########################### LP AUTOGEN COST #############################\n\n")
+    # # Extract the output path from the last agent
+    # lp_output_path = None
 
-    # Extract the output path from the last agent
-    lp_output_path = None
-
-    # Check if "TERMINATE" is in the last message content
-    last_message_content = chat_results.chat_history[-1].get("content")
-    if last_message_content is not None and "TERMINATE" in last_message_content:
-        for _, message in enumerate(chat_results.chat_history):
-            content = message.get('content')
-            if content is not None:
-                match = re.search(r'Output Path:\s*(.*\.docx)', content)
-                if match:
-                    lp_output_path = match.group(1).strip()
-                    break
-
-    if lp_output_path:
-            return lp_output_path
-    else:
-        raise Exception("Lesson Plan generation failed.")
+    # if lp_output_path:
+    #         return lp_output_path
+    # else:
+    #     raise Exception("Lesson Plan generation failed.")
