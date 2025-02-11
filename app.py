@@ -6,6 +6,7 @@ import Assessment.assessment_generation as assessment_generation
 import Courseware.courseware_generation  as courseware_generation
 import Brochure.brochure_generation as brochure_generation
 import AnnexAssessment.annex_assessment as annex_assessment
+import SupDocs.sup_doc as sup_doc
 # import Slides.slide_generation as slide_generation
 # from Slides.slide_generation import render_slide_generation_ui
 
@@ -15,7 +16,7 @@ st.set_page_config(layout="wide")
 with st.sidebar:
     selected = option_menu(
         "Tertiary Infotech",  # Title of the sidebar
-        ["Generate CP", "Generate AP/FG/LG/LP", "Generate Assessment", "Generate Slides", "Generate Brochure","Add Assessment to AP"],  # Options
+        ["Generate CP", "Generate AP/FG/LG/LP", "Generate Assessment", "Generate Slides", "Generate Brochure","Add Assessment to AP", "Check Documents"],  # Options
         icons=["filetype-doc", "file-earmark-richtext", "clipboard-check", "filetype-pptx", "files-alt", "folder-symlink"],  # Icon names
         menu_icon="boxes",  # Icon for the sidebar title
         default_index=0,  # Default selected item
@@ -27,6 +28,9 @@ if selected == "Generate CP":
 
 elif selected == "Generate AP/FG/LG/LP":
     courseware_generation.app()  # Display Courseware Generation app
+
+elif selected == "Check Documents":
+    sup_doc.app()
 
 elif selected == "Generate Assessment":
     assessment_generation.app()
