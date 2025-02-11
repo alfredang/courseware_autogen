@@ -32,3 +32,8 @@ llama-index-readers-llama-parse==0.4.0
 llama-index-vector-stores-qdrant==0.4.0
 llama-parse==0.5.14
 llamaindex-py-client==0.1.19
+google-generativeai
+pypdf2
+pymupdf
+gspread
+rapidfuzz
