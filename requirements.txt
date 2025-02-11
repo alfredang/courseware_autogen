@@ -37,3 +37,4 @@ pypdf2
 pymupdf
 gspread
 rapidfuzz
+oauth2client

@@ -16,6 +16,7 @@ import google.generativeai as genai
 from typing import Dict, Any, Union
 from PIL import Image
 import io
+from oauth2client.service_account import ServiceAccountCredentials
 
 # ------------------------------
 # Helper Functions
@@ -64,6 +65,23 @@ def convert_pdf_to_images(file_bytes: bytes) -> list:
 # ------------------------------
 # GOOGLE SHEETS FUNCTIONS
 # ------------------------------
+# def get_google_sheet_data():
+#     # Get the current working directory
+#     current_dir = os.path.dirname(os.path.abspath(__file__))
+
+#     # Construct the full path to the service account JSON file
+#     service_account_path = os.path.join(current_dir, "ssg-api-calls-9d65ee02e639.json")
+#     try:
+#         # gc = gspread.service_account(filename="ssg-api-calls-9d65ee02e639.json")
+#         gc = gspread.service_account(filename=service_account_path)        
+#         spreadsheet = gc.open_by_key("14IjSXJ0pHG23evfULhrLJEFXXsegx3hBNJoNSgRcp1k")
+#         worksheet = spreadsheet.worksheet("Detailed Data View")
+#         data = worksheet.get_all_records()
+#         return data
+#     except Exception as e:
+#         st.error("Error loading Google Sheet data: " + str(e))
+#         return []
+
 def get_google_sheet_data():
     # Get the current working directory
     current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -71,8 +89,13 @@ def get_google_sheet_data():
     # Construct the full path to the service account JSON file
     service_account_path = os.path.join(current_dir, "ssg-api-calls-9d65ee02e639.json")
     try:
-        # gc = gspread.service_account(filename="ssg-api-calls-9d65ee02e639.json")
-        gc = gspread.service_account(filename=service_account_path)        
+        # Define the scope
+        scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+
+        # Authenticate using the service account JSON file
+        credentials = ServiceAccountCredentials.from_json_keyfile_name(service_account_path, scope)
+        gc = gspread.authorize(credentials)
+        
         spreadsheet = gc.open_by_key("14IjSXJ0pHG23evfULhrLJEFXXsegx3hBNJoNSgRcp1k")
         worksheet = spreadsheet.worksheet("Detailed Data View")
         data = worksheet.get_all_records()
