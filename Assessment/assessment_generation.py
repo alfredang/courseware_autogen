@@ -109,7 +109,7 @@ def parse_slides(slides_path, LLAMA_CLOUD_API_KEY, OPENAI_API_KEY, is_multimodal
         md_json_objs = slides_parser.get_json_result(slides_path)
         md_json_list = md_json_objs[0]["pages"]
         
-        image_dicts = slides_parser.get_images(md_json_objs, download_path="data_images")
+        # image_dicts = slides_parser.get_images(md_json_objs, download_path="data_images")
         text_nodes = utils.get_text_nodes(md_json_list, image_dir="data_images")
 
         if not os.path.exists("storage_nodes_summary"):
@@ -122,7 +122,7 @@ def parse_slides(slides_path, LLAMA_CLOUD_API_KEY, OPENAI_API_KEY, is_multimodal
         
         # Cleanup multimodal directories
         if os.path.exists("data_images"):
-            shutil.rmtree("data_images")
+            shutil.rmtree("data_images")    
         if os.path.exists("storage_nodes_summary"):
             shutil.rmtree("storage_nodes_summary")
         return index
@@ -280,8 +280,11 @@ def app():
         selected_types.append("CS")
 
     # Toggle for Multimodal RAG
-    old_multimodal_value = st.session_state.get("old_multimodal_value")
-    current_multimodal_value = st.toggle("Enable Multimodal RAG", value=old_multimodal_value)
+    current_multimodal_value = st.toggle(
+        "Enable Multimodal RAG",
+        value=st.session_state["old_multimodal_value"],
+        key="old_multimodal_value"
+    )
 
     if current_multimodal_value:
         st.warning("⚠️ Multimodal RAG may take longer to process.")
@@ -305,7 +308,6 @@ def app():
             # If the toggle changed, reset the index so we can parse slides anew
             if current_multimodal_value != st.session_state["old_multimodal_value"]:
                 st.session_state["index"] = None
-            st.session_state["old_multimodal_value"] = current_multimodal_value
 
             # Save uploaded files
             fg_filepath = utils.save_uploaded_file(fg_doc_file, "data")
