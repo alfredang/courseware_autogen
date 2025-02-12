@@ -1,0 +1,231 @@
+{
+    "#ADuration": [],
+    "#InstructMethods": [],
+    "#AssessMethods": [
+        "Written Assessment - Short-Answer Questions (WA-SAQ)",
+        "Practical Performance (PP)"
+    ],
+    "#A[0]": [
+        "A1: Establish high level structures and frameworks to guide the development of IT solutions incorporating various processes, hardware and software components"
+    ],
+    "#A[10]": [],
+    "#A[11]": [],
+    "#A[12]": [],
+    "#A[13]": [],
+    "#A[14]": [],
+    "#A[15]": [],
+    "#A[16]": [],
+    "#A[17]": [],
+    "#A[1]": [
+        "A2: Determine relevant design tools or modelling techniques required to develop a solution architecture and blueprint"
+    ],
+    "#A[2]": [
+        "A3: Align requirements of various internal and external stakeholders, as well as technical, functional and service requirements within a solution architecture"
+    ],
+    "#A[3]": [
+        "A4: Coordinate multiple solution architecture components and design activities, ensuring consistency and compatibility within a target framework"
+    ],
+    "#A[4]": [
+        "A5: Articulate value added by the solution to the business needs"
+    ],
+    "#A[5]": [
+        "A6: Establish processes to regularly monitor, test and review solution architecture against business requirements"
+    ],
+    "#A[6]": [],
+    "#A[7]": [],
+    "#A[8]": [],
+    "#A[9]": [],
+    "#Company": [
+        "Tertiary Infotech Pte Ltd"
+    ],
+    "#Conclusion[0]": [
+        "Overall, the structured sequencing of these learning units is designed to address the performance gaps identified in the industry while equipping learners with the necessary attributes to excel in their roles as Kubernetes professionals."
+    ],
+    "#CourseTitle": [
+        "Certified Kubernetes Application Developer (CKAD) Training"
+    ],
+    "#Hours[0]": [
+        15
+    ],
+    "#Hours[1]": [
+        2
+    ],
+    "#Hours[2]": [
+        32
+    ],
+    "#Hours[3]": [
+        "15"
+    ],
+    "#Hours[4]": [],
+    "#IM": [
+        "Classroom",
+        "Didactic Questioning",
+        "Demonstration",
+        "Practice"
+    ],
+    "#KA[0]": [],
+    "#KA[1]": [],
+    "#KA[2]": [],
+    "#KA[3]": [],
+    "#KA[4]": [],
+    "#K[0]": [
+        "K1: Process for refining solution architecture"
+    ],
+    "#K[10]": [],
+    "#K[11]": [],
+    "#K[12]": [],
+    "#K[13]": [],
+    "#K[14]": [],
+    "#K[15]": [],
+    "#K[16]": [],
+    "#K[17]": [],
+    "#K[1]": [
+        "K2: Applications of tools and modelling techniques for creation of solution architecture"
+    ],
+    "#K[2]": [
+        "K3: Technical, functional and service considerations"
+    ],
+    "#K[3]": [
+        "K4: Considerations for multiple aspects of the overall solution including performance, security, latency and other relevant aspect for the solution"
+    ],
+    "#K[4]": [
+        "K5: Standards for coding, scalability, integration and reusability"
+    ],
+    "#K[5]": [
+        "K6: Compatibility among multiple solution architecture components and design activities"
+    ],
+    "#K[6]": [
+        "K7: Techniques to measure a solution's value-add"
+    ],
+    "#K[7]": [],
+    "#K[8]": [],
+    "#K[9]": [],
+    "#LO[0]": [
+        "LO1: Establish high-level structures and frameworks for Kubernetes solutions using appropriate processes and tools."
+    ],
+    "#LO[1]": [
+        "LO2: Align technical, functional, and service requirements within Kubernetes-based solution architectures."
+    ],
+    "#LO[2]": [
+        "LO3: Coordinate multiple Kubernetes solution components to ensure compatibility and meet design framework goals."
+    ],
+    "#LO[3]": [
+        "LO4: Articulate the value of Kubernetes solutions by addressing coding standards, scalability, and reusability."
+    ],
+    "#LO[4]": [
+        "LO5: Establish monitoring and testing processes to validate Kubernetes architectures against business requirements."
+    ],
+    "#LO[5]": [],
+    "#LO[6]": [],
+    "#LO[7]": [],
+    "#LU[0]": [
+        "LU1: Container Image Management"
+    ],
+    "#LU[1]": [
+        "LU2: Deployment Strategies in Kubernetes"
+    ],
+    "#LU[2]": [
+        "LU3: Monitoring and Debugging Kubernetes Applications"
+    ],
+    "#LU[3]": [
+        "LU4: Security and Configuration Management in Kubernetes"
+    ],
+    "#LU[4]": [
+        "LU5: Networking and Service Access in Kubernetes"
+    ],
+    "#LU[5]": [],
+    "#LU[6]": [],
+    "#LU[7]": [],
+    "#LUex[0]": [
+        "LU1 lays the foundational knowledge by introducing learners to the processes of defining, building, and modifying container images. This unit emphasizes the importance of choosing the right workload resources and understanding multi-container Pod design patterns. By establishing this foundational knowledge, learners are equipped to effectively design and implement high-level structures and frameworks for Kubernetes solutions, addressing the performance gap of inefficient deployment processes."
+    ],
+    "#LUex[1]": [
+        "Building on the foundational knowledge, LU2 delves into practical aspects of application deployment, focusing on using Kubernetes primitives to implement common deployment strategies. This unit enhances learners' ability to align technical, functional, and service requirements within Kubernetes-based solution architectures, addressing the performance gap of solutions that do not meet stakeholder needs."
+    ],
+    "#LUex[2]": [
+        "LU3 escalates to a higher level of complexity where learners explore application observability and maintenance. This unit equips learners with skills to coordinate multiple Kubernetes solution components, ensuring compatibility and adherence to design framework goals, thus addressing the performance gap related to coordination challenges."
+    ],
+    "#LUex[3]": [
+        "LU4 focuses on the importance of coding standards, scalability, and reusability in Kubernetes solutions. By understanding these principles, learners gain clarity on their significance, addressing the performance gap of unclear coding practices that can affect long-term application success."
+    ],
+    "#LUex[4]": [
+        "LU5 culminates the training by establishing monitoring and testing processes for Kubernetes architectures. This unit ensures that learners can validate their solutions against evolving business requirements, addressing the performance gap of lacking established processes for monitoring and testing."
+    ],
+    "#LUex[5]": [],
+    "#LUex[6]": [],
+    "#LUex[7]": [],
+    "#Placeholder[0]": [
+        "The Infocomm Technology industry is currently facing significant challenges in the adoption and implementation of Kubernetes solutions. One of the primary performance gaps is the lack of skilled professionals who can effectively design, deploy, and manage Kubernetes environments. Many organizations are struggling to find individuals who possess the necessary knowledge and practical experience in Kubernetes, leading to inefficient deployment processes and increased operational costs. Additionally, as Kubernetes continues to evolve, professionals often find it challenging to keep up with the latest features, best practices, and security protocols. This gap in knowledge can result in poorly architected solutions that do not meet business requirements, leading to performance issues, security vulnerabilities, and scalability challenges. Furthermore, the complexity of coordinating multiple components within Kubernetes environments can hinder organizations from fully leveraging the benefits of container orchestration, such as improved resource utilization and faster deployment cycles. As a result, organizations may experience delays in project timelines and increased frustration among teams, ultimately impacting their competitive edge in the market.\n\nTo address the identified performance gaps, there is a pressing need for targeted training programs that equip professionals with the skills and knowledge required to effectively work with Kubernetes. Training should focus on establishing high-level structures and frameworks for Kubernetes solutions, ensuring that participants understand the processes and tools necessary for successful implementation. Additionally, training must emphasize the alignment of technical, functional, and service requirements within Kubernetes-based architectures, enabling professionals to create solutions that meet diverse stakeholder needs. Practical, hands-on experience is crucial, as it allows participants to coordinate multiple solution components, ensuring compatibility and adherence to design framework goals. Furthermore, training should cover the importance of coding standards, scalability, and reusability, as these factors significantly contribute to the long-term success of Kubernetes solutions. Establishing monitoring and testing processes is also essential, as it ensures that Kubernetes architectures are validated against evolving business requirements. By addressing these training needs, organizations can build a workforce that is proficient in Kubernetes, ultimately leading to improved operational efficiency and reduced time-to-market for new applications.\n\nSeveral job roles within the Infocomm Technology sector would greatly benefit from training focused on Kubernetes application development. Firstly, DevOps engineers play a critical role in bridging the gap between development and operations, and their proficiency in Kubernetes is essential for automating deployment processes and managing containerized applications. Secondly, software developers who are involved in building applications that run on Kubernetes would benefit from understanding the intricacies of container orchestration, enabling them to design applications that are optimized for performance and scalability. Additionally, system administrators and cloud engineers responsible for managing infrastructure would find value in training that enhances their ability to deploy and maintain Kubernetes clusters effectively. Lastly, solution architects who design overall system architectures would benefit from a deeper understanding of Kubernetes to ensure that their designs are robust, secure, and aligned with business objectives. By equipping these roles with the necessary skills, organizations can foster a culture of innovation and agility, ultimately driving business success."
+    ],
+    "#Placeholder[1]": [
+        "Performance gaps were identified through survey forms distributed to external stakeholders:\n\nPerformance Gaps:\n\u2022\tLearners struggle to establish high-level structures and frameworks for Kubernetes solutions, leading to inefficient deployment processes.\n\u2022\tLearners often lack the ability to align technical, functional, and service requirements within Kubernetes-based solution architectures, resulting in solutions that do not meet stakeholder needs.\n\u2022\tLearners find it challenging to coordinate multiple Kubernetes solution components, which can lead to compatibility issues and hinder the overall design framework goals.\n\u2022\tLearners are unclear about the importance of coding standards, scalability, and reusability in Kubernetes solutions, which can affect the long-term success of their applications.\n\u2022\tLearners do not have established processes for monitoring and testing Kubernetes architectures, leading to potential misalignment with evolving business requirements.\n\nThrough targeted training programs, learners will gain the following attributes to address the identified performance gaps after the training:\n\nPost-Training Benefits to Learners:\n\u2022\tEnhanced efficiency in deploying Kubernetes solutions, reducing operational costs and project timelines.\n\u2022\tImproved ability to create solutions that meet diverse stakeholder needs, leading to higher satisfaction and better business outcomes.\n\u2022\tIncreased capability to leverage the full benefits of container orchestration, resulting in better resource utilization and faster deployment cycles.\n\u2022\tStronger adherence to best practices in coding and architecture, contributing to the overall quality and maintainability of applications.\n\u2022\tGreater alignment of Kubernetes architectures with evolving business requirements, ensuring long-term success and adaptability."
+    ],
+    "#Rationale[0]": [
+        "For this course, the step-by-step sequencing is employed to scaffold the learners' comprehension and application of Kubernetes solutions. This methodology is crucial as it systematically breaks down the intricate facets of Kubernetes, from foundational concepts to advanced practices, ensuring a solid understanding before advancing to more complex topics. The progression is designed to foster a deeper understanding and the ability to effectively apply the learned concepts in real-world scenarios, addressing the performance gaps identified in the industry while equipping learners with the necessary attributes to excel in their roles as Kubernetes professionals."
+    ],
+    "#TCS[0]": [
+        "Solution Architecture"
+    ],
+    "#TCS[1]": [
+        "ICT-DES-5006-1.1"
+    ],
+    "#TopicsEX[0]": [],
+    "#TopicsEX[1]": [],
+    "#TopicsEX[2]": [],
+    "#TopicsEX[3]": [],
+    "#TopicsEX[4]": [],
+    "#TopicsEX[5]": [],
+    "#Topics[0]": [
+        "Topic 1: Application Design and Build (K1, K2, A1, A2)\n\u2022\tDefine, build and modify container images\n\u2022\tChoose and use the right workload resource (Deployment, DaemonSet, CronJob, etc.)\n\u2022\tUnderstand multi-container Pod design patterns (e.g. sidecar, init and others)\n\u2022\tUtilize persistent and ephemeral volumes\n\nLO1 \u2013 Establish high-level structures and frameworks for Kubernetes solutions using appropriate processes and tools.\n\n\nK1: Process for refining solution architecture\n\nK2: Applications of tools and modelling techniques for creation of solution architecture\n\nA1: Establish high level structures and frameworks to guide the development of IT solutions incorporating various processes, hardware and software components\n\nA2: Determine relevant design tools or modelling techniques required to develop a solution architecture and blueprint\n\n"
+    ],
+    "#Topics[1]": [
+        "Topic 2: Application Deployment (K3, A3)\n\u2022\tUse Kubernetes primitives to implement common deployment strategies (e.g. blue/green or canary)\n\u2022\tUnderstand Deployments and how to perform rolling updates\n\u2022\tUse the Helm package manager to deploy existing packages\n\u2022\tKustomize\n\nLO2 \u2013 Align technical, functional, and service requirements within Kubernetes-based solution architectures.\n\n\nK3: Technical, functional and service considerations\n\nA3: Align requirements of various internal and external stakeholders, as well as technical, functional and service requirements within a solution architecture\n\n"
+    ],
+    "#Topics[2]": [
+        "Topic 3: Application Observability and Maintenance (K4, K6, A4)\n\u2022\tUnderstand API deprecations\n\u2022\tImplement probes and health checks\n\u2022\tUse built-in CLI tools to monitor Kubernetes applications\n\u2022\tUtilize container logs\n\u2022\tDebugging in Kubernetes\n\nLO3 \u2013 Coordinate multiple Kubernetes solution components to ensure compatibility and meet design framework goals.\n\n\nK4: Considerations for multiple aspects of the overall solution including performance, security, latency and other relevant aspect for the solution\n\nK6: Compatibility among multiple solution architecture components and design activities\n\nA4: Coordinate multiple solution architecture components and design activities, ensuring consistency and compatibility within a target framework\n\n"
+    ],
+    "#Topics[3]": [
+        "Topic 4: Application Environment, Configuration and Security (K5, A5)\n\u2022\tDiscover and use resources that extend Kubernetes (CRD, Operators)\n\u2022\tUnderstand authentication, authorization and admission control\n\u2022\tUnderstand requests, limits, quotas\n\u2022\tUnderstand ConfigMaps\n\u2022\tDefine resource requirements\n\u2022\tCreate & consume Secrets\n\u2022\tUnderstand ServiceAccounts\n\u2022\tUnderstand Application Security (SecurityContexts, Capabilities, etc.)\n\nLO4 \u2013 Articulate the value of Kubernetes solutions by addressing coding standards, scalability, and reusability.\n\n\nK5: Standards for coding, scalability, integration and reusability\n\nA5: Articulate value added by the solution to the business needs\n\n"
+    ],
+    "#Topics[4]": [
+        "Topic 5: Services and Networking (K7, A6)\n\u2022\tDemonstrate basic understanding of NetworkPolicies\n\u2022\tProvide and troubleshoot access to applications via services\n\u2022\tUse Ingress rules to expose applications\n\nLO5 \u2013 Establish monitoring and testing processes to validate Kubernetes architectures against business requirements.\n\n\nK7: Techniques to measure a solution's value-add\n\nA6: Establish processes to regularly monitor, test and review solution architecture against business requirements\n\n"
+    ],
+    "#Topics[5]": [],
+    "#TotalHours": [],
+    "#Assessment[0]": [],
+    "#Assessment[1]": [],
+    "#Assessment[2]": [],
+    "#Assessment[3]": [],
+    "#Assessment[4]": [],
+    "#AssessmentJustification": [
+        [
+            "Practical Performance (PP):\nA practical Performance (PP) assessment will provide direct evidence of whether candidates have acquired the competency for the ability statements by solving a scenario-based problem.\n\nThe Practical Performance (PP) assessment focuses on providing authentic 'Show Me Application' evidence of candidates' ability to apply Kubernetes concepts in real-world scenarios.\nCandidates will complete practical tasks that demonstrate their ability to design, deploy, and manage Kubernetes applications effectively.\n\nType of Evidence:\n\u2022\tFor LO1: Candidates will create a Kubernetes solution architecture that incorporates various processes and tools.\n\u2022\tFor LO2: Candidates will align technical and functional requirements within a Kubernetes deployment scenario.\n\u2022\tFor LO3: Candidates will coordinate multiple Kubernetes components to ensure compatibility in a given task.\n\u2022\tFor LO4: Candidates will articulate the value of their Kubernetes solutions by addressing coding standards and scalability.\n\u2022\tFor LO5: Candidates will establish monitoring and testing processes to validate their Kubernetes architectures.\nManner of Submission:\n\u2022\tCandidates will submit their Kubernetes configurations, deployment scripts, and any additional documentation that outlines their design and implementation processes.\nMarking Process: \n\u2022\tEffectiveness of Kubernetes deployment.\n\u2022\tQuality of solution architecture.\n\u2022\tAdherence to coding standards.\nRetention Period:\n\u2022\tAll submitted evidence, including configurations and documentation, will be retained for 3 years for compliance and auditing purposes.\n"
+        ]
+    ],
+    "#ADuration[0]": [
+        "Written Assessment - Short-Answer Questions (WA-SAQ) \u2013 12 mins\n\nPractical Performance (PP) \u2013 12 mins"
+    ],
+    "#ADuration[1]": [
+        "Written Assessment - Short-Answer Questions (WA-SAQ) \u2013 12 mins\n\nPractical Performance (PP) \u2013 12 mins"
+    ],
+    "#ADuration[2]": [
+        "Written Assessment - Short-Answer Questions (WA-SAQ) \u2013 12 mins\n\nPractical Performance (PP) \u2013 12 mins"
+    ],
+    "#ADuration[3]": [
+        "Written Assessment - Short-Answer Questions (WA-SAQ) \u2013 12 mins\n\nPractical Performance (PP) \u2013 12 mins"
+    ],
+    "#ADuration[4]": [
+        "Written Assessment - Short-Answer Questions (WA-SAQ) \u2013 12 mins\n\nPractical Performance (PP) \u2013 12 mins"
+    ],
+    "#ADuration[5]": [],
+    "#ADurationTotal": [
+        "WA-SAQ \u2013 1 hr\nPP \u2013 1 hr\nTotal \u2013 2 hr"
+    ],
+    "#Sequencing": [
+        "LU1: Container Image Management\nLU1 lays the foundational knowledge by introducing learners to the processes of defining, building, and modifying container images. This unit emphasizes the importance of choosing the right workload resources and understanding multi-container Pod design patterns. By establishing this foundational knowledge, learners are equipped to effectively design and implement high-level structures and frameworks for Kubernetes solutions, addressing the performance gap of inefficient deployment processes.",
+        "LU2: Deployment Strategies in Kubernetes\nBuilding on the foundational knowledge, LU2 delves into practical aspects of application deployment, focusing on using Kubernetes primitives to implement common deployment strategies. This unit enhances learners' ability to align technical, functional, and service requirements within Kubernetes-based solution architectures, addressing the performance gap of solutions that do not meet stakeholder needs.",
+        "LU3: Monitoring and Debugging Kubernetes Applications\nLU3 escalates to a higher level of complexity where learners explore application observability and maintenance. This unit equips learners with skills to coordinate multiple Kubernetes solution components, ensuring compatibility and adherence to design framework goals, thus addressing the performance gap related to coordination challenges.",
+        "LU4: Security and Configuration Management in Kubernetes\nLU4 focuses on the importance of coding standards, scalability, and reusability in Kubernetes solutions. By understanding these principles, learners gain clarity on their significance, addressing the performance gap of unclear coding practices that can affect long-term application success.",
+        "LU5: Networking and Service Access in Kubernetes\nLU5 culminates the training by establishing monitoring and testing processes for Kubernetes architectures. This unit ensures that learners can validate their solutions against evolving business requirements, addressing the performance gap of lacking established processes for monitoring and testing."
+    ]
+}

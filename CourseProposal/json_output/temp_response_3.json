@@ -1,0 +1,21 @@
+{
+    "course_info": {
+        "Course Title": "Certified Kubernetes Application Developer (CKAD) Training",
+        "Industry": "Infocomm Technology",
+        "Learning Outcomes": [
+            "LO1: Establish high-level structures and frameworks for Kubernetes solutions using appropriate processes and tools.",
+            "LO2: Align technical, functional, and service requirements within Kubernetes-based solution architectures.",
+            "LO3: Coordinate multiple Kubernetes solution components to ensure compatibility and meet design framework goals.",
+            "LO4: Articulate the value of Kubernetes solutions by addressing coding standards, scalability, and reusability.",
+            "LO5: Establish monitoring and testing processes to validate Kubernetes architectures against business requirements."
+        ],
+        "TSC Title": "Solution Architecture",
+        "TSC Code": "ICT-DES-5006-1.1"
+    },
+    "analyst_responses": [
+        {
+            "What are the performance gaps in the industry?": "The industry often experiences gaps in monitoring and maintaining Kubernetes applications. Many organizations do not have established processes for observability, which can lead to undetected issues and prolonged downtimes. Additionally, there is a lack of understanding regarding security and configuration management, which poses risks to application integrity and performance.",
+            "Why do you think this WSQ course will address the training needs for the industry?": "This course emphasizes the importance of establishing monitoring and testing processes to validate Kubernetes architectures. By focusing on observability and security management, it directly addresses the critical gaps in maintaining application performance and integrity within Kubernetes environments."
+        }
+    ]
+}

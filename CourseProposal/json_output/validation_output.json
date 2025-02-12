@@ -1,0 +1,29 @@
+{
+  "analyst_responses": [
+    {
+      "What are the performance gaps in the industry?": "The industry faces significant challenges in effectively managing and deploying containerized applications. Many organizations struggle with ensuring compatibility among various components of their Kubernetes solutions, leading to inefficiencies and increased downtime. Additionally, there is often a lack of standardized processes for monitoring and testing these architectures, which can result in missed business requirements and suboptimal performance.",
+      "Why do you think this WSQ course will address the training needs for the industry?": "This course is designed to equip participants with the skills needed to establish robust frameworks for Kubernetes solutions. By focusing on the coordination of multiple components and ensuring compatibility, it directly addresses the need for improved integration and efficiency in application deployment."
+    },
+    {
+      "What are the performance gaps in the industry?": "A common issue in the industry is the inability to align technical and functional requirements effectively within Kubernetes-based architectures. This misalignment often leads to solutions that do not fully meet the needs of stakeholders, resulting in wasted resources and project delays. Furthermore, organizations frequently lack the necessary skills to articulate the value of their Kubernetes solutions, which can hinder buy-in from key stakeholders.",
+      "Why do you think this WSQ course will address the training needs for the industry?": "The course will provide participants with the knowledge to align various stakeholder requirements within their solution architectures. By enhancing their ability to articulate the value of Kubernetes solutions, participants will be better positioned to secure stakeholder support and drive successful project outcomes."
+    },
+    {
+      "What are the performance gaps in the industry?": "The industry often experiences gaps in monitoring and maintaining Kubernetes applications. Many organizations do not have established processes for observability, which can lead to undetected issues and prolonged downtimes. Additionally, there is a lack of understanding regarding security and configuration management, which poses risks to application integrity and performance.",
+      "Why do you think this WSQ course will address the training needs for the industry?": "This course emphasizes the importance of establishing monitoring and testing processes to validate Kubernetes architectures. By focusing on observability and security management, it directly addresses the critical gaps in maintaining application performance and integrity within Kubernetes environments."
+    }
+  ],
+  "course_info": {
+    "Course Title": "Certified Kubernetes Application Developer (CKAD) Training",
+    "Industry": "Infocomm Technology",
+    "Learning Outcomes": [
+      "LO1: Establish high-level structures and frameworks for Kubernetes solutions using appropriate processes and tools.",
+      "LO2: Align technical, functional, and service requirements within Kubernetes-based solution architectures.",
+      "LO3: Coordinate multiple Kubernetes solution components to ensure compatibility and meet design framework goals.",
+      "LO4: Articulate the value of Kubernetes solutions by addressing coding standards, scalability, and reusability.",
+      "LO5: Establish monitoring and testing processes to validate Kubernetes architectures against business requirements."
+    ],
+    "TSC Title": "Solution Architecture",
+    "TSC Code": "ICT-DES-5006-1.1"
+  }
+}

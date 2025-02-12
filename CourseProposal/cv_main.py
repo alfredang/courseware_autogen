@@ -1,0 +1,97 @@
+from agents.extraction_team import create_extraction_team, extraction_task
+from agents.research_team import create_research_team, research_task
+from agents.justification_agent import run_assessment_justification_agent, recreate_assessment_phrasing_dynamic, justification_task
+from agents.course_validation_team import create_course_validation_team, validation_task
+from autogen_agentchat.ui import Console
+from utils.helpers import (
+    extract_final_aggregator_json, 
+    rename_keys_in_json_file,
+    update_knowledge_ability_mapping,
+    validate_knowledge_and_ability,
+    extract_final_editor_json,
+    extract_final_agent_json,
+    flatten_json,
+    flatten_list,
+    append_validation_output,
+)
+from utils.json_docu_replace import replace_placeholders_in_doc
+from utils.json_mapping import map_values
+from utils.jinja_docu_replace import replace_placeholders_with_docxtpl
+import json
+import asyncio
+import sys
+import os
+
+async def main() -> None:
+    # Course Validation Form Process
+    validation_group_chat = create_course_validation_team()
+    stream = validation_group_chat.run_stream(task=validation_task)
+    await Console(stream)
+
+    # Validation Team JSON management
+    state = await validation_group_chat.save_state()
+    with open("json_output/validation_group_chat_state.json", "w") as f:
+        json.dump(state, f)
+    editor_data = extract_final_editor_json("json_output/validation_group_chat_state.json")
+    with open("json_output/validation_output.json", "w", encoding="utf-8") as out:
+        json.dump(editor_data, out, indent=2)
+    append_validation_output(
+        "json_output/ensemble_output.json",
+        "json_output/validation_output.json",
+    )
+    with open('json_output/validation_output.json', 'r') as file:
+        validation_output = json.load(file)
+    # If validation_output is a JSON string, parse it first
+    if isinstance(validation_output, str):
+        validation_output = json.loads(validation_output)   
+    # Load mapping template with key:empty list pair
+    with open('json_output/validation_mapping_source.json', 'r') as file:
+        validation_mapping_source = json.load(file) 
+    # Step 2: Loop through the responses and create three different output documents
+    responses = validation_output.get('analyst_responses', [])
+    if len(responses) < 3:
+        print("Error: Less than 3 responses found in the JSON file.")
+        sys.exit(1)
+
+    # load CV templates
+    CV_template_1 = "templates/CP_validation_template_bernard.docx"
+    CV_template_2 = "templates/CP_validation_template_dwight.docx"
+    CV_template_3 = "templates/CP_validation_template_ferris.docx"
+    CV_templates = [CV_template_1, CV_template_2, CV_template_3]
+    # Iterate over responses and templates
+    for i, (response, CV_template) in enumerate(zip(responses[:3], CV_templates), 1):
+        # Check that 'course_info' is in 'data'
+        course_info = validation_output.get("course_info")
+        if not course_info:
+            print(f"Error: 'course_info' is missing from the JSON data during iteration {i}.")
+            sys.exit(1)
+        # Create a temporary JSON file for the current response
+        temp_response_json = f"json_output/temp_response_{i}.json"
+        
+        # Prepare the content to write to the JSON file
+        json_content = {
+            "course_info": course_info,
+            "analyst_responses": [response]
+        }
+        
+        # Write to the temporary JSON file
+        with open(temp_response_json, 'w', encoding="utf-8") as temp_file:
+            json.dump(json_content, temp_file, indent=4)
+
+        # Debugging: Print the contents of temp_response_json to confirm correctness
+        print(f"Debug: Contents of temp_response_json ({temp_response_json}):")
+        with open(temp_response_json, 'r', encoding="utf-8") as temp_file:
+            print(temp_file.read())
+
+        # # Extract the name of the word template without the file extension
+        # template_name_without_extension = os.path.splitext(os.path.basename(CV_template))[0]
+        
+        # # Define the output file name for this response in the same directory as the input file
+        # output_docx_version = os.path.join(output_directory, f"{template_name_without_extension}_updated.docx")
+
+
+        # replace_placeholders_in_doc(json_file, CV_template, output_word_file, analyst_response)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

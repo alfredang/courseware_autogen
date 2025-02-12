@@ -329,7 +329,7 @@ try:
 except IOError as e:
     print(f"Error saving JSON to file: {e}")
 
-# Step 2: Execute the second agent (Interpreter) using the generated output
+
 with open('ensemble_output.json', 'r') as file:
     ensemble_output = json.load(file)
 
