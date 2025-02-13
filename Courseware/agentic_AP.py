@@ -400,7 +400,7 @@ def generate_assessment_plan(context, name_of_organisation, llm_config, sfw_data
         # Add the logo to the context
         context['company_logo'] = logo_image
 
-        doc.render(context)
+        doc.render(context, autoescape=True)
 
         # Use a temporary file to save the document
         with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp_file:
