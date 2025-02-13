@@ -87,75 +87,90 @@ def app():
     - Double check the industry of the CV and background info of the CP, in case the wrong industry is mentioned!
     """, unsafe_allow_html=True)
 
-    uploaded_file = st.file_uploader("📁 Upload a DOCX file", type="docx", key='uploaded_file')
+    uploaded_file = st.file_uploader("Upload a TSC DOCX file", type="docx", key='uploaded_file')
 
     if uploaded_file is not None:
-        st.success(f"📄 Uploaded file: {uploaded_file.name}")
+        st.success(f"Uploaded file: {uploaded_file.name}")
 
-        # Save the uploaded file to a temporary location
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp_file:
-            tmp_file.write(uploaded_file.getbuffer())
-            temp_input_file = tmp_file.name
+        # 1) Save the uploaded file to a temporary location
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp_input:
+            tmp_input.write(uploaded_file.getbuffer())
+            input_tsc_path = tmp_input.name
 
+        # 2) Process button
         if st.button("🚀 Process File"):
-            run_processing(temp_input_file)
+            run_processing(input_tsc_path)
             st.session_state['processing_done'] = True
 
-    # After processing, check if outputs are in session_state and display download buttons
+    # 3) Display download buttons after processing
     if st.session_state.get('processing_done'):
-        st.markdown('<div class="header">📦 Download Processed Files:</div>', unsafe_allow_html=True)
+        st.subheader("Download Processed Files")
 
-        # Download button for the output from root's main.py
-        output_docx = st.session_state.get('output_docx')
-        if output_docx and os.path.exists(output_docx):
-            with open(output_docx, 'rb') as f:
-                output_data = f.read()
+        # CP docx
+        cp_docx_temp = st.session_state.get('cp_docx_temp')
+        if cp_docx_temp and os.path.exists(cp_docx_temp):
+            with open(cp_docx_temp, 'rb') as f:
+                data = f.read()
             st.download_button(
-                label=f"⬇️ Download {os.path.basename(output_docx)}",
-                data=output_data,
-                file_name=os.path.basename(output_docx),
+                label="Download CP Output",
+                data=data,
+                file_name="CP_output.docx",
                 mime='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
             )
         else:
-            st.warning("⚠️ Processed output file not found.")
+            st.warning("No CP docx found in session state.")
 
-        # Download buttons for the CV output files
-        output_files = st.session_state.get('cv_output_files', [])
-        # Provide download buttons for each processed file
-        for output_file in output_files:
-            if os.path.exists(output_file):
-                with open(output_file, 'rb') as f:
-                    output_data = f.read()
+        # CV docs
+        cv_docx_temps = st.session_state.get('cv_docx_temps', [])
+        for idx, temp_path in enumerate(cv_docx_temps, start=1):
+            if os.path.exists(temp_path):
+                with open(temp_path, 'rb') as f:
+                    data = f.read()
                 st.download_button(
-                    label=f"⬇️ Download {os.path.basename(output_file)}",
-                    data=output_data,
-                    file_name=os.path.basename(output_file),
+                    label=f"Download CV Output {idx}",
+                    data=data,
+                    file_name=os.path.basename(temp_path),
                     mime='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
                 )
             else:
-                st.warning(f"⚠️ Expected output {os.path.basename(output_file)} not found.")
-def run_processing(input_file):
-    try:
-        st.info("Processing...")
-        main(input_file)
+                st.warning(f"No CV docx found at {temp_path}")
 
-        # Use a temporary directory for processing
-        temp_dir = tempfile.mkdtemp()
-        output_json = os.path.join(temp_dir, 'json_output/output_TSC.json')
-        output_docx = os.path.join(temp_dir, 'Updated_CP_Document2.docx')
+def run_processing(input_file: str):
+    """
+    1. Runs your main pipeline, which writes docs to 'output_docs/' 
+    2. Copies those docs into NamedTemporaryFiles and stores them in session state.
+    """
+    st.info("Running pipeline (this might take some time) ...")
 
+    # 1) Run the pipeline, passing the TSC doc path
+    #    If your main() uses sys.argv[1], ensure main() picks up `input_file`
+    main(input_file)
 
+    # 2) Now copy the relevant docx files from 'output_docs' to NamedTemporaryFiles
+    cp_doc_path = "output_docs/CP_output.docx"
+    cv_doc_paths = [
+        "output_docs/CP_validation_template_bernard_updated.docx",
+        "output_docs/CP_validation_template_dwight_updated.docx",
+        "output_docs/CP_validation_template_ferris_updated.docx"
+    ]
 
-        st.success("Processing complete for CP generation. Starting CV generation now.")
+    # Copy CP doc into tempfile
+    if os.path.exists(cp_doc_path):
+        with open(cp_doc_path, 'rb') as infile, tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as outfile:
+            outfile.write(infile.read())
+            st.session_state['cp_docx_temp'] = outfile.name
 
-        # Save the output_docx in session state
-        st.session_state['output_docx'] = output_docx
+    # Copy CV docs
+    cv_temp_paths = []
+    for doc_path in cv_doc_paths:
+        if os.path.exists(doc_path):
+            with open(doc_path, 'rb') as infile, tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as outfile:
+                outfile.write(infile.read())
+                cv_temp_paths.append(outfile.name)
 
-        # Save the output files in session state
-        st.session_state['cv_output_files'] = output_files
+    st.session_state['cv_docx_temps'] = cv_temp_paths
 
-    except Exception as e:
-        st.error(f"An unexpected error occurred: {e}")
+    st.success("Processing complete. Download your files below!")
 
 # if __name__ == "__main__":
-#     main()
+#     app()
