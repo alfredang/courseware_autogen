@@ -22,7 +22,7 @@ import asyncio
 import sys
 import os
 
-async def main() -> None:
+async def create_course_validation() -> None:
     # Course Validation Form Process
     validation_group_chat = create_course_validation_team()
     stream = validation_group_chat.run_stream(task=validation_task)
@@ -82,16 +82,18 @@ async def main() -> None:
         print(f"Debug: Contents of temp_response_json ({temp_response_json}):")
         with open(temp_response_json, 'r', encoding="utf-8") as temp_file:
             print(temp_file.read())
+            analyst_response = json_content["analyst_responses"][0]
 
-        # # Extract the name of the word template without the file extension
-        # template_name_without_extension = os.path.splitext(os.path.basename(CV_template))[0]
-        
-        # # Define the output file name for this response in the same directory as the input file
-        # output_docx_version = os.path.join(output_directory, f"{template_name_without_extension}_updated.docx")
+        # Extract the name of the word template without the file extension
+        template_name_without_extension = os.path.splitext(os.path.basename(CV_template))[0]
+        output_directory = "output_docs"
+        os.makedirs(output_directory, exist_ok=True)   
+        # Define the output file name for this response in the same directory as the input file
+        output_docx_version = os.path.join(output_directory, f"{template_name_without_extension}_updated.docx")
 
 
-        # replace_placeholders_in_doc(json_file, CV_template, output_word_file, analyst_response)
+        replace_placeholders_in_doc(temp_response_json, CV_template, output_docx_version, analyst_response)
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(create_course_validation())

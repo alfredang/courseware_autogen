@@ -1,29 +1,26 @@
 {
   "analyst_responses": [
     {
-      "What are the performance gaps in the industry?": "The industry faces significant challenges in effectively managing and deploying containerized applications. Many organizations struggle with ensuring compatibility among various components of their Kubernetes solutions, leading to inefficiencies and increased downtime. Additionally, there is often a lack of standardized processes for monitoring and testing these architectures, which can result in missed business requirements and suboptimal performance.",
-      "Why do you think this WSQ course will address the training needs for the industry?": "This course is designed to equip participants with the skills needed to establish robust frameworks for Kubernetes solutions. By focusing on the coordination of multiple components and ensuring compatibility, it directly addresses the need for improved integration and efficiency in application deployment."
+      "What are the performance gaps in the industry?": "In the current landscape, many organizations face challenges in their programming workflows, often resulting in inefficiencies and delays. The lack of integration of advanced tools leads to repetitive tasks and a slower development cycle, which can hinder innovation and responsiveness to market demands.",
+      "Why do you think this WSQ course will address the training needs for the industry?": "This course equips participants with the skills to identify inefficiencies in their programming processes and leverage AI-assisted tools to enhance productivity. By exploring practical applications of GitHub Copilot, attendees will learn to streamline coding practices, ultimately fostering a more agile development environment."
     },
     {
-      "What are the performance gaps in the industry?": "A common issue in the industry is the inability to align technical and functional requirements effectively within Kubernetes-based architectures. This misalignment often leads to solutions that do not fully meet the needs of stakeholders, resulting in wasted resources and project delays. Furthermore, organizations frequently lack the necessary skills to articulate the value of their Kubernetes solutions, which can hinder buy-in from key stakeholders.",
-      "Why do you think this WSQ course will address the training needs for the industry?": "The course will provide participants with the knowledge to align various stakeholder requirements within their solution architectures. By enhancing their ability to articulate the value of Kubernetes solutions, participants will be better positioned to secure stakeholder support and drive successful project outcomes."
+      "What are the performance gaps in the industry?": "Organizations often struggle with outdated coding practices and insufficient knowledge of emerging technologies, which can lead to suboptimal software development outcomes. This gap not only affects productivity but also limits the ability to innovate and adapt to new technological trends.",
+      "Why do you think this WSQ course will address the training needs for the industry?": "The course provides a comprehensive introduction to GitHub Copilot, enabling participants to explore its capabilities in various programming languages. By applying these tools, they can enhance their coding processes and stay updated with the latest technological advancements, thus addressing the skills gap in the industry."
     },
     {
-      "What are the performance gaps in the industry?": "The industry often experiences gaps in monitoring and maintaining Kubernetes applications. Many organizations do not have established processes for observability, which can lead to undetected issues and prolonged downtimes. Additionally, there is a lack of understanding regarding security and configuration management, which poses risks to application integrity and performance.",
-      "Why do you think this WSQ course will address the training needs for the industry?": "This course emphasizes the importance of establishing monitoring and testing processes to validate Kubernetes architectures. By focusing on observability and security management, it directly addresses the critical gaps in maintaining application performance and integrity within Kubernetes environments."
+      "What are the performance gaps in the industry?": "A significant performance gap exists in the ability to effectively utilize modern programming tools, which can lead to inefficiencies and increased error rates in software development. Many teams lack the necessary training to integrate AI tools into their workflows, resulting in missed opportunities for optimization.",
+      "Why do you think this WSQ course will address the training needs for the industry?": "This course focuses on practical applications of AI programming tools, allowing participants to gain hands-on experience with GitHub Copilot. By understanding how to implement these tools effectively, they will be better equipped to propose solutions that enhance their organization's coding efficiency and overall productivity."
     }
   ],
   "course_info": {
-    "Course Title": "Certified Kubernetes Application Developer (CKAD) Training",
+    "Course Title": "Hands-on AI-Assisted Programming Made Simple with GitHub Copilot",
     "Industry": "Infocomm Technology",
     "Learning Outcomes": [
-      "LO1: Establish high-level structures and frameworks for Kubernetes solutions using appropriate processes and tools.",
-      "LO2: Align technical, functional, and service requirements within Kubernetes-based solution architectures.",
-      "LO3: Coordinate multiple Kubernetes solution components to ensure compatibility and meet design framework goals.",
-      "LO4: Articulate the value of Kubernetes solutions by addressing coding standards, scalability, and reusability.",
-      "LO5: Establish monitoring and testing processes to validate Kubernetes architectures against business requirements."
+      "LO1: Identify gaps in existing programming workflows and propose AI-assisted solutions using GitHub Copilot to enhance efficiency.",
+      "LO2: Explore and apply emerging AI programming tools, including GitHub Copilot, to streamline organizational coding processes."
     ],
-    "TSC Title": "Solution Architecture",
-    "TSC Code": "ICT-DES-5006-1.1"
+    "TSC Title": "Digital Technology Adoption and Innovation",
+    "TSC Code": "ACC-ICT-3004-1.1"
   }
 }

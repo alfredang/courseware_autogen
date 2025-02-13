@@ -51,7 +51,7 @@ def replace_placeholders_with_docxtpl(json_path, doc_path, new_doc_name):
     tpl.render(context, autoescape=True)
 
     # Save the new document after rendering placeholders
-    temp_doc_path = "temp_with_placeholders_replaced.docx"
+    temp_doc_path = "output_docs/temp_with_placeholders_replaced.docx"
     tpl.save(temp_doc_path)
 
     # Load the modified document to clean tables

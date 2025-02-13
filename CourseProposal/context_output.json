@@ -1,0 +1,367 @@
+{
+    "ADuration": [],
+    "InstructMethods": [],
+    "AssessMethods": [
+        "Written Assessment - Short-Answer Questions (WA-SAQ)",
+        "Practical Performance (PP)"
+    ],
+    "A_0": [
+        "A1: Identify issues in the existing software and systems"
+    ],
+    "A_10": [],
+    "A_11": [],
+    "A_12": [],
+    "A_13": [],
+    "A_14": [],
+    "A_15": [],
+    "A_16": [],
+    "A_17": [],
+    "A_1": [
+        "A2: Seek potential IT solutions to resolve issues or for systems upgrading"
+    ],
+    "A_2": [
+        "A3: Propose to management on suitable IT solutions for the organisation"
+    ],
+    "A_3": [
+        "A4: Keep up to date with new technologies and systems"
+    ],
+    "A_4": [],
+    "A_5": [],
+    "A_6": [],
+    "A_7": [],
+    "A_8": [],
+    "A_9": [],
+    "Company": [
+        "Tertiary Infotech Pte Ltd"
+    ],
+    "Conclusion_0": [
+        "Overall, the structured sequencing of these learning units is designed to address the performance gaps identified in the Infocomm Technology sector while equipping learners with the necessary attributes to excel in their roles as software developers and IT professionals."
+    ],
+    "CourseTitle": [
+        "Hands-on AI-Assisted Programming Made Simple with GitHub Copilot"
+    ],
+    "Hours_0": [
+        3
+    ],
+    "Hours_1": [
+        1
+    ],
+    "Hours_2": [
+        8
+    ],
+    "Hours_3": [
+        "N.A."
+    ],
+    "Hours_4": [],
+    "IM": [
+        "Classroom",
+        "Didactic Questioning",
+        "Demonstration",
+        "Practical"
+    ],
+    "KA_0": [
+        "K1, K3, A1, A3"
+    ],
+    "KA_1": [
+        "K2, K4, A2, A4"
+    ],
+    "KA_2": [],
+    "KA_3": [],
+    "KA_4": [],
+    "K_0": [
+        "K1: Relevant systems and software"
+    ],
+    "K_10": [],
+    "K_11": [],
+    "K_12": [],
+    "K_13": [],
+    "K_14": [],
+    "K_15": [],
+    "K_16": [],
+    "K_17": [],
+    "K_1": [
+        "K2: Organisation's processes"
+    ],
+    "K_2": [
+        "K3: Strengths and weaknesses of existing software and systems"
+    ],
+    "K_3": [
+        "K4: Emerging technological trends such as block chain, machine learning, artificial intelligence"
+    ],
+    "K_4": [],
+    "K_5": [],
+    "K_6": [],
+    "K_7": [],
+    "K_8": [],
+    "K_9": [],
+    "LO_0": [
+        "LO1: Identify gaps in existing programming workflows and propose AI-assisted solutions using GitHub Copilot to enhance efficiency."
+    ],
+    "LO_1": [
+        "LO2: Explore and apply emerging AI programming tools, including GitHub Copilot, to streamline organizational coding processes."
+    ],
+    "LO_2": [],
+    "LO_3": [],
+    "LO_4": [],
+    "LO_5": [],
+    "LO_6": [],
+    "LO_7": [],
+    "LU_0": [
+        "LU1: Introduction to GitHub Copilot"
+    ],
+    "LU_1": [
+        "LU2: Practical Applications of GitHub Copilot"
+    ],
+    "LU_2": [],
+    "LU_3": [],
+    "LU_4": [],
+    "LU_5": [],
+    "LU_6": [],
+    "LU_7": [],
+    "LUex_0": [
+        "LU1 lays the foundational knowledge by introducing learners to GitHub Copilot and its role in enhancing software development efficiency. The facilitator will guide learners through the installation process and exploration of Copilot's features, setting the stage for understanding how to identify gaps in existing programming workflows. This unit addresses the performance gap of struggling to identify inefficiencies in current workflows, equipping learners with the ability to analyze and propose AI-assisted solutions."
+    ],
+    "LUex_1": [
+        "Building on the foundational knowledge, LU2 dives into the practical applications of GitHub Copilot across various programming languages and scenarios. Learners will engage in hands-on exercises to effectively integrate Copilot into their coding processes, addressing the performance gap of underutilization of AI tools. This unit enhances learners' ability to leverage GitHub Copilot and similar tools, fostering proficiency in utilizing emerging AI programming tools to innovate and streamline coding practices."
+    ],
+    "LUex_2": [],
+    "LUex_3": [],
+    "LUex_4": [],
+    "LUex_5": [],
+    "LUex_6": [],
+    "LUex_7": [],
+    "Placeholder_0": [
+        "The Infocomm Technology sector is currently facing significant challenges in adapting to rapid technological advancements, particularly in the realm of artificial intelligence and automation. Many organizations struggle with integrating AI tools into their existing programming workflows, leading to inefficiencies and a lack of innovation. Developers often find themselves overwhelmed by the sheer volume of new technologies, which can create a performance gap where they are unable to leverage these tools effectively. Additionally, there is a noticeable gap in understanding how to identify and resolve issues within existing software systems, which can hinder productivity and lead to suboptimal coding practices. The inability to propose suitable IT solutions that align with organizational processes further exacerbates these challenges, as teams may miss out on opportunities for improvement and modernization. Furthermore, the lack of familiarity with emerging technologies such as machine learning and blockchain can leave organizations at a competitive disadvantage, as they may not be able to keep pace with industry standards or customer expectations.\n\nTo address the identified performance gaps, there is a pressing need for targeted training that focuses on the practical application of AI-assisted programming tools, specifically GitHub Copilot. Training programs should be designed to equip developers with the skills necessary to identify gaps in their current workflows and propose effective AI-driven solutions that enhance coding efficiency. This includes hands-on experience with GitHub Copilot, allowing participants to explore its features and understand how it can be integrated into their daily programming tasks. Additionally, training should cover the strengths and weaknesses of existing software systems, enabling developers to critically assess their tools and processes. Knowledge of emerging technological trends is also essential, as it empowers developers to stay informed about new advancements and apply them effectively within their organizations. Overall, a comprehensive training approach that combines theoretical knowledge with practical application will be crucial in bridging the performance gaps in the industry.\n\nSeveral job roles within the Infocomm Technology sector would significantly benefit from this training. Software developers and programmers are the primary beneficiaries, as they are directly involved in coding and software development processes. By enhancing their skills in AI-assisted programming, they can improve their efficiency and output quality. Additionally, IT project managers would gain valuable insights into how to implement AI tools within their teams, enabling them to drive innovation and streamline project workflows. System analysts and software architects would also find the training beneficial, as it would equip them with the knowledge to assess existing systems and propose suitable upgrades or replacements. Furthermore, technical leads and team leaders would be able to leverage the training to mentor their teams effectively, fostering a culture of continuous improvement and adaptation to new technologies. Overall, the training would create a ripple effect, enhancing the capabilities of individuals and teams across various roles within the industry."
+    ],
+    "Placeholder_1": [
+        {
+            "type": "paragraph",
+            "content": "Performance gaps were identified through survey forms distributed to external stakeholders:"
+        },
+        {
+            "type": "bold_paragraph",
+            "content": "Performance Gaps:"
+        },
+        {
+            "type": "bullets",
+            "content": [
+                "Learners struggle to identify inefficiencies in their current programming workflows, leading to missed opportunities for improvement.",
+                "Learners lack the skills to effectively integrate AI tools like GitHub Copilot into their coding processes, resulting in underutilization of available technology.",
+                "Learners are often unaware of emerging AI programming tools and their potential applications, which limits their ability to innovate and stay competitive."
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": "Through targeted training programs, learners will gain the following attributes to address the identified performance gaps after the training:"
+        },
+        {
+            "type": "bold_paragraph",
+            "content": "Attributes Gained:"
+        },
+        {
+            "type": "bullets",
+            "content": [
+                "Proficiency in analyzing and identifying gaps in programming workflows to propose AI-assisted solutions.",
+                "Ability to effectively utilize GitHub Copilot and similar tools to enhance coding efficiency.",
+                "Knowledge of emerging AI programming tools and their practical applications in software development."
+            ]
+        },
+        {
+            "type": "bold_paragraph",
+            "content": "Post-Training Benefits to Learners:"
+        },
+        {
+            "type": "bullets",
+            "content": [
+                "Increased efficiency in coding processes, leading to higher productivity and reduced time spent on tasks.",
+                "Enhanced capability to leverage AI tools, resulting in improved software quality and innovation.",
+                "Greater awareness of technological trends, enabling learners to keep pace with industry advancements and maintain a competitive edge."
+            ]
+        }
+    ],
+    "Rationale_0": [
+        "For this course, the step-by-step sequencing is employed to scaffold the learners' comprehension and application of AI-assisted programming tools using GitHub Copilot. This methodology is crucial as it systematically breaks down the intricate facets of programming workflows and AI integration into digestible units. This aids in gradually building the learners' knowledge and skills from foundational concepts to practical applications, ensuring a solid understanding before advancing to more complex topics. The progression is designed to foster a deeper understanding and the ability to effectively apply the learned concepts in real-world programming scenarios."
+    ],
+    "TCS_0": [
+        "Digital Technology Adoption and Innovation"
+    ],
+    "TCS_1": [
+        "ACC-ICT-3004-1.1"
+    ],
+    "TopicsEX_0": [],
+    "TopicsEX_1": [],
+    "TopicsEX_2": [],
+    "TopicsEX_3": [],
+    "TopicsEX_4": [],
+    "TopicsEX_5": [],
+    "Topics_0": [
+        {
+            "type": "paragraph",
+            "content": "Topic 1: Getting Started  with Github Copilot (K1, K3, A1, A3)"
+        },
+        {
+            "type": "bullets",
+            "content": [
+                "What is Github Copilot?",
+                "How Github Copilot enhances software development efficiency?",
+                "Install Github Copilot on Visual Studio Code",
+                "Explore Github Copilot features"
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": "LO1 \u2013 Identify gaps in existing programming workflows and propose AI-assisted solutions using GitHub Copilot to enhance efficiency."
+        },
+        {
+            "type": "paragraph",
+            "content": "K1: Relevant systems and software"
+        },
+        {
+            "type": "paragraph",
+            "content": "K3: Strengths and weaknesses of existing software and systems"
+        },
+        {
+            "type": "paragraph",
+            "content": "A1: Identify issues in the existing software and systems"
+        },
+        {
+            "type": "paragraph",
+            "content": "A3: Propose to management on suitable IT solutions for the organisation"
+        }
+    ],
+    "Topics_1": [
+        {
+            "type": "paragraph",
+            "content": "Topic 2: Software Development with Github Copilot (K2, K4, A2, A4)"
+        },
+        {
+            "type": "bullets",
+            "content": [
+                "Github Copilot for HTML",
+                "Github Copilot for Python",
+                "Github Copilot for Javascript",
+                "Github Copilot for REST API",
+                "Other emerging AI tools for software development"
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": "LO2 \u2013 Explore and apply emerging AI programming tools, including GitHub Copilot, to streamline organizational coding processes."
+        },
+        {
+            "type": "paragraph",
+            "content": "K2: Organisation's processes"
+        },
+        {
+            "type": "paragraph",
+            "content": "K4: Emerging technological trends such as block chain, machine learning, artificial intelligence"
+        },
+        {
+            "type": "paragraph",
+            "content": "A2: Seek potential IT solutions to resolve issues or for systems upgrading"
+        },
+        {
+            "type": "paragraph",
+            "content": "A4: Keep up to date with new technologies and systems"
+        }
+    ],
+    "Topics_2": [],
+    "Topics_3": [],
+    "Topics_4": [],
+    "Topics_5": [],
+    "TotalHours": [],
+    "Assessment_0": [
+        "Written Assessment - Short-Answer Questions (WA-SAQ) \u2013 K1, K3\n\nPractical Performance (PP) \u2013 A1, A3"
+    ],
+    "Assessment_1": [
+        "Written Assessment - Short-Answer Questions (WA-SAQ) \u2013 K2, K4\n\nPractical Performance (PP) \u2013 A2, A4"
+    ],
+    "Assessment_2": [],
+    "Assessment_3": [],
+    "Assessment_4": [],
+    "AssessmentJustification": [
+        {
+            "type": "paragraph",
+            "content": "Practical Performance (PP): A practical Performance (PP) assessment will provide direct evidence of whether candidates have acquired the competency for the ability statements by solving a scenario-based problem."
+        },
+        {
+            "type": "paragraph",
+            "content": "The Practical Performance (PP) assessment focuses on providing authentic 'Show Me Application' evidence of candidates' ability to apply GitHub Copilot in programming tasks. Candidates will complete practical coding tasks using GitHub Copilot to demonstrate their ability to enhance programming workflows."
+        },
+        {
+            "type": "paragraph",
+            "content": "Type of Evidence:"
+        },
+        {
+            "type": "bullets",
+            "content": [
+                "For LO1: Candidates will identify gaps in existing workflows and propose AI-assisted solutions using GitHub Copilot.",
+                "For LO2: Candidates will apply GitHub Copilot to streamline coding processes in various programming languages."
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": "Manner of Submission:"
+        },
+        {
+            "type": "bullets",
+            "content": [
+                "Candidates will submit their code files and documentation detailing how they utilized GitHub Copilot to enhance their programming efficiency.",
+                "This includes annotated code snippets showing Copilot's contributions to task completion."
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": "Marking Process:"
+        },
+        {
+            "type": "bullets",
+            "content": [
+                "Effectiveness in Identifying Gaps.",
+                "Quality of Proposed Solutions.",
+                "Application of GitHub Copilot."
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": "Retention Period:"
+        },
+        {
+            "type": "bullets",
+            "content": [
+                "All submitted evidence, including code files and assessment records, will be retained for 3 years to ensure compliance with institutional policies and for auditing purposes."
+            ]
+        }
+    ],
+    "ADuration_0": [
+        "Written Assessment - Short-Answer Questions (WA-SAQ) \u2013 15 mins\n\nPractical Performance (PP) \u2013 15 mins"
+    ],
+    "ADuration_1": [
+        "Written Assessment - Short-Answer Questions (WA-SAQ) \u2013 15 mins\n\nPractical Performance (PP) \u2013 15 mins"
+    ],
+    "ADuration_2": [],
+    "ADuration_3": [],
+    "ADuration_4": [],
+    "ADuration_5": [],
+    "ADurationTotal": [
+        "WA-SAQ \u2013 0.5 hr\nPP \u2013 0.5 hr\nTotal \u2013 1 hr"
+    ],
+    "Sequencing": [
+        {
+            "type": "bold_paragraph",
+            "content": "LU1: Introduction to GitHub Copilot"
+        },
+        {
+            "type": "paragraph",
+            "content": "LU1 lays the foundational knowledge by introducing learners to GitHub Copilot and its role in enhancing software development efficiency. The facilitator will guide learners through the installation process and exploration of Copilot's features, setting the stage for understanding how to identify gaps in existing programming workflows. This unit addresses the performance gap of struggling to identify inefficiencies in current workflows, equipping learners with the ability to analyze and propose AI-assisted solutions."
+        },
+        {
+            "type": "bold_paragraph",
+            "content": "LU2: Practical Applications of GitHub Copilot"
+        },
+        {
+            "type": "paragraph",
+            "content": "Building on the foundational knowledge, LU2 dives into the practical applications of GitHub Copilot across various programming languages and scenarios. Learners will engage in hands-on exercises to effectively integrate Copilot into their coding processes, addressing the performance gap of underutilization of AI tools. This unit enhances learners' ability to leverage GitHub Copilot and similar tools, fostering proficiency in utilizing emerging AI programming tools to innovate and streamline coding practices."
+        }
+    ]
+}

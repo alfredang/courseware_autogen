@@ -18,6 +18,7 @@ from utils.jinja_docu_replace import replace_placeholders_with_docxtpl
 import json
 import asyncio
 import sys
+from cv_main import create_course_validation
 
 async def main() -> None:
     group_chat = create_extraction_team()
@@ -35,7 +36,7 @@ async def main() -> None:
     # JSON key validation for ensemble_output to ensure that key names are constant
     rename_keys_in_json_file("json_output/ensemble_output.json")
 
-    update_knowledge_ability_mapping('output_json/output_TSC.json', 'output_json/ensemble_output.json')
+    update_knowledge_ability_mapping('json_output/output_TSC.json', 'json_output/ensemble_output.json')
 
     validate_knowledge_and_ability()
 
@@ -110,9 +111,12 @@ async def main() -> None:
         print(f"Error saving JSON to file: {e}")
 
     # Parameters
-    json_file = sys.argv[1]
-    word_file = sys.argv[2]
-    new_word_file = sys.argv[3]    
+    # json_file = sys.argv[1]
+    # word_file = sys.argv[2]
+    # new_word_file = sys.argv[3]
+    json_file = "json_output/generated_mapping.json"
+    word_file = "templates/CP Template_jinja.docx"
+    new_word_file = "output_docs/CP_output.docx"       
     replace_placeholders_with_docxtpl(json_file, word_file, new_word_file)
 
     validation_group_chat = create_course_validation_team()
@@ -128,7 +132,7 @@ async def main() -> None:
         json.dump(editor_data, out, indent=2)
     
     # Course Validation Form Process
-    
+    await create_course_validation()
     
 
 if __name__ == "__main__":

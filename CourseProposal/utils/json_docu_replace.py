@@ -89,9 +89,9 @@ if __name__ == "__main__":
         print("Usage: python json_docu_replace.py <json_file> <word_template> <output_word_file>")
         sys.exit(1)
 
-    json_file = sys.argv[1]
-    word_template = sys.argv[2]
-    output_word_file = sys.argv[3]
+    json_file = sys.argv[1] #temp json files
+    word_template = sys.argv[2] #iteration of the word templates
+    output_word_file = sys.argv[3] # iteration of output files
 
     # Load the JSON file
     with open(json_file, 'r') as f:

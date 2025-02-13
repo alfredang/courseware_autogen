@@ -24,7 +24,7 @@ config = {
 
 model_client = ChatCompletionClient.load_component(config)
 
-parse_document("TSC Mapping-tertiary-ckad.docx", "json_output/output_TSC.json")
+parse_document("TSC Mapping-tertiary-github.docx", "json_output/output_TSC.json")
 
 output_json = "json_output/output_TSC.json"
 # Load the JSON file into a Python variable
