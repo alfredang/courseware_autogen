@@ -1,6 +1,6 @@
 from autogen_agentchat.agents import AssistantAgent
 from autogen_agentchat.teams import RoundRobinGroupChat
-from model_configs import get_model_config
+from CourseProposal.model_configs import get_model_config
 from autogen_core.models import ChatCompletionClient
 
 

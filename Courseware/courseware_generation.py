@@ -1,11 +1,11 @@
 #############################
 # courseware_generation.py
 #############################
-from Courseware.agentic_LG import generate_learning_guide
-from Courseware.agentic_AP import generate_assessment_plan
-from Courseware.timetable_generator import generate_timetable
-from Courseware.agentic_LP import generate_lesson_plan
-from Courseware.agentic_FG import generate_facilitators_guide
+from Courseware.utils.agentic_LG import generate_learning_guide
+from Courseware.utils.agentic_AP import generate_assessment_documents
+from Courseware.utils.timetable_generator import generate_timetable
+from Courseware.utils.agentic_LP import generate_lesson_plan
+from Courseware.utils.agentic_FG import generate_facilitators_guide
 import os
 import re
 import json 
@@ -33,12 +33,19 @@ from autogen_ext.code_executors.local import LocalCommandLineCodeExecutor
 from autogen_agentchat.teams import RoundRobinGroupChat
 from autogen_ext.models.openai import OpenAIChatCompletionClient
 
-if 'context' not in st.session_state:
-    st.session_state['context'] = None
+# Initialize session state variables
+if 'processing_done' not in st.session_state:
+    st.session_state['processing_done'] = False
 if 'lg_output' not in st.session_state:
     st.session_state['lg_output'] = None
 if 'ap_output' not in st.session_state:
     st.session_state['ap_output'] = None
+if 'lp_output' not in st.session_state:
+    st.session_state['lp_output'] = None
+if 'fg_output' not in st.session_state:
+    st.session_state['fg_output'] = None
+if 'context' not in st.session_state:
+    st.session_state['context'] = None
 if 'asr_output' not in st.session_state:
     st.session_state['asr_output'] = None
 
@@ -103,7 +110,8 @@ class CourseData(BaseModel):
 
 class Session(BaseModel):
     Time: str
-    Instructions: str  # For activities, include only the activity header here.
+    instruction_title: str
+    bullet_points: List[str]
     Instructional_Methods: str
     Resources: str
 
@@ -320,11 +328,11 @@ def app():
     st.title("Courseware Document Generator")
 
     # Step 1: Upload Course Proposal (CP) Document
-    st.header("Step 1: Upload Course Proposal (CP) Document")
+    st.subheader("Step 1: Upload Course Proposal (CP) Document")
     cp_file = st.file_uploader("Upload Course Proposal (CP) Document", type=["docx"])
 
     # Step 2: Select Name of Organisation
-    st.header("Step 2: Select Name of Organisation")
+    st.subheader("Step 2: Select Name of Organisation")
 
     organisations = [
         "Tertiary Infotech Pte Ltd",
@@ -348,7 +356,7 @@ def app():
     selected_org = st.selectbox("Select Name of Organisation", organisations)
 
     # Step 3 (Optional): Upload Updated SFW Dataset
-    st.header("Step 3 (Optional): Upload Updated Skills Framework (SFw) Dataset")
+    st.subheader("Step 3 (Optional): Upload Updated Skills Framework (SFw) Dataset")
     sfw_file = st.file_uploader("Upload Updated SFw Dataset (Excel File)", type=["xlsx"])
     if sfw_file:
         sfw_data_dir = save_uploaded_file(sfw_file, 'input/dataset')
@@ -357,12 +365,11 @@ def app():
         sfw_data_dir = "Courseware/input/dataset/Sfw_dataset-2022-03-30 copy.xlsx"
 
     # Step 4: Select Document(s) to Generate using Checkboxes
-    st.header("Step 4: Select Document(s) to Generate")
+    st.subheader("Step 4: Select Document(s) to Generate")
     generate_lg = st.checkbox("Learning Guide (LG)")
     generate_ap = st.checkbox("Assessment Plan (AP)")
     generate_lp = st.checkbox("Lesson Plan (LP)")
     generate_fg = st.checkbox("Facilitator's Guide (FG)")
-
 
     # Step 4: Generate Documents
     if st.button("Generate Documents"):
@@ -446,7 +453,7 @@ def app():
                 if generate_lg:
                     try:
                         with st.spinner('Generating Learning Guide...'):
-                            lg_output = asyncio.run(generate_learning_guide(context, selected_org, openai_model_client))
+                            lg_output = generate_learning_guide(context, selected_org, openai_model_client)
                         if lg_output:
                             st.success(f"Learning Guide generated: {lg_output}")
                             st.session_state['lg_output'] = lg_output  # Store output path in session state
@@ -457,7 +464,7 @@ def app():
                 if generate_ap:
                     try:
                         with st.spinner('Generating Assessment Plan and Assessment Summary Record...'):
-                            ap_output, asr_output = asyncio.run(generate_assessment_plan(context, selected_org, openai_model_client))
+                            ap_output, asr_output = generate_assessment_documents(context, selected_org)
                         if ap_output:
                             st.success(f"Assessment Plan generated: {ap_output}")
                             st.session_state['ap_output'] = ap_output  # Store output path in session state
@@ -489,7 +496,7 @@ def app():
                 if generate_lp:
                     try:
                         with st.spinner("Generating Lesson Plan..."):
-                            lp_output = asyncio.run(generate_lesson_plan(context, selected_org, openai_model_client))
+                            lp_output = generate_lesson_plan(context, selected_org)
                         if lp_output:
                             st.success(f"Lesson Plan generated: {lp_output}")
                             st.session_state['lp_output'] = lp_output  # Store output path in session state
@@ -502,7 +509,7 @@ def app():
                 if generate_fg:
                     try:
                         with st.spinner("Generating Facilitator's Guide..."):
-                            fg_output = asyncio.run(generate_facilitators_guide(context, selected_org, openai_model_client))
+                            fg_output = generate_facilitators_guide(context, selected_org)
                         if fg_output:
                             st.success(f"Facilitator's Guide generated: {fg_output}")
                             st.session_state['fg_output'] = fg_output  # Store output path in session state
@@ -518,7 +525,7 @@ def app():
             st.error("Please upload a CP document and select a Name of Organisation.")
  
     if st.session_state.get('processing_done'):
-        st.header("Download Generated Documents")
+        st.subheader("Download Generated Documents")
 
         # Ensure 'context' exists in session state
         if 'context' in st.session_state:
