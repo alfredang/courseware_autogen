@@ -1,11 +1,11 @@
-from utils.document_parser import parse_document
-from agents.extraction_team import create_extraction_team, extraction_task
-from agents.research_team import create_research_team, research_task
-from agents.justification_agent import run_assessment_justification_agent, recreate_assessment_phrasing_dynamic, justification_task
-from agents.course_validation_team import create_course_validation_team
-from agents.tsc_agent import create_tsc_agent, tsc_agent_task
+from CourseProposal.utils.document_parser import parse_document
+from CourseProposal.agents.extraction_team import create_extraction_team, extraction_task
+from CourseProposal.agents.research_team import create_research_team, research_task
+from CourseProposal.agents.justification_agent import run_assessment_justification_agent, recreate_assessment_phrasing_dynamic, justification_task
+from CourseProposal.agents.course_validation_team import create_course_validation_team
+from CourseProposal.agents.tsc_agent import create_tsc_agent, tsc_agent_task
 from autogen_agentchat.ui import Console
-from utils.helpers import (
+from CourseProposal.utils.helpers import (
     extract_final_aggregator_json, 
     rename_keys_in_json_file,
     update_knowledge_ability_mapping,
@@ -16,10 +16,10 @@ from utils.helpers import (
     flatten_list,
     extract_tsc_agent_json,
 )
-from utils.json_mapping import map_values
-from utils.jinja_docu_replace import replace_placeholders_with_docxtpl
+from CourseProposal.utils.json_mapping import map_values
+from CourseProposal.utils.jinja_docu_replace import replace_placeholders_with_docxtpl
 import json
-from cv_main import create_course_validation
+from CourseProposal.cv_main import create_course_validation
 import streamlit as st
 
 async def main(input_tsc) -> None:

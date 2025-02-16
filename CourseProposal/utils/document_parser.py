@@ -7,7 +7,6 @@ from docx.oxml.table import CT_Tbl
 from docx.table import Table
 from docx.text.paragraph import Paragraph
 import re
-import sys
 
 def parse_document(input_docx, output_json):
     # Load the document

@@ -1,13 +1,11 @@
 # app.py
 import streamlit as st
 import os
-import subprocess
-import sys
 import tempfile
-from main import main
+from CourseProposal.main import main
 import asyncio
-from utils.document_parser import parse_document
-from model_configs import MODEL_CHOICES
+from CourseProposal.utils.document_parser import parse_document
+from CourseProposal.model_configs import MODEL_CHOICES
 
 # Initialize session state variables
 if 'processing_done' not in st.session_state:
@@ -22,9 +20,8 @@ if 'selected_model' not in st.session_state:
 def app():
     st.title("📄 Course Proposal File Processor")
 
-    # Model selection dropdown
-    st.sidebar.title("Model Selection")
-    model_choice = st.sidebar.selectbox(
+    st.subheader("Model Selection")
+    model_choice = st.selectbox(
         "Select LLM Model:",
         options=list(MODEL_CHOICES.keys()),
         index=0  # default: "GPT-4o Mini (Default)"

@@ -1,10 +1,10 @@
 from agents.course_validation_team import create_course_validation_team, validation_task
 from autogen_agentchat.ui import Console
-from utils.helpers import (
+from CourseProposal.utils.helpers import (
     extract_final_editor_json,
     append_validation_output,
 )
-from utils.json_docu_replace import replace_placeholders_in_doc
+from CourseProposal.utils.json_docu_replace import replace_placeholders_in_doc
 import json
 import asyncio
 import sys

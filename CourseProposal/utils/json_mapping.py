@@ -1,15 +1,4 @@
-import json
 import re
-
-# # Load JSON files
-# with open('mapping_source.json', encoding='utf-8') as f:
-#     mapping_source = json.load(f)
-
-# with open('ensemble_output.json', encoding='utf-8') as f:
-#     ensemble_output = json.load(f)
-
-# with open('research_output.json', encoding='utf-8') as f:
-#     research_output = json.load(f)
 
 def flatten_list(nested_list):
     flat_list = []
