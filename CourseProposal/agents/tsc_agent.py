@@ -1,35 +1,8 @@
-from autogen_core.models import ChatCompletionClient
 from autogen_agentchat.agents import AssistantAgent
 from autogen_agentchat.teams import RoundRobinGroupChat
-import json
-import asyncio
-import os
-from dotenv import load_dotenv
-import sys
+from model_configs import get_model_config
+from autogen_core.models import ChatCompletionClient
 
-load_dotenv()
-
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
-# OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
-config = {
-    "provider": "OpenAIChatCompletionClient",
-    "config": {
-        "model": "gpt-4o-mini",
-        "api_key": OPENAI_API_KEY,
-        "seed": 42,
-        "temperature": 0.2,
-        "response_format": {"type": "json_object"},
-    }
-}
-
-
-
-model_client = ChatCompletionClient.load_component(config)
-
-# input_json = "json_output/output_TSC.json"
-# # Load the JSON file into a Python variable
-# with open(input_json, 'r', encoding='utf-8') as file:
-#     tsc_data = json.load(file)
 
 def tsc_agent_task(tsc_data):
     tsc_task = f"""
@@ -40,7 +13,10 @@ def tsc_agent_task(tsc_data):
     """
     return tsc_task
 
-def create_tsc_agent(tsc_data) -> RoundRobinGroupChat:
+def create_tsc_agent(tsc_data, model_choice: str) -> RoundRobinGroupChat:
+    chosen_config = get_model_config(model_choice)
+    model_client = ChatCompletionClient.load_component(chosen_config)
+
     tsc_parser_agent_message = f"""
         You are to parse and correct spelling mistakes from {tsc_data}:
         The requirements are as follows:

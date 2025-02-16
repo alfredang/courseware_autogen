@@ -7,6 +7,7 @@ import tempfile
 from main import main
 import asyncio
 from utils.document_parser import parse_document
+from model_configs import MODEL_CHOICES
 
 # Initialize session state variables
 if 'processing_done' not in st.session_state:
@@ -15,9 +16,20 @@ if 'output_docx' not in st.session_state:
     st.session_state['output_docx'] = None
 if 'cv_output_files' not in st.session_state:
     st.session_state['cv_output_files'] = []
+if 'selected_model' not in st.session_state:
+    st.session_state['selected_model'] = "GPT-4o Mini (Default)"
 
 def app():
     st.title("📄 Course Proposal File Processor")
+
+    # Model selection dropdown
+    st.sidebar.title("Model Selection")
+    model_choice = st.sidebar.selectbox(
+        "Select LLM Model:",
+        options=list(MODEL_CHOICES.keys()),
+        index=0  # default: "GPT-4o Mini (Default)"
+    )
+    st.session_state['selected_model'] = model_choice
 
     # Add a description of the page with improved styling
     st.markdown(

@@ -1,27 +1,10 @@
 from autogen_core.models import ChatCompletionClient
 from autogen_agentchat.agents import AssistantAgent
 from autogen_agentchat.teams import RoundRobinGroupChat
-import json
-import asyncio
-import os
 from dotenv import load_dotenv
+from model_configs import get_model_config
 
 load_dotenv()
-
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
-# OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
-config = {
-    "provider": "OpenAIChatCompletionClient",
-    "config": {
-        "model": "gpt-4o-mini",
-        "api_key": OPENAI_API_KEY,
-        "seed": 42,
-        "temperature": 0.2,
-        "response_format": {"type": "json_object"},
-    }
-}
-
-model_client = ChatCompletionClient.load_component(config)
 
 
 def extraction_task(data):
@@ -32,8 +15,9 @@ def extraction_task(data):
     """
     return extraction_task
 
-def create_extraction_team(data) -> RoundRobinGroupChat:
-
+def create_extraction_team(data, model_choice: str) -> RoundRobinGroupChat:
+    chosen_config = get_model_config(model_choice)
+    model_client = ChatCompletionClient.load_component(chosen_config)
     course_info_extractor_message = f"""
     You are to extract the following variables from {data}:
         1) Course Title

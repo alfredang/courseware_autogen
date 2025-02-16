@@ -19,11 +19,11 @@ from utils.helpers import (
 from utils.json_mapping import map_values
 from utils.jinja_docu_replace import replace_placeholders_with_docxtpl
 import json
-import asyncio
-import sys
 from cv_main import create_course_validation
+import streamlit as st
 
 async def main(input_tsc) -> None:
+    model_choice = st.session_state.get('selected_model', "GPT-4o Mini (Default)")
     # Parse document
     parse_document(input_tsc, "json_output/output_TSC.json")
     # load the json variables first then pass it in, if you pass it in within the agent scripts it will load the previous json states
@@ -31,7 +31,7 @@ async def main(input_tsc) -> None:
     with open("json_output/output_TSC.json", 'r', encoding='utf-8') as file:
         tsc_data = json.load(file)        
     # TSC Agent Process
-    tsc_agent = create_tsc_agent(tsc_data=tsc_data)
+    tsc_agent = create_tsc_agent(tsc_data=tsc_data, model_choice=model_choice)
     stream = tsc_agent.run_stream(task=tsc_agent_task(tsc_data))
     await Console(stream)
     #TSC JSON management
@@ -45,7 +45,7 @@ async def main(input_tsc) -> None:
     # Extraction Process
     with open("json_output/output_TSC.json", 'r', encoding='utf-8') as file:
         tsc_data = json.load(file)    
-    group_chat = create_extraction_team(tsc_data)
+    group_chat = create_extraction_team(tsc_data, model_choice=model_choice)
     stream = group_chat.run_stream(task=extraction_task(tsc_data))
     await Console(stream)
 
@@ -67,7 +67,7 @@ async def main(input_tsc) -> None:
     # Research Team Process
     with open("json_output/ensemble_output.json", 'r', encoding='utf-8') as file:
         ensemble_output = json.load(file)  
-    research_group_chat = create_research_team(ensemble_output)
+    research_group_chat = create_research_team(ensemble_output, model_choice=model_choice)
     stream = research_group_chat.run_stream(task=research_task(ensemble_output))
     await Console(stream)
 
@@ -82,14 +82,16 @@ async def main(input_tsc) -> None:
     with open("json_output/ensemble_output.json", 'r', encoding='utf-8') as file:
         ensemble_output = json.load(file)      
     # Justification Agent Process
-    justification_agent = run_assessment_justification_agent(ensemble_output)
+    justification_agent = run_assessment_justification_agent(ensemble_output, model_choice=model_choice)
     stream = justification_agent.run_stream(task=justification_task(ensemble_output))
     await Console(stream)
 
     justification_state = await justification_agent.save_state()
     with open("json_output/assessment_justification_agent_state.json", "w") as f:
         json.dump(justification_state, f)
-    justification_data = extract_final_agent_json("json_output/assessment_justification_agent_state.json")    
+    justification_data = extract_final_agent_json("json_output/assessment_justification_agent_state.json")  
+    with open("json_output/justification_debug.json", "w") as f:
+        json.dump(justification_data, f)  
     output_phrasing = recreate_assessment_phrasing_dynamic(justification_data)
     # Load the existing research_output.json
     with open('json_output/research_output.json', 'r', encoding='utf-8') as f:
@@ -152,7 +154,7 @@ async def main(input_tsc) -> None:
         json.dump(editor_data, out, indent=2)
     
     # Course Validation Form Process
-    await create_course_validation()
+    await create_course_validation(model_choice=model_choice)
     
 
 # if __name__ == "__main__":

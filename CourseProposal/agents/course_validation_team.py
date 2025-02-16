@@ -1,28 +1,7 @@
 from autogen_core.models import ChatCompletionClient
 from autogen_agentchat.agents import AssistantAgent
 from autogen_agentchat.teams import RoundRobinGroupChat
-import json
-import asyncio
-import os
-from dotenv import load_dotenv
-import sys
-
-load_dotenv()
-
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
-# OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
-config = {
-    "provider": "OpenAIChatCompletionClient",
-    "config": {
-        "model": "gpt-4o-mini",
-        "api_key": OPENAI_API_KEY,
-        "seed": 42,
-        "temperature": 0.2,
-        "response_format": {"type": "json_object"},
-    }
-}
-
-model_client = ChatCompletionClient.load_component(config)
+from model_configs import get_model_config
 
 def validation_task(ensemble_output):
     validation_task = f"""
@@ -33,7 +12,9 @@ def validation_task(ensemble_output):
     """
     return validation_task
 
-def create_course_validation_team(ensemble_output) -> RoundRobinGroupChat:
+def create_course_validation_team(ensemble_output, model_choice: str) -> RoundRobinGroupChat:
+    chosen_config = get_model_config(model_choice)
+    model_client = ChatCompletionClient.load_component(chosen_config)
 
     # insert research analysts
     analyst_message = f"""

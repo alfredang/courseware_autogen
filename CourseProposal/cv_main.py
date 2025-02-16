@@ -10,12 +10,12 @@ import asyncio
 import sys
 import os
 
-async def create_course_validation() -> None:
+async def create_course_validation(model_choice: str) -> None:
     # Load the JSON file into a Python variable
     with open('json_output/ensemble_output.json', 'r', encoding="utf-8") as file:
         ensemble_output = json.load(file)    
     # Course Validation Form Process
-    validation_group_chat = create_course_validation_team(ensemble_output)
+    validation_group_chat = create_course_validation_team(ensemble_output, model_choice=model_choice)
     stream = validation_group_chat.run_stream(task=validation_task(ensemble_output))
     await Console(stream)
 

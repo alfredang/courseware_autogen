@@ -7,23 +7,9 @@ from dotenv import load_dotenv
 import asyncio
 from utils.helpers import extract_final_agent_json
 from autogen_agentchat.messages import TextMessage
+from model_configs import get_model_config
 
 load_dotenv()
-
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
-# OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
-config = {
-    "provider": "OpenAIChatCompletionClient",
-    "config": {
-        "model": "gpt-4o-mini",
-        "api_key": OPENAI_API_KEY,
-        "seed": 42,
-        "temperature": 0.2,
-        "response_format": {"type": "json_object"},
-    }
-}
-
-model_client = ChatCompletionClient.load_component(config)
 
 def justification_task(ensemble_output):
     justification_task = f"""
@@ -77,7 +63,11 @@ def recreate_assessment_phrasing_dynamic(json_data):
 
     return "\n".join(phrasing_list)
 
-def run_assessment_justification_agent(ensemble_output) -> RoundRobinGroupChat:
+def run_assessment_justification_agent(ensemble_output, model_choice: str) -> RoundRobinGroupChat:
+    
+    chosen_config = get_model_config(model_choice)
+    model_client = ChatCompletionClient.load_component(chosen_config)
+        
     assessment_justification_agent_message = f"""
     Based on the following course details, you are to provide justification for the appropriate Assessment Method followng a defined structure.
     The course details are as follows:
