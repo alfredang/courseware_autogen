@@ -5,7 +5,7 @@ import json
 import asyncio
 import os
 from dotenv import load_dotenv
-from model_configs import get_model_config
+from CourseProposal.model_configs import get_model_config
 
 def research_task(ensemble_output):
     research_task = f"""

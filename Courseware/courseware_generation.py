@@ -328,11 +328,11 @@ def app():
     st.title("Courseware Document Generator")
 
     # Step 1: Upload Course Proposal (CP) Document
-    st.header("Step 1: Upload Course Proposal (CP) Document")
+    st.subheader("Step 1: Upload Course Proposal (CP) Document")
     cp_file = st.file_uploader("Upload Course Proposal (CP) Document", type=["docx"])
 
     # Step 2: Select Name of Organisation
-    st.header("Step 2: Select Name of Organisation")
+    st.subheader("Step 2: Select Name of Organisation")
 
     organisations = [
         "Tertiary Infotech Pte Ltd",
@@ -356,7 +356,7 @@ def app():
     selected_org = st.selectbox("Select Name of Organisation", organisations)
 
     # Step 3 (Optional): Upload Updated SFW Dataset
-    st.header("Step 3 (Optional): Upload Updated Skills Framework (SFw) Dataset")
+    st.subheader("Step 3 (Optional): Upload Updated Skills Framework (SFw) Dataset")
     sfw_file = st.file_uploader("Upload Updated SFw Dataset (Excel File)", type=["xlsx"])
     if sfw_file:
         sfw_data_dir = save_uploaded_file(sfw_file, 'input/dataset')
@@ -365,7 +365,7 @@ def app():
         sfw_data_dir = "Courseware/input/dataset/Sfw_dataset-2022-03-30 copy.xlsx"
 
     # Step 4: Select Document(s) to Generate using Checkboxes
-    st.header("Step 4: Select Document(s) to Generate")
+    st.subheader("Step 4: Select Document(s) to Generate")
     generate_lg = st.checkbox("Learning Guide (LG)")
     generate_ap = st.checkbox("Assessment Plan (AP)")
     generate_lp = st.checkbox("Lesson Plan (LP)")
@@ -525,7 +525,7 @@ def app():
             st.error("Please upload a CP document and select a Name of Organisation.")
  
     if st.session_state.get('processing_done'):
-        st.header("Download Generated Documents")
+        st.subheader("Download Generated Documents")
 
         # Ensure 'context' exists in session state
         if 'context' in st.session_state:

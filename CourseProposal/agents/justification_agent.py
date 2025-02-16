@@ -5,9 +5,9 @@ import json
 import os
 from dotenv import load_dotenv
 import asyncio
-from utils.helpers import extract_final_agent_json
+from CourseProposal.utils.helpers import extract_final_agent_json
 from autogen_agentchat.messages import TextMessage
-from model_configs import get_model_config
+from CourseProposal.model_configs import get_model_config
 
 load_dotenv()
 
