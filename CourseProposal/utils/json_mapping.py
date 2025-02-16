@@ -532,18 +532,3 @@ def map_values(mapping_source, ensemble_output, research_output):
 
     combine_lu_luex(mapping_source)
     return mapping_source
-
-# # Apply the mapping
-# updated_mapping_source = map_values(mapping_source, ensemble_output, research_output)
-
-# # Output the updated mapping source for verification
-# print(json.dumps(updated_mapping_source, indent=4))
-
-# # Step 2: Save the parsed output to a JSON file
-# output_filename = 'generated_mapping.json'
-# try:
-#     with open(output_filename, 'w') as json_file:
-#         json.dump(updated_mapping_source, json_file, indent=4)
-#     print(f"Output saved to {output_filename}")
-# except IOError as e:
-#     print(f"Error saving JSON to file: {e}")
