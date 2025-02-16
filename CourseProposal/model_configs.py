@@ -23,6 +23,18 @@ default_config = {
     }
 }
 
+# GPT-4o
+gpt_4o_config = {
+    "provider": "OpenAIChatCompletionClient",
+    "config": {
+        "model": "gpt-4o",
+        "api_key": OPENAI_API_KEY,
+        "seed": 42,
+        "temperature": 0.2,
+        "response_format": {"type": "json_object"},
+    }
+}
+
 # DeepSeek
 deepseek_config = {
     "provider": "OpenAIChatCompletionClient",
@@ -59,9 +71,10 @@ gemini_config = {
 
 # Map user-friendly names to configs
 MODEL_CHOICES = {
-    "GPT-4o Mini (Default)": default_config,
-    "DeepSeek": deepseek_config,
-    "Gemini": gemini_config,
+    "GPT-4o-Mini": default_config,
+    "DeepSeek-V3": deepseek_config,
+    "Gemini-Flash-2.0-Exp": gemini_config,
+    "GPT-4o": gpt_4o_config,
 }
 
 def get_model_config(choice: str) -> dict:
