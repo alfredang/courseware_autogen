@@ -1,0 +1,9 @@
+chunk_sizes: [4096, 2048, 1024, 512]
+chunk_size: 512
+chunk_overlap: 50
+indexing_method: "hierarchical"  # Or "flat"
+create_qa_index_flag: True  # Set to False if you don't want the QA index
+create_vector_index_flag: True
+project_id: assessment-rag  # Replace with your actual project ID
+firestore_db_name: "tertiary-rag-docstore"  # Replace with your Firestore database name, or leave as (default)
+firestore_namespace: "hierarchical_docs"   # Replace with desired collection, can be left empty

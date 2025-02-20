@@ -29,7 +29,7 @@ def create_planning_team(tsc_data, model_choice: str) -> RoundRobinGroupChat:
         3. Provide Keywords that will assist in the search.
         4. Return a full JSON object with your suggestions according to the schema.
 
-        An example JSON schema looks like this, with the LUs as a key-value pair:
+        An example JSON schema looks like this:
         {{
         "Planning": {{
             "Retrieval Plan": [
