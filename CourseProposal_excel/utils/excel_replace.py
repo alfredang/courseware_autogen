@@ -1,117 +1,77 @@
 import json
-import sys
-import re
 import openpyxl
-from openpyxl.styles import Font
-from openpyxl.富文本 import RichText, TextRun
+import re  # For cell reference validation
 import os
+from helpers import load_json_file
 
-def process_excel_template_with_json(json_path, excel_template_path, output_excel_path):
-    # Load the JSON data
-    with open(json_path, 'r') as file:
-        json_data = json.load(file)
+def process_excel_with_direct_mapping(json_data_path, excel_template_path, output_excel_path):
+    """
+    Processes an Excel template by directly placing JSON values into specified cells
+    based on a pre-defined cell_replacement_map.  Assumes JSON already contains the final values.
 
-    # Preprocess JSON keys to make them valid Python variable names
-    def preprocess_json_keys(json_data):
-        new_data = {}
-        for key, value in json_data.items():
-            # Remove special characters and adjust keys
-            new_key = re.sub(r'[^0-9a-zA-Z_]', '_', key)
-            new_key = new_key.strip('_')
-            # Recursively preprocess if value is a dict
-            if isinstance(value, dict):
-                value = preprocess_json_keys(value)
-            new_data[new_key] = value
-        return new_data
+    Args:
+        json_data_path (str): Path to the JSON file containing the data (generated_mapping.json),
+                              assumed to have keys with pre-concatenated values.
+        excel_template_path (str): Path to the Excel template file (.xlsx).
+        output_excel_path (str): Path to save the processed Excel file.
+    """
 
-    context = preprocess_json_keys(json_data)
+    json_data = load_json_file(json_data_path)
+    if not json_data:
+        print("Failed to load JSON data. Exiting.")
+        return
+    
+    sheet1 = "1 - Course Particulars"
+    sheet2 = "2 - Background"
+    sheet3 = "3 - Instructional Design"
+    sheet4 = "4 - Methodologies"
 
-    # List of placeholders to process (same as original script for context)
-    placeholders_to_process = ['Placeholder_1'] + [f'Topics_{i}' for i in range(6)] + ['AssessmentJustification','Sequencing']
+    cell_replacement_map = {  # Define your cell mapping dictionary DIRECTLY HERE
+        "#Company":      {"sheet": sheet1, "cell": "C2",  "json_key": "#Company"},        # Example - adjust json_key as needed
+        "#CourseTitle":   {"sheet": sheet1, "cell": "C3",  "json_key": "#CourseTitle"},     # Example - adjust json_key as needed
+        "#TCS_Code_Skill":      {"sheet": sheet1, "cell": "C10",  "json_key": "#TCS_Code_Skill"},      # Map to existing key
+        "#Sequencing_rationale": {"sheet": sheet3, "cell": "B6", "json_key": "#Sequencing_rationale"}, # Map to existing key
+        
+    }
 
-    # Process specified placeholders to structure the context for Excel formatting
-    for placeholder in placeholders_to_process:
-        if placeholder in context:
-            value = context[placeholder]
-            if isinstance(value, list) or isinstance(value, str): # Process lists and strings
-                context[placeholder] = process_placeholder(value) # Use the existing process_placeholder
-
-
-    # CHECK THE CONTEXT BEFORE RENDERING to Excel
-    print("Context being passed to Excel template processing:")
-    print(json.dumps(context, indent=4))
-
-    # Load the Excel template workbook
     try:
         workbook = openpyxl.load_workbook(excel_template_path)
     except FileNotFoundError:
         print(f"Error: Excel template file not found at {excel_template_path}")
-        sys.exit(1)
+        return
 
-    placeholder_regex = re.compile(r'\{\{\s*([a-zA-Z0-9_]+)\s*\}\}')
+    for new_key_name, mapping_config in cell_replacement_map.items():
+        if not isinstance(mapping_config, dict) or 'sheet' not in mapping_config or 'cell' not in mapping_config or 'json_key' not in mapping_config:
+            print(f"Warning: Invalid mapping format for key '{new_key_name}'. Expected format: {{'sheet': 'SheetName', 'cell': 'CellRef', 'json_key': 'JsonKey'}}")
+            continue
 
-    # Process each sheet in the workbook
-    for sheet_name in workbook.sheetnames:
+        sheet_name = mapping_config['sheet']
+        cell_reference = mapping_config['cell']
+        json_key_to_use = mapping_config['json_key'] # Get the JSON key to use for this cell
+
+        if not re.match(r'^[A-Z]+[1-9][0-9]*$', cell_reference): # Basic cell reference validation
+            print(f"Warning: Invalid cell reference '{cell_reference}' for key '{new_key_name}'. Skipping.")
+            continue
+
+        if sheet_name not in workbook.sheetnames:
+            print(f"Warning: Sheet '{sheet_name}' not found in workbook for key '{new_key_name}'. Skipping.")
+            continue
+
         sheet = workbook[sheet_name]
-        print(f"Processing sheet: {sheet_name}")
+        cell = sheet[cell_reference] # Get the cell object
 
-        for row in sheet.iter_rows():
-            for cell in row:
-                if cell.value and isinstance(cell.value, str): # Process only string cell values that might contain placeholders
-                    original_cell_value = cell.value
-                    rich_text_runs = [] # List to hold TextRun objects for RichText
-                    last_pos = 0 # Track position in the original string
+        # Directly get value from JSON using the specified json_key
+        cell_value = json_data.get(json_key_to_use)
 
-                    for match in placeholder_regex.finditer(original_cell_value):
-                        placeholder_name = match.group(1)
-                        start_pos = match.start()
-                        end_pos = match.end()
-
-                        # Add any text before the placeholder as a plain TextRun
-                        if start_pos > last_pos:
-                            plain_text_segment = original_cell_value[last_pos:start_pos]
-                            rich_text_runs.append(TextRun(plain_text_segment, Font(bold=False)))
-
-                        if placeholder_name in context:
-                            placeholder_content = context[placeholder_name] # This is now the structured data from process_placeholder
-
-                            if isinstance(placeholder_content, list): # Expecting list of dicts from process_placeholder
-                                for item in placeholder_content:
-                                    if item['type'] == 'paragraph':
-                                        rich_text_runs.append(TextRun(item['content'], Font(bold=False)))
-                                        rich_text_runs.append(TextRun("\n")) # Add newline after paragraph
-                                    elif item['type'] == 'bullets':
-                                        for bullet_item in item['content']:
-                                            rich_text_runs.append(TextRun("·   ", Font(bold=False))) # Bullet character
-                                            rich_text_runs.append(TextRun(bullet_item, Font(bold=False)))
-                                            rich_text_runs.append(TextRun("\n")) # Newline after each bullet
-                                    elif item['type'] == 'bold_paragraph':
-                                        rich_text_runs.append(TextRun(item['content'], Font(bold=True))) # Bold
-                                        rich_text_runs.append(TextRun("\n")) # Newline after bold paragraph
-                            elif isinstance(placeholder_content, str): # Fallback for simple string placeholders if process_placeholder not used correctly
-                                rich_text_runs.append(TextRun(placeholder_content, Font(bold=False)))
-                                rich_text_runs.append(TextRun("\n"))
-                            else: # Handle unexpected data type
-                                rich_text_runs.append(TextRun(f"Error: Unexpected data type for placeholder '{placeholder_name}'", Font(color="FF0000")))
-                                rich_text_runs.append(TextRun("\n"))
+        if cell_value is not None:
+            if isinstance(cell_value, list): # Handle list values if needed (e.g., concatenate or take first element)
+                cell.value = "\n".join(map(str, cell_value)) # Concatenate list items with newlines
+            else:
+                cell.value = str(cell_value) # Convert to string and set cell value
+        else:
+            print(f"Warning: JSON key '{json_key_to_use}' not found in JSON data. Cell '{cell_reference}' will be empty.")
 
 
-                        else: # Placeholder not found in context
-                            rich_text_runs.append(TextRun(f"{{{{{placeholder_name}}}}} (Not Found)", Font(color="0000FF"))) # Indicate missing placeholder in blue
-
-                        last_pos = end_pos # Update last processed position
-
-                    # Add any remaining text after the last placeholder
-                    if last_pos < len(original_cell_value):
-                        remaining_text = original_cell_value[last_pos:]
-                        rich_text_runs.append(TextRun(remaining_text, Font(bold=False)))
-
-                    if rich_text_runs: # Only set RichText if there's content
-                        cell.value = RichText(rich_text_runs)
-                    else: # If the cell was just a placeholder that resolved to nothing, you might want to clear it or leave it as is.
-                        cell.value = "" # Or cell.value = None to clear the cell completely
-
-    # Save the modified workbook
     try:
         workbook.save(output_excel_path)
         print(f"Updated Excel file saved to: {output_excel_path}")
@@ -119,127 +79,9 @@ def process_excel_template_with_json(json_path, excel_template_path, output_exce
         print(f"Error saving Excel file: {e}")
 
 
-def process_placeholder(value):
-    import re
-    items = []
-
-    # Define the phrases to be bolded
-    bold_phrases = ["Performance Gaps:", "Attributes Gained:", "Post-Training Benefits to Learners:"]
-
-    # If value is a list, process each entry in the list
-    if isinstance(value, list):
-        for idx, entry in enumerate(value):
-            lines = entry.split('\n')
-            current_paragraph = []
-            bullet_points = []
-
-            for line in lines:
-                line = line.strip()
-
-                if not line:
-                    # Empty line encountered; finalize current paragraph or bullets
-                    if current_paragraph:
-                        items.append({'type': 'paragraph', 'content': ' '.join(current_paragraph)})
-                        current_paragraph = []
-                    if bullet_points:
-                        items.append({'type': 'bullets', 'content': bullet_points})
-                        bullet_points = []
-                    # Do not add empty paragraph for spacing
-
-                elif line.startswith('•'):
-                    # Bullet point
-                    if current_paragraph:
-                        items.append({'type': 'paragraph', 'content': ' '.join(current_paragraph)})
-                        current_paragraph = []
-                    bullet_points.append(line.lstrip('•').strip())
-
-                elif re.match(r'^LU\d+:\s', line) or line in bold_phrases:
-                    # LU title or specific bold phrases
-                    if current_paragraph:
-                        items.append({'type': 'paragraph', 'content': ' '.join(current_paragraph)})
-                        current_paragraph = []
-                    if bullet_points:
-                        items.append({'type': 'bullets', 'content': bullet_points})
-                        bullet_points = []
-                    # Add the line as a bold paragraph
-                    items.append({'type': 'bold_paragraph', 'content': line})
-
-                else:
-                    # Regular line
-                    if bullet_points:
-                        items.append({'type': 'bullets', 'content': bullet_points})
-                        bullet_points = []
-                    current_paragraph.append(line)
-
-            # Handle any remaining content in the entry
-            if current_paragraph:
-                items.append({'type': 'paragraph', 'content': ' '.join(current_paragraph)})
-                current_paragraph = []
-            if bullet_points:
-                items.append({'type': 'bullets', 'content': bullet_points})
-                bullet_points = []
-
-    else:
-        # Handle single string value (e.g., Conclusion)
-        lines = value.split('\n')
-        current_paragraph = []
-        bullet_points = []
-
-        for line in lines:
-            line = line.strip()
-
-            if not line:
-                # Empty line encountered; finalize current paragraph or bullets
-                if current_paragraph:
-                    items.append({'type': 'paragraph', 'content': ' '.join(current_paragraph)})
-                    current_paragraph = []
-                if bullet_points:
-                    items.append({'type': 'bullets', 'content': bullet_points})
-                    bullet_points = []
-                # Do not add empty paragraph for spacing
-
-            elif line.startswith('•'):
-                if current_paragraph:
-                    items.append({'type': 'paragraph', 'content': ' '.join(current_paragraph)})
-                    current_paragraph = []
-                bullet_points.append(line.lstrip('•').strip())
-
-            elif line in bold_phrases:
-                # Specific bold phrases
-                if current_paragraph:
-                    items.append({'type': 'paragraph', 'content': ' '.join(current_paragraph)})
-                    current_paragraph = []
-                if bullet_points:
-                    items.append({'type': 'bullets', 'content': bullet_points})
-                    bullet_points = []
-                # Add the line as a bold paragraph
-                items.append({'type': 'bold_paragraph', 'content': line})
-
-            else:
-                if bullet_points:
-                    items.append({'type': 'bullets', 'content': bullet_points})
-                    bullet_points = []
-                current_paragraph.append(line)
-
-        if current_paragraph:
-            items.append({'type': 'paragraph', 'content': ' '.join(current_paragraph)})
-        if bullet_points:
-            items.append({'type': 'bullets', 'content': bullet_points})
-
-    return items
-
-
-# Example of how to use this function
 if __name__ == "__main__":
-    # Ensure correct number of arguments
-    if len(sys.argv) != 4:
-        print("Usage: python script.py <json_file> <excel_template> <new_excel>")
-        sys.exit(1)
+    json_data_path = os.path.join('..', 'json_output', 'generated_mapping.json') # Path to your data JSON - now assumes pre-processed
+    excel_template_path = os.path.join('..', 'templates', 'CP_excel_template.xlsx') # Path to your Excel template
+    output_excel_path = os.path.join('..', 'output_docs', 'Course Proposal Template V1_output_direct_value_map.xlsx') # Path for output Excel
 
-    # Parameters
-    json_file = os.path.join('..', 'data', 'generated_mapping.json')
-    excel_template_file = os.path.join('..', 'templates', 'CP_excel_template.xlsx')
-    output_excel_file = os.path.join('..', 'output_docs', 'updated_CP.xlsx')
-
-    # Call the function
-    process_excel_template_with_json(json_file, excel_template_file, output_excel_file)
+    process_excel_with_direct_mapping(json_data_path, excel_template_path, output_excel_path)

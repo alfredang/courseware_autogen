@@ -29,7 +29,7 @@ def extract_and_concatenate_json_values(json_data, keys_to_extract, new_key_name
 
     Args:
         json_data (dict): The JSON data as a dictionary.
-        keys_to_extract (list of str): A list of keys to extract values from. Keys can include array indexing like "key[index]".
+        keys_to_extract (list of str): A list of keys to extract values from. Keys are used directly as in JSON.
         new_key_name (str): The name of the new key for the concatenated string in the output.
 
     Returns:
@@ -39,51 +39,65 @@ def extract_and_concatenate_json_values(json_data, keys_to_extract, new_key_name
         return None
 
     concatenated_string = ""
-    for key_path in keys_to_extract:
+    for key_path in keys_to_extract: # Iterate through keys as they are, NO parsing needed
         try:
-            # Handle potential array indexing in keys like "key[index]"
-            base_key = key_path
-            index = None
-            if '[' in key_path and key_path.endswith(']'):
-                base_key_parts = key_path.split('[')
-                base_key = base_key_parts[0]
-                index_str = base_key_parts[1][:-1] # Remove closing bracket
-                try:
-                    index = int(index_str)
-                except ValueError:
-                    print(f"Warning: Invalid array index format in key '{key_path}'. Ignoring index.")
-                    index = None # Treat as no index if not an integer
-
-            value = json_data.get(base_key)
+            value = json_data.get(key_path) # Use key_path directly as the JSON key
 
             if value is None:
-                print(f"Warning: Key '{base_key}' not found in JSON data.")
+                print(f"Warning: Key '{key_path}' not found in JSON data.")
                 continue # Skip to the next key if not found
 
             if isinstance(value, list):
-                if index is not None: # Access list element by index
-                    if 0 <= index < len(value):
-                        list_value = value[index]
-                        if isinstance(list_value, list): # Nested list handling - flatten if needed
-                            concatenated_string += "\n".join(map(str, list_value)) + "\n"
-                        else:
-                            concatenated_string += str(list_value) + "\n"
-                    else:
-                        print(f"Warning: Index '{index}' out of range for key '{base_key}'. Skipping.")
-                else: # Concatenate all list items if no index specified
-                    concatenated_string += "\n".join(map(str, value)) + "\n" # Map to str to handle non-string list elements if any
+                concatenated_string += "\n".join(map(str, value)) + "\n" # Map to str to handle non-string list elements if any
             else: # If value is not a list (e.g., string, number)
                 concatenated_string += str(value) + "\n" # Ensure it's a string
 
         except KeyError:
             print(f"Error: Key '{key_path}' not found in JSON data.")
-        except IndexError:
-            print(f"Error: Index out of range accessing value for key '{key_path}'.")
         except TypeError as e: # Handle cases where indexing might be attempted on non-list
             print(f"TypeError accessing key '{key_path}': {e}")
 
 
     output_data = {new_key_name: concatenated_string.rstrip('\n')} # rstrip to remove trailing newline
+    return output_data
+
+def extract_and_concatenate_json_values_space_seperator(json_data, keys_to_extract, new_key_name):
+    """
+    Extracts values from JSON data based on keys, concatenates them into a string with spaces, THIS METHOD IS DIFFERENT FROM THE ONE WITH NO SPACES
+    and returns a dictionary containing the concatenated string under a new key.
+
+    Args:
+        json_data (dict): The JSON data as a dictionary.
+        keys_to_extract (list of str): A list of keys to extract values from. Keys are used directly as in JSON.
+        new_key_name (str): The name of the new key for the concatenated string in the output.
+
+    Returns:
+        dict: A dictionary containing the new key and the concatenated string, or None if input json_data is None.
+    """
+    if json_data is None:
+        return None
+
+    concatenated_string = ""
+    for key_path in keys_to_extract: # Iterate through keys as they are, NO parsing needed
+        try:
+            value = json_data.get(key_path) # Use key_path directly as the JSON key
+
+            if value is None:
+                print(f"Warning: Key '{key_path}' not found in JSON data.")
+                continue # Skip to the next key if not found
+
+            if isinstance(value, list):
+                concatenated_string += " ".join(map(str, value)) + " " # Map to str to handle non-string list elements if any
+            else: # If value is not a list (e.g., string, number)
+                concatenated_string += str(value) + " " # Ensure it's a string
+
+        except KeyError:
+            print(f"Error: Key '{key_path}' not found in JSON data.")
+        except TypeError as e: # Handle cases where indexing might be attempted on non-list
+            print(f"TypeError accessing key '{key_path}': {e}")
+
+
+    output_data = {new_key_name: concatenated_string} # rstrip to remove trailing newline
     return output_data
 
 def write_json_file(data, output_file_path):
@@ -120,7 +134,7 @@ def map_new_key_names_excel():
 
     # tcs code combined with skill name
     tcs_keys = ["#TCS[1]", "#TCS[0]"]
-    tcs_code_skill_data = extract_and_concatenate_json_values(generated_mapping, tcs_keys, "#TCS_Code_Skill")
+    tcs_code_skill_data = extract_and_concatenate_json_values_space_seperator(generated_mapping, tcs_keys, "#TCS_Code_Skill")
 
     if sequencing_rationale_data and tcs_code_skill_data: # Check if both data extractions were successful
         # **Update the existing data dictionary**

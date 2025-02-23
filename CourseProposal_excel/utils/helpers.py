@@ -438,4 +438,16 @@ def safe_json_loads(json_str):
     except json.JSONDecodeError as e:
         print(f"JSON Parsing Error: {e}")
         return None
+
+def load_json_file(file_path):
+    """Loads JSON data from a file."""
+    try:
+        with open(file_path, 'r') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        print(f"Error: JSON file not found at '{file_path}'")
+        return None
+    except json.JSONDecodeError:
+        print(f"Error: Could not decode JSON from file '{file_path}'. Please ensure it is valid JSON.")
+        return None
     
