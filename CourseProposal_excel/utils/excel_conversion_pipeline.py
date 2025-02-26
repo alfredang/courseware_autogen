@@ -3,6 +3,7 @@ import sys
 import os
 from helpers import load_json_file, extract_lo_keys, recursive_get_keys
 import pandas as pd
+import re
 
 
 def extract_and_concatenate_json_values(json_data, keys_to_extract, new_key_name):
@@ -22,26 +23,25 @@ def extract_and_concatenate_json_values(json_data, keys_to_extract, new_key_name
         return None
 
     concatenated_string = ""
-    for key_path in keys_to_extract: # Iterate through keys as they are, NO parsing needed
+    for key_path in keys_to_extract:  # Iterate through keys as they are, NO parsing needed
         try:
-            value = json_data.get(key_path) # Use key_path directly as the JSON key
+            value = json_data.get(key_path)  # Use key_path directly as the JSON key
 
             if value is None:
                 print(f"Warning: Key '{key_path}' not found in JSON data.")
-                continue # Skip to the next key if not found
+                continue  # Skip to the next key if not found
 
             if isinstance(value, list):
-                concatenated_string += "\n".join(map(str, value)) + "\n\n" # Map to str to handle non-string list elements if any
-            else: # If value is not a list (e.g., string, number)
-                concatenated_string += str(value) + "\n\n" # Ensure it's a string
+                concatenated_string += "\n".join(map(str, value)) + "\n\n"  # Map to str to handle non-string list elements if any
+            else:  # If value is not a list (e.g., string, number)
+                concatenated_string += str(value) + "\n\n"  # Ensure it's a string
 
         except KeyError:
             print(f"Error: Key '{key_path}' not found in JSON data.")
-        except TypeError as e: # Handle cases where indexing might be attempted on non-list
+        except TypeError as e:  # Handle cases where indexing might be attempted on non-list
             print(f"TypeError accessing key '{key_path}': {e}")
 
-
-    output_data = {new_key_name: concatenated_string.rstrip('\n\n')} # rstrip to remove trailing newline
+    output_data = {new_key_name: concatenated_string.rstrip('\n\n')}  # rstrip to remove trailing newline
     return output_data
 
 def extract_and_concatenate_json_values_space_seperator(json_data, keys_to_extract, new_key_name):
@@ -334,6 +334,42 @@ def create_assessment_dataframe(json_data):
     ])
     return df
 
+def enrich_assessment_dataframe_ka_descriptions(df, excel_data_json_path):
+    """
+    Enriches the 'KA' column of an assessment DataFrame with descriptions from excel_data.json.
+
+    Args:
+        df (pd.DataFrame): The assessment DataFrame created by create_assessment_dataframe.
+        excel_data_json_path (str): Path to the excel_data.json file.
+
+    Returns:
+        pd.DataFrame: The DataFrame with enriched 'KA' column values.
+    """
+    try:
+        with open(excel_data_json_path, 'r', encoding='utf-8') as f:
+            excel_data = json.load(f)
+    except FileNotFoundError:
+        print(f"Error: excel_data.json file not found at: {excel_data_json_path}")
+        return df  # Return original DataFrame if JSON not found
+
+    ka_analysis_data = excel_data[1].get("KA_Analysis", {}) # Access KA_Analysis data
+
+    enriched_ka_values = []
+    for index, row in df.iterrows():
+        ka_value = row['KA']
+        ka_code_match = re.match(r'([KA]\d+):', ka_value) # Regex to extract KA code (e.g., K1, A2)
+
+        if ka_code_match:
+            ka_code = ka_code_match.group(1)
+            ka_description = ka_analysis_data.get(ka_code, "Description not found") # Get description from JSON
+            enriched_ka_value = f"{ka_description}\n{ka_value}" # Combine description and original KA value
+        else:
+            enriched_ka_value = ka_value # If KA code not found, keep original value
+
+        enriched_ka_values.append(enriched_ka_value)
+
+    df['KA'] = enriched_ka_values # Update the KA column with enriched values
+    return df
 
 # main function for this script
 def map_new_key_names_excel():
@@ -341,6 +377,8 @@ def map_new_key_names_excel():
     generated_mapping = load_json_file(generated_mapping_path)
 
     output_json_file = os.path.join('..', 'json_output', 'generated_mapping.json')
+    excel_data_path = os.path.join('..', 'json_output', 'excel_data.json')
+    excel_data = load_json_file(excel_data_path)
 
     # **Load existing JSON file first**
     existing_data = load_json_file(output_json_file) # Load existing data, returns {} if file not found or invalid JSON
@@ -360,6 +398,12 @@ def map_new_key_names_excel():
     combined_lo = ["#LO[0]", "#LO[1]", "#LO[2]", "#LO[3]", "#LO[4]", "#LO[5]", "#LO[6]", "#LO[7]"]
     lo_data = extract_and_concatenate_json_values(generated_mapping, combined_lo, "#Combined_LO")
 
+    # course_background = extract_and_concatenate_json_values(
+    #     excel_data[0]["course_overview"],
+    #     ["description", "benefits", "relevance_and_impact", "target_audience"],
+    #     "#Course_Background1",
+    #     handle_lists=True
+    # )
     course_outline_keys = recursive_get_keys(generated_mapping, "#Topics[")
     print(course_outline_keys)
     course_outline = extract_and_concatenate_json_values(generated_mapping, course_outline_keys, "#Course_Outline")
@@ -370,6 +414,7 @@ def map_new_key_names_excel():
         existing_data.update(tcs_code_skill_data)
         existing_data.update(lo_data)
         existing_data.update(course_outline)
+        # existing_data.update(course_background)
 
         # **Write the updated dictionary back to the output file**
         write_json_file(existing_data, output_json_file)
@@ -529,11 +574,12 @@ if __name__ == "__main__":
     # instructional_methods_path = os.path.join('..', 'json_output', 'instructional_methods.json')
     # instructional_methods_output = load_json_file(ensemble_output_path)
 
-    # # Create the DataFrame
-    # # df = create_course_dataframe(ensemble_output)
+    # # # Create the DataFrame
+    # df = create_assessment_dataframe(ensemble_output)
+    # # # df = create_course_dataframe(ensemble_output)
     # # df = create_instructional_dataframe(ensemble_output)
-    # df = create_instruction_description_dataframe(ensemble_output_path, instructional_methods_path)
+    # # df = create_instruction_description_dataframe(ensemble_output_path, instructional_methods_path)
     # # Print the DataFrame (optional)
     # print(df)
-    # df.to_csv("instructional_methods_dataframe.csv", index=False)
+    # df.to_csv("create_assessment_dataframe.csv", index=False)
 

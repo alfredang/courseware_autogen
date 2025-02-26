@@ -6,7 +6,7 @@ import zipfile
 import json
 import pandas as pd
 from lxml import etree as ET
-from excel_conversion_pipeline import create_course_dataframe, create_assessment_dataframe, create_instructional_dataframe, create_instruction_description_dataframe, map_new_key_names_excel
+from excel_conversion_pipeline import create_course_dataframe, create_assessment_dataframe, create_instructional_dataframe, create_instruction_description_dataframe, map_new_key_names_excel, enrich_assessment_dataframe_ka_descriptions
 
 def cleanup_old_files(output_excel_path_modified, output_excel_path_preserved):
     """
@@ -169,7 +169,11 @@ def process_excel_update(json_data_path, excel_template_path, output_excel_path,
         # Insert the DataFrame into a designated sheet (e.g., "3 - Instructional Design")
         if "3 - Methodologies" in sheet_mapping:
             # Create the DataFrame using your helper function (provided separately)
-            df = create_assessment_dataframe(ensemble_output)
+            a_df = create_assessment_dataframe(ensemble_output)
+            
+            # append the K and A descriptions in excel_data.json to the dataframe under the KA column
+            excel_json_data = os.path.join('..', 'json_output', 'excel_data.json')
+            df = enrich_assessment_dataframe_ka_descriptions(a_df, excel_json_data)
             if not df.empty:
                 sheet_xml_path = os.path.join(temp_dir, sheet_mapping["3 - Methodologies"])
                 # For example, insert starting at row 18 and column 2 (B18)
@@ -198,6 +202,7 @@ def process_excel_update(json_data_path, excel_template_path, output_excel_path,
             instructional_methods_path = os.path.join('..', 'json_output', 'instructional_methods.json')
             # Create the DataFrame using your helper function (provided separately)
             df = create_instruction_description_dataframe(ensemble_output_path, instructional_methods_path)
+
             if not df.empty:
                 sheet_xml_path = os.path.join(temp_dir, sheet_mapping["3 - Methodologies"])
                 # For example, insert starting at row 18 and column 2 (B18)

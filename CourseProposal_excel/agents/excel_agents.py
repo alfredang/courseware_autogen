@@ -5,11 +5,19 @@ import json
 import asyncio
 import os
 from dotenv import load_dotenv
-from CourseProposal.model_configs import get_model_config
+from model_configs import get_model_config
 
-def overview_task():
+def course_task():
     overview_task = f"""
     1. Based on the provided data, generate your justifications.
+    2. Ensure your responses are structured in JSON format.
+    3. Return a full JSON object with all your answers according to the schema.
+    """
+    return overview_task
+
+def ka_task():
+    overview_task = f"""
+    1. Based on the provided data, generate your justifications, ensure that ALL the A and K factors are addressed.
     2. Ensure your responses are structured in JSON format.
     3. Return a full JSON object with all your answers according to the schema.
     """
@@ -38,7 +46,10 @@ def create_course_agent(research_output, model_choice: str) -> RoundRobinGroupCh
 
     Format your response in the given JSON structure under "course_overview".
     "course_overview": {{
-
+    "description": ...",
+    "benefits": "...",
+    "relevance_and_impact": "...",
+    "target_audience": "..."
         }}
     """
 
@@ -52,7 +63,7 @@ def create_course_agent(research_output, model_choice: str) -> RoundRobinGroupCh
 
     return course_agent_chat
 
-def create_ka_analysis_agent(instructional_methods_data, model_choice: str) -> RoundRobinGroupChat:
+def create_ka_analysis_agent(ensemble_output, instructional_methods_data, model_choice: str) -> RoundRobinGroupChat:
 
     chosen_config = get_model_config(model_choice)
     model_client = ChatCompletionClient.load_component(chosen_config)
@@ -63,13 +74,21 @@ def create_ka_analysis_agent(instructional_methods_data, model_choice: str) -> R
     pair, input rationale for each on why this MoA was chosen, and specify which K&As it will assess.
 
     The data provided which contains the ensemble of K and A statements, and the Learning Outcomes and Methods of Assessment, is in this dataframe: {instructional_methods_data}
-    For each explanation, you are to provide no more than 50 words.
+    For each explanation, you are to provide no more than 50 words. Do so for each A and K factor present.
     Your response should be structured in the given JSON format under "KA_Analysis".
+    Full list of K factors: {ensemble_output.get('Learning Outcomes', {}).get('Knowledge', [])}
+    Full list of A factors: {ensemble_output.get('Learning Outcomes', {}).get('Ability', [])}
+    Ensure that ALL of the A and K factors are addressed.
+    Only use the first 2 characters as the key names for your JSON output, like K1 for example. Do not use the full A and K factor description as the key name.
+
+    For example:
     KA_Analysis: {{
     K1: [explanation],
     A1: [explanation],
     K2: [explanation],
     A2: [explanation],
+    ...
+    (and so on for however many A and K factors)
     }}
 
     """
@@ -84,32 +103,32 @@ def create_ka_analysis_agent(instructional_methods_data, model_choice: str) -> R
 
     return ka_analysis_chat
 
-if __name__ == "__main__":
-    # Load the existing research_output.json
-    with open('json_output/research_output.json', 'r', encoding='utf-8') as f:
-        research_output = json.load(f)
+# if __name__ == "__main__":
+#     # Load the existing research_output.json
+#     with open('json_output/research_output.json', 'r', encoding='utf-8') as f:
+#         research_output = json.load(f)
 
-    course_agent = create_course_agent(research_output, model_choice=model_choice)
-    stream = course_agent.run_stream(task=overview_task)
-    await Console(stream)
+#     course_agent = create_course_agent(research_output, model_choice=model_choice)
+#     stream = course_agent.run_stream(task=overview_task)
+#     await Console(stream)
 
-    course_agent_state = await course_agent.save_state()
-    with open("json_output/course_agent_state.json", "w") as f:
-        json.dump(course_agent_state, f)
-    course_agent_data = extract_final_agent_json("json_output/course_agent_state.json")  
-    with open("json_output/excel_data.json", "w", encoding="utf-8") as f:
-        json.dump(course_agent_data, f)  
+#     course_agent_state = await course_agent.save_state()
+#     with open("json_output/course_agent_state.json", "w") as f:
+#         json.dump(course_agent_state, f)
+#     course_agent_data = extract_final_agent_json("json_output/course_agent_state.json")  
+#     with open("json_output/excel_data.json", "w", encoding="utf-8") as f:
+#         json.dump(course_agent_data, f)  
 
-    # K and A analysis pipeline
-    instructional_methods_data = create_instructional_dataframe()
-    ka_agent = create_ka_analysis_agent(instructional_methods_data, model_choice=model_choice)
-    stream = ka_agent.run_stream(task=overview_task)
-    await Console(stream)
-    #TSC JSON management
-    state = await ka_agent.save_state()
-    with open("json_output/ka_agent_state.json", "w") as f:
-        json.dump(state, f)
-    ka_agent_data = extract_final_agent_json("json_output/ka_agent_state.json")
-    with open("json_output/excel_data.json", "w", encoding="utf-8") as out:
-        json.dump(ka_agent_data, out, indent=2)
+#     # K and A analysis pipeline
+#     instructional_methods_data = create_instructional_dataframe()
+#     ka_agent = create_ka_analysis_agent(instructional_methods_data, model_choice=model_choice)
+#     stream = ka_agent.run_stream(task=overview_task)
+#     await Console(stream)
+#     #TSC JSON management
+#     state = await ka_agent.save_state()
+#     with open("json_output/ka_agent_state.json", "w") as f:
+#         json.dump(state, f)
+#     ka_agent_data = extract_final_agent_json("json_output/ka_agent_state.json")
+#     with open("json_output/excel_data.json", "w", encoding="utf-8") as out:
+#         json.dump(ka_agent_data, out, indent=2)
 
