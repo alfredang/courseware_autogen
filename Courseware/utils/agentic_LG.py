@@ -10,7 +10,7 @@ from autogen_agentchat.messages import TextMessage
 from PIL import Image
 from docx.shared import Inches
 from docxtpl import DocxTemplate, InlineImage
-from Courseware.utils.helper import parse_json_content
+from utils.helper import parse_json_content
 
 LG_TEMPLATE_DIR = "Courseware/input/Template/LG_TGS-Ref-No_Course-Title_v1.docx"  
 
