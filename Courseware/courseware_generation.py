@@ -32,8 +32,8 @@ from autogen_core import CancellationToken
 from autogen_ext.code_executors.local import LocalCommandLineCodeExecutor
 from autogen_agentchat.teams import RoundRobinGroupChat
 from autogen_ext.models.openai import OpenAIChatCompletionClient
-from Courseware.utils.model_configs import MODEL_CHOICES, get_model_config
-from Courseware.utils.helper import save_uploaded_file, parse_json_content
+from utils.model_configs import MODEL_CHOICES, get_model_config
+from utils.helper import save_uploaded_file, parse_json_content
 
 # Initialize session state variables
 if 'processing_done' not in st.session_state:

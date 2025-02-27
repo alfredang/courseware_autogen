@@ -5,7 +5,7 @@ import json
 from autogen_agentchat.agents import AssistantAgent
 from autogen_core import CancellationToken
 from autogen_agentchat.messages import TextMessage
-from Courseware.utils.helper import parse_json_content
+from utils.helper import parse_json_content
 
 def extract_unique_instructional_methods(course_context):
     unique_methods = set()
