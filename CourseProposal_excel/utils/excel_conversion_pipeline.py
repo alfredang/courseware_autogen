@@ -398,12 +398,11 @@ def map_new_key_names_excel():
     combined_lo = ["#LO[0]", "#LO[1]", "#LO[2]", "#LO[3]", "#LO[4]", "#LO[5]", "#LO[6]", "#LO[7]"]
     lo_data = extract_and_concatenate_json_values(generated_mapping, combined_lo, "#Combined_LO")
 
-    # course_background = extract_and_concatenate_json_values(
-    #     excel_data[0]["course_overview"],
-    #     ["description", "benefits", "relevance_and_impact", "target_audience"],
-    #     "#Course_Background1",
-    #     handle_lists=True
-    # )
+    course_background = extract_and_concatenate_json_values(
+        excel_data[0]["course_overview"],
+        ["description", "benefits", "relevance_and_impact", "target_audience"],
+        "#Course_Background1",
+    )
     course_outline_keys = recursive_get_keys(generated_mapping, "#Topics[")
     print(course_outline_keys)
     course_outline = extract_and_concatenate_json_values(generated_mapping, course_outline_keys, "#Course_Outline")
