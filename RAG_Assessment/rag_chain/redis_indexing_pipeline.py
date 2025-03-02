@@ -13,7 +13,13 @@ from llama_index.vector_stores.redis import RedisVectorStore
 from redisvl.schema import IndexSchema
 from config_loader import load_shared_resources  # Import shared resources loader
 import logging
+from llama_cloud_services import LlamaParse
 
+# basically llamaparse replaces the simpledirectoryreader, returning document objects
+# the next question is to inspect the document objects, view how images are returned
+# and decide how to handle the returned images along with the parsed documents
+# ideally the images should be converted into binary and stored in the redis database
+# to be called when needed
 
 def create_ingestion_pipeline(embed_model, custom_schema):
     """Creates and returns the ingestion pipeline."""
@@ -39,9 +45,15 @@ def create_ingestion_pipeline(embed_model, custom_schema):
 
 def load_documents(data_dir="./data"):
     """Loads documents from the specified directory with deterministic IDs."""
+    # set up parser
+    parser = LlamaParse(
+        result_type="markdown"  # "markdown" and "text" are available
+    )
+    file_extractor = {".pdf": parser}
+
     logging.info("Loading documents...")
     documents = SimpleDirectoryReader(
-        data_dir, filename_as_id=True
+        data_dir, filename_as_id=True, file_extractor=file_extractor
     ).load_data()
     logging.info(f"Documents loaded: {len(documents)}")
     if documents:
