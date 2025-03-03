@@ -154,7 +154,7 @@ class CitationQueryEngineWorkflow(Workflow):
             print("Index is empty, load some documents before querying!")
             return None
 
-        retriever = ev.index.as_retriever(similarity_top_k=2)
+        retriever = ev.index.as_retriever(similarity_top_k=5)
         nodes = retriever.retrieve(query)
         print(f"Retrieved {len(nodes)} nodes.")
         return RetrieverEvent(nodes=nodes)
@@ -235,8 +235,9 @@ async def main():
     )
 
     w = CitationQueryEngineWorkflow()
-    # Run a query
-    result = await w.run(query="What is near the pontoon on Lazarus Island?", index=index)
+
+    query = "Create a question and answer with at least 100 words each for my exam regarding the following learning outcome: LO='LO1: Analyze Github components and coordinate release scheduling with collaborators to align processes.' Abilities=unit_abilities(root={'A1': 'Analyse release components', 'A2': 'Coordinate with relevant stakeholders on release scheduling to align release processes and procedures'}) Knowledge=unit_knowledge(root={})"
+    result = await w.run(query=query, index=index)
 
     print(result)
     print(result.source_nodes[0].node.get_text())

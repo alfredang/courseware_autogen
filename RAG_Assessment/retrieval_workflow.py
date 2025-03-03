@@ -11,6 +11,46 @@ from llama_index.core.workflow import (
 import asyncio
 from config_loader import load_shared_resources
 from llama_index.llms.gemini import Gemini
+from llama_index.core.workflow import Event
+from llama_index.core.schema import NodeWithScore
+from llama_index.core.prompts import PromptTemplate
+from llama_index.core import SimpleDirectoryReader, VectorStoreIndex
+from llama_index.core.workflow import (
+    Context,
+    Workflow,
+    StartEvent,
+    StopEvent,
+    step,
+)
+from llama_index.core.schema import (
+    MetadataMode,
+    NodeWithScore,
+    TextNode,
+)
+from llama_index.core.response_synthesizers import (
+    ResponseMode,
+    get_response_synthesizer,
+)
+from typing import Union, List
+from llama_index.core.node_parser import SentenceSplitter
+from llama_index.llms.gemini import Gemini
+from redisvl.schema import IndexSchema
+from config_loader import load_shared_resources
+import asyncio
+from llama_index.core import VectorStoreIndex, PromptTemplate
+from llama_index.core.llms import ChatMessage
+from llama_index.vector_stores.redis import RedisVectorStore
+from redisvl.schema import IndexSchema
+from llama_index.core.query_pipeline import (
+    QueryPipeline,
+    CustomQueryComponent
+)
+from llama_index.llms.gemini import Gemini
+from llama_index.core.retrievers import VectorIndexRetriever
+from llama_index.core.query_pipeline.components.input import InputComponent
+from typing import Optional, List, Dict, Any
+from pydantic import Field
+from llama_index.core.schema import NodeWithScore
 
 config, embed_model = load_shared_resources()
 llm = Gemini(
@@ -58,47 +98,6 @@ lu_data = load_json_file("output_json/parsed_TSC.json")
 
 # Parse the dictionary into the Pydantic model
 learning_units = LearningUnits.model_validate(lu_data) # Use .parse_obj for RootModel
-
-from llama_index.core.workflow import Event
-from llama_index.core.schema import NodeWithScore
-from llama_index.core.prompts import PromptTemplate
-from llama_index.core import SimpleDirectoryReader, VectorStoreIndex
-from llama_index.core.workflow import (
-    Context,
-    Workflow,
-    StartEvent,
-    StopEvent,
-    step,
-)
-from llama_index.core.schema import (
-    MetadataMode,
-    NodeWithScore,
-    TextNode,
-)
-from llama_index.core.response_synthesizers import (
-    ResponseMode,
-    get_response_synthesizer,
-)
-from typing import Union, List
-from llama_index.core.node_parser import SentenceSplitter
-from llama_index.llms.gemini import Gemini
-from redisvl.schema import IndexSchema
-from config_loader import load_shared_resources
-import asyncio
-from llama_index.core import VectorStoreIndex, PromptTemplate
-from llama_index.core.llms import ChatMessage
-from llama_index.vector_stores.redis import RedisVectorStore
-from redisvl.schema import IndexSchema
-from llama_index.core.query_pipeline import (
-    QueryPipeline,
-    CustomQueryComponent
-)
-from llama_index.llms.gemini import Gemini
-from llama_index.core.retrievers import VectorIndexRetriever
-from llama_index.core.query_pipeline.components.input import InputComponent
-from typing import Optional, List, Dict, Any
-from pydantic import Field
-from llama_index.core.schema import NodeWithScore
 
 class RetrieverEvent(Event):
     """Result of running retrieval"""
@@ -167,6 +166,31 @@ CITATION_REFINE_TEMPLATE = PromptTemplate(
     "Query: {query_str}\n"
     "Answer: "
 )
+
+synthesizer_prompt = """
+(
+    You are an expert question-answer crafter with deep domain expertise. Your task is to generate a scenario-based question and answer pair for a given knowledge statement while strictly grounding your response in the provided retrieved content. You must not hallucinate or fabricate details.
+
+    Context information is below.\n
+    ---------------------\n
+    {context_str}\n
+    
+    Knowledge Statements:
+    {knowledge_statement}\n"
+    ---------------------\n
+    Given the context information and not prior knowledge,
+    answer the query.\n
+    Query: {query_str}\n
+    Guidelines:
+    1. Base your response entirely on the retrieved content. If the content does not directly address the knowledge statement, do not invent new details. Instead, use minimal general context only to bridge gaps, but ensure that every key element of the final question and answer is explicitly supported by the retrieved content.
+    2. Craft a realistic scenario in 2-3 sentences that reflects the context from the retrieved content while clearly addressing the given knowledge statement.
+    3. Formulate one direct, simple question that ties the scenario to the knowledge statement. The question should be directly answerable using the retrieved content.
+    4. Provide concise, practical bullet-point answers that list the key knowledge points explicitly mentioned in the retrieved content.         
+    5. Do not mention about the source of the content in the scenario or question.
+    6. Structure the final output in **valid Pydantic format**
+)
+"""
+syn_prompt = PromptTemplate(synthesizer_prompt)
 
 DEFAULT_CITATION_CHUNK_SIZE = 512
 DEFAULT_CITATION_CHUNK_OVERLAP = 20
@@ -243,16 +267,6 @@ class PydanticWorkflow(Workflow):
         # First step now *receives*, *updates*, and packages the data into LUDataEvent
         return LUDataEvent(lu_details=lu_details, query=query, index=ev.index)
 
-    # @step
-    # async def send_query(self, event: LUDataEvent) -> LUDataEvent:
-    #     # Extract keywords from lu_details and preserve lu_details in the return event
-    #     lu_details = event.lu_details
-
-        
-    #     # Return updated event with both lu_details and query
-    #     return LUDataEvent(lu_details=lu_details, query=query, index=event.index)
-
-    # 3. Update retrieve method to work with the updated LUDataEvent
     @step
     async def retrieve(
         self, ctx: Context, ev: LUDataEvent
@@ -337,7 +351,7 @@ class PydanticWorkflow(Workflow):
         
         # Convert list to string if needed
         if isinstance(query, list):
-            query_str = "Based on the retrieved context, create a question and answer that takes into account the following: ".join(query)
+            query_str = "Based on the retrieved context, create a question and answer that takes into account the additional knowledge statements above."
         else:
             query_str = query
         
@@ -361,7 +375,11 @@ class PydanticWorkflow(Workflow):
                 
         return LUStopEvent(result=response, lu_details=lu_details)
 
-
+# left with synthesizer, decide on whether to use autogen groupchats
+# simple llm calls with pydantic output
+# or attempt to work with llamaindex synthesizers (seems limited in ability from testing so far)
+# or use a custom synthesizer
+# or use a custom synthesizer with a custom synthesizer prompt
 async def main():
     # Load data *once* outside the workflow loop
     lu_data = load_json_file("output_json/parsed_TSC.json")
