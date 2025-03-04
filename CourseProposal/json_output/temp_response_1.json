@@ -1,18 +1,22 @@
 {
     "course_info": {
-        "Course Title": "Hands-on AI-Assisted Programming Made Simple with GitHub Copilot",
+        "Course Title": "Github Foundations Certification Training",
         "Industry": "Infocomm Technology",
         "Learning Outcomes": [
-            "LO1: Identify gaps in existing programming workflows and propose AI-assisted solutions using GitHub Copilot to enhance efficiency.",
-            "LO2: Explore and apply emerging AI programming tools, including GitHub Copilot, to streamline organizational coding processes."
+            "LO1: Analyze Github components and coordinate release scheduling with collaborators to align processes.",
+            "LO2: Select appropriate Git scripts for integrating and deploying software products.",
+            "LO3: Configure software products and deploy releases using Git configuration tests.",
+            "LO4: Diagnose issues identified during Github configuration testing by interpreting configuration test results.",
+            "LO5: Identify potential improvements to the software configuration, deployment processes, and code elements.",
+            "LO6: Implement modifications to software products and processes for improved functionality."
         ],
-        "TSC Title": "Digital Technology Adoption and Innovation",
-        "TSC Code": "ACC-ICT-3004-1.1"
+        "TSC Title": "Software Configuration",
+        "TSC Code": "ICT-DIT-3014-1.1"
     },
     "analyst_responses": [
         {
-            "What are the performance gaps in the industry?": "Within this industry, software development teams often face bottlenecks related to repetitive coding tasks and debugging. This can lead to prolonged project timelines and increased costs. Additionally, many organizations struggle to keep pace with the latest technological advancements, limiting their ability to innovate and optimize existing systems.",
-            "Why do you think this WSQ course will address the training needs for the industry?": "This course will help professionals pinpoint inefficiencies in their current development processes and consider new solutions. By learning how to incorporate AI-assisted tools into their existing workflows, teams can accelerate the development lifecycle, reduce errors, and free up valuable time for more strategic initiatives. The course equips individuals with the ability to introduce useful IT solutions for the advancement of the organization."
+            "What are the performance gaps in the industry?": "Many organizations struggle with coordinating software releases effectively, leading to delays and inconsistencies. This often stems from a lack of clear understanding of the components involved and poor synchronization between development teams and other stakeholders. This lack of coordination affects the speed and reliability of deployments.",
+            "Why do you think this WSQ course will address the training needs for the industry?": "This course offers methods to break down release processes and align team efforts. By teaching how to assess project elements and encouraging greater communication, the training aims to streamline the entire software release lifecycle. This can reduce deployment bottlenecks and ensure that releases are more predictable and timely."
         }
     ]
 }

@@ -1,18 +1,22 @@
 {
     "course_info": {
-        "Course Title": "Hands-on AI-Assisted Programming Made Simple with GitHub Copilot",
+        "Course Title": "Github Foundations Certification Training",
         "Industry": "Infocomm Technology",
         "Learning Outcomes": [
-            "LO1: Identify gaps in existing programming workflows and propose AI-assisted solutions using GitHub Copilot to enhance efficiency.",
-            "LO2: Explore and apply emerging AI programming tools, including GitHub Copilot, to streamline organizational coding processes."
+            "LO1: Analyze Github components and coordinate release scheduling with collaborators to align processes.",
+            "LO2: Select appropriate Git scripts for integrating and deploying software products.",
+            "LO3: Configure software products and deploy releases using Git configuration tests.",
+            "LO4: Diagnose issues identified during Github configuration testing by interpreting configuration test results.",
+            "LO5: Identify potential improvements to the software configuration, deployment processes, and code elements.",
+            "LO6: Implement modifications to software products and processes for improved functionality."
         ],
-        "TSC Title": "Digital Technology Adoption and Innovation",
-        "TSC Code": "ACC-ICT-3004-1.1"
+        "TSC Title": "Software Configuration",
+        "TSC Code": "ICT-DIT-3014-1.1"
     },
     "analyst_responses": [
         {
-            "What are the performance gaps in the industry?": "A common issue is the struggle to maintain code quality and consistency across projects. This often results in increased technical debt and difficulty in scaling applications. Furthermore, there is a growing need for developers to quickly adapt to new programming languages and frameworks to support diverse project requirements.",
-            "Why do you think this WSQ course will address the training needs for the industry?": "By identifying current issues and learning how to make use of AI tools like GitHub Copilot, participants can create more effective coding workflows. The goal is to enhance efficiency and reduce the risk of errors, while providing hands-on practice in multiple programming languages to improve code quality. Also, individuals will learn new technologies and systems that will allow them to propose suitable IT solutions."
+            "What are the performance gaps in the industry?": "A significant performance gap exists in the ability to properly configure software products and diagnose issues arising from configuration testing. Many professionals struggle with interpreting test results and identifying the root causes of problems, leading to prolonged debugging cycles and delayed releases. Additionally, security vulnerabilities due to misconfiguration are a constant concern.",
+            "Why do you think this WSQ course will address the training needs for the industry?": "The course provides a deep dive into configuring software products and interpreting configuration test results, giving participants the skills to diagnose and fix issues quickly. By focusing on testing procedures and helping participants understand test results, this course improves configuration management and reduces the risk of deployment errors. This helps improve software quality and reduces the time it takes to deliver new features."
         }
     ]
 }

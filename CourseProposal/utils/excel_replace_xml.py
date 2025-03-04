@@ -173,7 +173,8 @@ def process_excel_update(json_data_path, excel_template_path, output_excel_path,
             a_df = create_assessment_dataframe(ensemble_output)
             
             # append the K and A descriptions in excel_data.json to the dataframe under the KA column
-            excel_json_data = os.path.join('..', 'json_output', 'excel_data.json')
+            # excel_json_data = os.path.join('..', 'json_output', 'excel_data.json')
+            excel_json_data = "CourseProposal/json_output/excel_data.json"
             df = enrich_assessment_dataframe_ka_descriptions(a_df, excel_json_data)
             if not df.empty:
                 sheet_xml_path = os.path.join(temp_dir, sheet_mapping["3 - Methodologies"])
@@ -199,8 +200,10 @@ def process_excel_update(json_data_path, excel_template_path, output_excel_path,
 
         # Insert the DataFrame into a designated sheet (e.g., "3 - Instructional Design")
         if "3 - Methodologies" in sheet_mapping:
-            ensemble_output_path = os.path.join('..', 'json_output', 'ensemble_output.json')
-            instructional_methods_path = os.path.join('..', 'json_output', 'instructional_methods.json')
+            # ensemble_output_path = os.path.join('..', 'json_output', 'ensemble_output.json')
+            # instructional_methods_path = os.path.join('..', 'json_output', 'instructional_methods.json')
+            ensemble_output_path = "CourseProposal/json_output/ensemble_output.json"
+            instructional_methods_path = "CourseProposal/json_output/instructional_methods.json"
             # Create the DataFrame using your helper function (provided separately)
             df = create_instruction_description_dataframe(ensemble_output_path, instructional_methods_path)
 

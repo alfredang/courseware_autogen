@@ -14,8 +14,10 @@ def validation_task(ensemble_output):
 
 def create_course_validation_team(ensemble_output, model_choice: str) -> RoundRobinGroupChat:
     chosen_config = get_model_config(model_choice)
-    model_client = ChatCompletionClient.load_component(chosen_config)
+    print(f"Debug: model_choice in create_course_validation: {model_choice}") # Add this line
 
+    model_client = ChatCompletionClient.load_component(chosen_config)
+    print(f"Debug: Model config for validation team: {chosen_config}")
     # insert research analysts
     analyst_message = f"""
     Using the following information from {ensemble_output}:

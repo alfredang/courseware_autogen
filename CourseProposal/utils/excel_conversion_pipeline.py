@@ -372,18 +372,18 @@ def enrich_assessment_dataframe_ka_descriptions(df, excel_data_json_path):
     return df
 
 # main function for this script
-def map_new_key_names_excel():
+def map_new_key_names_excel(generated_mapping_path, generated_mapping, output_json_file, excel_data_path):
     # generated_mapping_path = os.path.join('..', 'json_output', 'generated_mapping.json')
     # generated_mapping = load_json_file(generated_mapping_path)
 
     # output_json_file = os.path.join('..', 'json_output', 'generated_mapping.json')
     # excel_data_path = os.path.join('..', 'json_output', 'excel_data.json')
 
-    generated_mapping_path = "CourseProposal/json_output/generated_mapping.json"
-    generated_mapping = load_json_file(generated_mapping_path)
+    # generated_mapping_path = "CourseProposal/json_output/generated_mapping.json"
+    # generated_mapping = load_json_file(generated_mapping_path)
 
-    output_json_file = "CourseProposal/json_output/generated_mapping.json"
-    excel_data_path = "CourseProposal/json_output/excel_data.json"
+    # output_json_file = "CourseProposal/json_output/generated_mapping.json"
+    # excel_data_path = "CourseProposal/json_output/excel_data.json"
     excel_data = load_json_file(excel_data_path)
 
     # **Load existing JSON file first**
@@ -409,6 +409,11 @@ def map_new_key_names_excel():
         ["description", "benefits", "relevance_and_impact", "target_audience"],
         "#Course_Background1",
     )
+    # course_background = extract_and_concatenate_json_values(
+    #     excel_data["course_overview"],
+    #     ["description", "benefits", "relevance_and_impact", "target_audience"],
+    #     "#Course_Background1",
+    # )    
     course_outline_keys = recursive_get_keys(generated_mapping, "#Topics[")
     print(course_outline_keys)
     course_outline = extract_and_concatenate_json_values(generated_mapping, course_outline_keys, "#Course_Outline")
@@ -419,7 +424,7 @@ def map_new_key_names_excel():
         existing_data.update(tcs_code_skill_data)
         existing_data.update(lo_data)
         existing_data.update(course_outline)
-        # existing_data.update(course_background)
+        existing_data.update(course_background)
 
         # **Write the updated dictionary back to the output file**
         write_json_file(existing_data, output_json_file)

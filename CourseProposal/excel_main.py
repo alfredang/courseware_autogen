@@ -11,9 +11,31 @@ import asyncio
 import os
 from autogen_agentchat.ui import Console
 from CourseProposal.utils.helpers import extract_final_agent_json, extract_agent_json
+from CourseProposal.utils.helpers import load_json_file
+
+def combine_json_files(file1_path, file2_path):
+    """
+    Combines the data from two JSON files into a list of dictionaries.
+
+    Args:
+        file1_path (str): The path to the first JSON file (course_agent_data.json).
+        file2_path (str): The path to the second JSON file (ka_agent_data.json).
+
+    Returns:
+        list: A list containing two dictionaries, one for course_overview and one for KA_Analysis.
+    """
+    with open(file1_path, 'r', encoding='utf-8') as f1:
+        data1 = json.load(f1)
+    with open(file2_path, 'r', encoding='utf-8') as f2:
+        data2 = json.load(f2)
+
+    combined_data = [
+        data1,
+        data2
+    ]
+    return combined_data
 
 async def process_excel(model_choice: str) -> None:
-    map_new_key_names_excel()
     # json_data_path = os.path.join('json_output', 'generated_mapping.json')
     # excel_template_path = os.path.join( 'templates', 'CP_excel_template.xlsx')
     # output_excel_path_modified = os.path.join( 'output_docs', 'CP_template_updated_cells_output.xlsx') # Intermediate output after cell update
@@ -38,14 +60,15 @@ async def process_excel(model_choice: str) -> None:
     with open("CourseProposal/json_output/course_agent_state.json", "w") as f:
         json.dump(course_agent_state, f)
     course_agent_data = extract_agent_json("CourseProposal/json_output/course_agent_state.json", "course_agent")  
-    with open("CourseProposal/json_output/excel_data.json", "w", encoding="utf-8") as f:
+    with open("CourseProposal/json_output/course_agent_data.json", "w", encoding="utf-8") as f:
         json.dump(course_agent_data, f)  
 
     with open('CourseProposal/json_output/ensemble_output.json', 'r', encoding='utf-8') as f:
         ensemble_output = json.load(f)
     # K and A analysis pipeline
     instructional_methods_data = create_instructional_dataframe(ensemble_output)
-    ka_agent = create_ka_analysis_agent(instructional_methods_data, model_choice=model_choice)
+    print(instructional_methods_data)
+    ka_agent = create_ka_analysis_agent(ensemble_output, instructional_methods_data, model_choice=model_choice)
     stream = ka_agent.run_stream(task=ka_task())
     await Console(stream)
     #TSC JSON management
@@ -53,9 +76,27 @@ async def process_excel(model_choice: str) -> None:
     with open("CourseProposal/json_output/ka_agent_state.json", "w") as f:
         json.dump(state, f)
     ka_agent_data = extract_agent_json("CourseProposal/json_output/ka_agent_state.json", "ka_analysis_agent")
-    with open("CourseProposal/json_output/excel_data.json", "w", encoding="utf-8") as out:
+    with open("CourseProposal/json_output/ka_agent_data.json", "w", encoding="utf-8") as out:
         json.dump(ka_agent_data, out, indent=2)
 
+
+    # Combine the JSON files
+    excel_data = combine_json_files(
+        "CourseProposal/json_output/course_agent_data.json",
+        "CourseProposal/json_output/ka_agent_data.json"
+    )
+
+    # Write the combined data to excel_data.json
+    with open("CourseProposal/json_output/excel_data.json", "w", encoding="utf-8") as out:
+        json.dump(excel_data, out, indent=2)
+
+    generated_mapping_path = "CourseProposal/json_output/generated_mapping.json"
+    generated_mapping = load_json_file(generated_mapping_path)
+
+    output_json_file = "CourseProposal/json_output/generated_mapping.json"
+    excel_data_path = "CourseProposal/json_output/excel_data.json"
+
+    map_new_key_names_excel(generated_mapping_path, generated_mapping, output_json_file, excel_data_path)
     # --- CALL CLEANUP FUNCTION HERE ---
     cleanup_old_files(output_excel_path_modified, output_excel_path_preserved)
 
@@ -66,4 +107,4 @@ async def process_excel(model_choice: str) -> None:
     preserve_excel_metadata(excel_template_path, output_excel_path_modified, output_excel_path_preserved)
 
 # if __name__ == "__main__":
-#     asyncio.run(process_excel())
+#     asyncio.run(process_excel(model_choice=))

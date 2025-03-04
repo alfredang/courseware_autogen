@@ -1,26 +1,30 @@
 {
   "analyst_responses": [
     {
-      "What are the performance gaps in the industry?": "Within this industry, software development teams often face bottlenecks related to repetitive coding tasks and debugging. This can lead to prolonged project timelines and increased costs. Additionally, many organizations struggle to keep pace with the latest technological advancements, limiting their ability to innovate and optimize existing systems.",
-      "Why do you think this WSQ course will address the training needs for the industry?": "This course will help professionals pinpoint inefficiencies in their current development processes and consider new solutions. By learning how to incorporate AI-assisted tools into their existing workflows, teams can accelerate the development lifecycle, reduce errors, and free up valuable time for more strategic initiatives. The course equips individuals with the ability to introduce useful IT solutions for the advancement of the organization."
+      "What are the performance gaps in the industry?": "Many organizations struggle with coordinating software releases effectively, leading to delays and inconsistencies. This often stems from a lack of clear understanding of the components involved and poor synchronization between development teams and other stakeholders. This lack of coordination affects the speed and reliability of deployments.",
+      "Why do you think this WSQ course will address the training needs for the industry?": "This course offers methods to break down release processes and align team efforts. By teaching how to assess project elements and encouraging greater communication, the training aims to streamline the entire software release lifecycle. This can reduce deployment bottlenecks and ensure that releases are more predictable and timely."
     },
     {
-      "What are the performance gaps in the industry?": "One significant challenge is the slow adoption of new technologies and methodologies, hindering the ability to remain competitive. Teams may lack the expertise to effectively integrate emerging tools, which can lead to missed opportunities for automation and improved productivity. Legacy systems and a reluctance to change further compound these issues.",
-      "Why do you think this WSQ course will address the training needs for the industry?": "This course directly addresses this by providing hands-on experience with cutting-edge AI programming tools. Participants will explore how these tools can streamline organizational coding processes, including using code completion and suggesting code snippets. The course is designed to help individuals stay current with the latest technology and propose relevant IT solutions."
+      "What are the performance gaps in the industry?": "Integrating and deploying software products often involves using a variety of scripts and tools, but many developers lack the expertise to select the most appropriate ones. This can lead to inefficient deployment processes, increased errors, and difficulty in maintaining software quality across different platforms and environments. This impacts developer productivity and the overall reliability of software deployments.",
+      "Why do you think this WSQ course will address the training needs for the industry?": "This course teaches participants to use specific scripts and tools tailored for integrating and deploying software, greatly enhancing their skill set. The course emphasizes choosing the right tools for the job, which leads to more efficient deployments and better overall integration, which reduces deployment issues and improves developer output."
     },
     {
-      "What are the performance gaps in the industry?": "A common issue is the struggle to maintain code quality and consistency across projects. This often results in increased technical debt and difficulty in scaling applications. Furthermore, there is a growing need for developers to quickly adapt to new programming languages and frameworks to support diverse project requirements.",
-      "Why do you think this WSQ course will address the training needs for the industry?": "By identifying current issues and learning how to make use of AI tools like GitHub Copilot, participants can create more effective coding workflows. The goal is to enhance efficiency and reduce the risk of errors, while providing hands-on practice in multiple programming languages to improve code quality. Also, individuals will learn new technologies and systems that will allow them to propose suitable IT solutions."
+      "What are the performance gaps in the industry?": "A significant performance gap exists in the ability to properly configure software products and diagnose issues arising from configuration testing. Many professionals struggle with interpreting test results and identifying the root causes of problems, leading to prolonged debugging cycles and delayed releases. Additionally, security vulnerabilities due to misconfiguration are a constant concern.",
+      "Why do you think this WSQ course will address the training needs for the industry?": "The course provides a deep dive into configuring software products and interpreting configuration test results, giving participants the skills to diagnose and fix issues quickly. By focusing on testing procedures and helping participants understand test results, this course improves configuration management and reduces the risk of deployment errors. This helps improve software quality and reduces the time it takes to deliver new features."
     }
   ],
   "course_info": {
-    "Course Title": "Hands-on AI-Assisted Programming Made Simple with GitHub Copilot",
+    "Course Title": "Github Foundations Certification Training",
     "Industry": "Infocomm Technology",
     "Learning Outcomes": [
-      "LO1: Identify gaps in existing programming workflows and propose AI-assisted solutions using GitHub Copilot to enhance efficiency.",
-      "LO2: Explore and apply emerging AI programming tools, including GitHub Copilot, to streamline organizational coding processes."
+      "LO1: Analyze Github components and coordinate release scheduling with collaborators to align processes.",
+      "LO2: Select appropriate Git scripts for integrating and deploying software products.",
+      "LO3: Configure software products and deploy releases using Git configuration tests.",
+      "LO4: Diagnose issues identified during Github configuration testing by interpreting configuration test results.",
+      "LO5: Identify potential improvements to the software configuration, deployment processes, and code elements.",
+      "LO6: Implement modifications to software products and processes for improved functionality."
     ],
-    "TSC Title": "Digital Technology Adoption and Innovation",
-    "TSC Code": "ACC-ICT-3004-1.1"
+    "TSC Title": "Software Configuration",
+    "TSC Code": "ICT-DIT-3014-1.1"
   }
 }
