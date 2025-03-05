@@ -24,6 +24,14 @@ def ka_task():
     """
     return overview_task
 
+def im_task():
+    im_task = f"""
+    1. Based on the provided data, generate your justifications, ensure that the instructional methods are addressed.
+    2. Ensure your responses are structured in JSON format.
+    3. Return a full JSON object with all your answers according to the schema.
+    """
+    return im_task
+
 def create_course_agent(ensemble_output, model_choice: str) -> RoundRobinGroupChat:
 
     chosen_config = get_model_config(model_choice)
@@ -86,18 +94,14 @@ def create_ka_analysis_agent(ensemble_output, instructional_methods_data, model_
     Full list of K factors: {ensemble_output.get('Learning Outcomes', {}).get('Knowledge', [])}
     Full list of A factors: {ensemble_output.get('Learning Outcomes', {}).get('Ability', [])}
     Ensure that ALL of the A and K factors are addressed.
-    Only use the first 2 characters as the key names for your JSON output, like K1 for example. Do not use the full A and K factor description as the key name, afterwards in the value to the key, you must follow the format below, the answer should for example K1: "For K1: example explanation"
-
-    An example explanation for K1 and A1 would look like this:
-    For K1: Candidates will analyze a given software project, set up a GitHub repository, and coordinate release scheduling using GitHub features.
-    For A2: Candidates will select and apply appropriate Git scripts to automate the integration and deployment of a software product.
+    Only use the first 2 characters as the key names for your JSON output, like K1 for example. Do not use the full A and K factor description as the key name.
 
     K factors must address theory and knowledge, while A factors must address practical application and skills, you must reflect this in your analysis.
 
     For example:
     KA_Analysis: {{
-    K1: "For K1: Candidates will analyze a given software project, set up a GitHub repository, and coordinate release scheduling using GitHub features.",
-    A1: "For A2: Candidates will select and apply appropriate Git scripts to automate the integration and deployment of a software product.",
+    K1: "The candidate will respond to a series of [possibly scenario based] short answer questions related to: ",
+    A1: "The candidate will perform [some form of practical exercise] on this [topic] and submit [materials done] for: ",
     K2: "explanation",
     A2: "explanation",
     ...
@@ -116,34 +120,75 @@ def create_ka_analysis_agent(ensemble_output, instructional_methods_data, model_
 
     return ka_analysis_chat
 
-async def run_excel_agents():
-    # Load the existing research_output.json
-    with open('json_output/research_output.json', 'r', encoding='utf-8') as f:
-        research_output = json.load(f)
+def create_instructional_methods_agent(ensemble_output, instructional_methods_json, model_choice: str) -> RoundRobinGroupChat:
 
-    course_agent = create_course_agent(research_output, model_choice=model_choice)
-    stream = course_agent.run_stream(task=overview_task)
-    await Console(stream)
+    chosen_config = get_model_config(model_choice)
+    model_client = ChatCompletionClient.load_component(chosen_config)
 
-    course_agent_state = await course_agent.save_state()
-    with open("json_output/course_agent_state.json", "w") as f:
-        json.dump(course_agent_state, f)
-    course_agent_data = extract_final_agent_json("json_output/course_agent_state.json")  
-    with open("json_output/excel_data.json", "w", encoding="utf-8") as f:
-        json.dump(course_agent_data, f)  
+    # instructional_methods_data = create_instructional_dataframe()
+    im_analysis_message = f"""
+    You are responsible for contextualising the explanations of the chosen instructional methods to fit the context of the course. 
+    You will take the template explanations and provide a customised explanation for each instructional method.
+    Your response must be structured in the given JSON format under "Instructional_Methods".
+    Focus on explaining why each of the IM is appropriate and not just on what will be done using the particular IM.
+    Do not mention any A and K factors directly.
+    Do not mention any topics directly.
+    Do not mention the course name directly.
 
-    # K and A analysis pipeline
-    instructional_methods_data = create_instructional_dataframe()
-    ka_agent = create_ka_analysis_agent(instructional_methods_data, model_choice=model_choice)
-    stream = ka_agent.run_stream(task=overview_task)
-    await Console(stream)
-    #TSC JSON management
-    state = await ka_agent.save_state()
-    with open("json_output/ka_agent_state.json", "w") as f:
-        json.dump(state, f)
-    ka_agent_data = extract_final_agent_json("json_output/ka_agent_state.json")
-    with open("json_output/excel_data.json", "w", encoding="utf-8") as out:
-        json.dump(ka_agent_data, out, indent=2)
+    Your response should be structured in the given JSON format under "Instructional_Methods".
+    The following JSON output details the course, and the full list of chosen instructional methods can be found under the Instructional Methods key: {ensemble_output}
+    Full list of template answers for the chosen instructional methods: {instructional_methods_json}
+
+    Do not miss out on any of the chosen instructional methods.
+    The key names must be the exact name of the instructional method, and the value must be the explanation.
+
+    For example:
+    Instructional_Methods: {{
+    Lecture: "",
+    Didactic Questioning: "",
+    ...
+    }}
+
+    """
+
+    instructional_methods_agent = AssistantAgent(
+        name="instructional_methods_agent",
+        model_client=model_client,
+        system_message=im_analysis_message,
+    )
+
+    im_analysis_chat = RoundRobinGroupChat([instructional_methods_agent], max_turns=1)
+
+    return im_analysis_chat
+
+# async def run_excel_agents():
+#     # Load the existing research_output.json
+#     with open('json_output/research_output.json', 'r', encoding='utf-8') as f:
+#         research_output = json.load(f)
+
+#     course_agent = create_course_agent(research_output, model_choice=model_choice)
+#     stream = course_agent.run_stream(task=overview_task)
+#     await Console(stream)
+
+#     course_agent_state = await course_agent.save_state()
+#     with open("json_output/course_agent_state.json", "w") as f:
+#         json.dump(course_agent_state, f)
+#     course_agent_data = extract_final_agent_json("json_output/course_agent_state.json")  
+#     with open("json_output/excel_data.json", "w", encoding="utf-8") as f:
+#         json.dump(course_agent_data, f)  
+
+#     # K and A analysis pipeline
+#     instructional_methods_data = create_instructional_dataframe()
+#     ka_agent = create_ka_analysis_agent(instructional_methods_data, model_choice=model_choice)
+#     stream = ka_agent.run_stream(task=overview_task)
+#     await Console(stream)
+#     #TSC JSON management
+#     state = await ka_agent.save_state()
+#     with open("json_output/ka_agent_state.json", "w") as f:
+#         json.dump(state, f)
+#     ka_agent_data = extract_final_agent_json("json_output/ka_agent_state.json")
+#     with open("json_output/excel_data.json", "w", encoding="utf-8") as out:
+#         json.dump(ka_agent_data, out, indent=2)
 
 # if __name__ == "__main__":
     # # Load the existing research_output.json

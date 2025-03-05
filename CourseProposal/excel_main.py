@@ -4,7 +4,9 @@ from CourseProposal.agents.excel_agents import (
     course_task,
     ka_task,
     create_course_agent,
-    create_ka_analysis_agent
+    create_ka_analysis_agent,
+    create_instructional_methods_agent,
+    im_task
 )
 import json
 import asyncio

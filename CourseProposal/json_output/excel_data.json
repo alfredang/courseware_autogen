@@ -1,24 +1,24 @@
 [
   {
     "course_overview": {
-      "course_description": "This course provides a comprehensive introduction to Git and GitHub, focusing on software configuration and collaborative development practices for beginner learners. Participants will learn to manage repositories, create branches, and integrate software products using appropriate Git scripts. The course emphasizes practical application through hands-on exercises covering repository management, issue tracking, and pull requests, ensuring learners can effectively collaborate on software projects. \n\nFurthermore, the course explores modern development tools such as GitHub Actions, Copilot, and Codespaces to automate workflows and enhance productivity. Learners will also gain essential skills in security and administration, including dependency management, code scanning, and user authentication. By mastering these skills, participants will improve their ability to diagnose configuration issues, optimize deployment processes, and contribute to secure and efficient software development, increasing their employment and job upgrading opportunities."
+      "course_description": "This course provides a foundational understanding of Git and GitHub, essential for modern software development and collaboration. Participants will learn to navigate GitHub components, manage repositories, and coordinate release schedules effectively. The curriculum covers basic Git commands, repository creation, branching strategies, and the management of changes through pull requests. Emphasis is placed on fostering collaborative workflows using GitHub's features for issue tracking, code reviews, and team discussions. The course is designed for individuals with little to no prior experience in version control systems, offering a practical introduction to industry-standard practices.\n\nParticipants will also explore advanced GitHub tools like Actions, Copilot, and Codespaces to streamline development processes and enhance productivity. The course includes an overview of security best practices within GitHub, including dependency and secret management, alongside authentication and authorization protocols. By the end of the course, learners will be equipped with the skills to contribute to software projects, manage code securely, and leverage GitHub's collaborative features to improve team efficiency, enhancing career prospects in software development and IT management."
     }
   },
   {
     "KA_Analysis": {
-      "K1": "For K1: Practical exercises directly assess understanding of script/tool types and usage for integration and deployment.",
-      "A1": "For A1: Analyzing release components is evaluated through practical tasks where trainees identify and examine elements.",
-      "K2": "For K2: Software configuration procedures are directly assessed in practical exercises, where trainees configure software.",
-      "A2": "For A2: Coordination is assessed via practical tasks where trainees must communicate during simulated release scheduling.",
-      "K3": "For K3: Configuration test knowledge is assessed through identifying purposes in practical exercises.",
-      "A3": "For A3: Practical exercises require trainees to choose appropriate scripts/tools, assessing selection skills.",
-      "K4": "For K4: Interpreting configuration test results is assessed by analyzing output during practical exercises.",
-      "A4": "For A4: Software configuration skills are evaluated directly through hands-on configuration tasks in practicals.",
-      "K5": "For K5: Practical tasks will indirectly show knowledge of deployment process elements when trainees perform them.",
-      "A5": "For A5: Practical exercises directly assess executing config tests during hands-on activities.",
-      "A6": "For A6: Practical work and configuration test results are analysed to diagnose issues surfaced from configuration testing",
-      "A7": "For A7: Improvements are identified by trainees during exercises, assessing their analytical and improvement skills.",
-      "A8": "For A8: Implementing modifications is directly assessed by evaluating successful changes made during practicals."
+      "K1": "Practical exercises assess the application of knowledge regarding scripts and tools, and their usage in software integration and deployment. It tests understanding of when and how to use specific tools.",
+      "A1": "Practical exercises provide a direct demonstration of the ability to analyze release components. Assessing the practical application of identifying and understanding the different components of a release.",
+      "K2": "Practical application tests the understanding of software configuration procedures by requiring candidates to execute these procedures, showing they understand each step's purpose and sequence.",
+      "A2": "Practical exercises simulate real-world scenarios requiring coordination. Assessing the ability to communicate effectively and align release activities with stakeholders' needs and timelines.",
+      "K3": "Configuration tests are included to check the candidate knows the configuration tests performed, and their purpose in ensuring the reliability and stability of the software product.",
+      "A3": "Practical assessment demonstrates the ability to choose appropriate scripts and tools. Focusing on effectiveness and suitability for specific integration and deployment tasks, evaluating selection skills.",
+      "K4": "Practical activities ensures the candidate can determine the outcome, issues or successes of testing procedures, and ensures the software is functional after configuration tests.",
+      "A4": "Practical exercises test the ability to configure software. It assesses the ability to translate theoretical knowledge into practical skills in diverse platform configurations.",
+      "K5": "The practical element ensures the candidate understands the software configuration and deployment process, and they have appropriate knowledge to perform actions that will be tested in action.",
+      "A5": "Practical activities demonstrate competency in executing configuration tests. Assessing the ability to follow procedures accurately and efficiently, while understanding the expected outcomes.",
+      "A6": "Practical tests involve identifying the cause and remedy to issues, which allows for assessment of their ability to diagnose effectively. The configuration allows a setting for practical investigation.",
+      "A7": "Practical implementation allows for the ability to determine improvements from the outcome of testing, and their experience, which allows for better modification of software code.",
+      "A8": "The practical element ensures the candidate can properly modify platform-specific software products and processes, while retaining previous functionality and applying improvements."
     }
   }
 ]

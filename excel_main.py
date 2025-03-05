@@ -19,7 +19,9 @@ from CourseProposal.agents.excel_agents import (
     course_task,
     ka_task,
     create_course_agent,
-    create_ka_analysis_agent
+    create_ka_analysis_agent,
+    create_instructional_methods_agent,
+    im_task
 )
 import json
 import asyncio
@@ -102,6 +104,20 @@ async def process_excel(model_choice: str) -> None:
         "CourseProposal/json_output/course_agent_data.json",
         "CourseProposal/json_output/ka_agent_data.json"
     )
+
+    # instructional methods pipeline
+    with open('CourseProposal/json_output/instructional_methods.json', 'r', encoding='utf-8') as f:
+        instructional_methods_descriptions = json.load(f)
+    im_agent = create_instructional_methods_agent(ensemble_output, instructional_methods_descriptions, model_choice=model_choice)
+    stream = im_agent.run_stream(task=im_task())
+    await Console(stream)
+    #TSC JSON management
+    state = await im_agent.save_state()
+    with open("CourseProposal/json_output/im_agent_state.json", "w") as f:
+        json.dump(state, f)
+    ka_agent_data = extract_agent_json("CourseProposal/json_output/im_agent_state.json", "instructional_methods_agent")
+    with open("CourseProposal/json_output/im_agent_data.json", "w", encoding="utf-8") as out:
+        json.dump(ka_agent_data, out, indent=2)    
 
     # Write the combined data to excel_data.json
     with open("CourseProposal/json_output/excel_data.json", "w", encoding="utf-8") as out:

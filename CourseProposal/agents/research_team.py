@@ -7,6 +7,11 @@ import os
 from dotenv import load_dotenv
 from CourseProposal.model_configs import get_model_config
 
+# performance gaps sometimes does not meet the learning outcomes
+# no mention of specific industry in background information
+# add in filler text in background information
+# does not conflict with other sequencing
+
 def research_task(ensemble_output):
     research_task = f"""
     1. Based on the extracted data from {ensemble_output}, generate your justifications.

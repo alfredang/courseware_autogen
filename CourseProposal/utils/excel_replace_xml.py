@@ -8,6 +8,26 @@ import pandas as pd
 from lxml import etree as ET
 from CourseProposal.utils.excel_conversion_pipeline import create_course_dataframe, create_assessment_dataframe, create_instructional_dataframe, create_instruction_description_dataframe, map_new_key_names_excel, enrich_assessment_dataframe_ka_descriptions, create_summary_dataframe
 
+def convert_minutes_to_hours_minutes(minutes_total):
+    hours = minutes_total // 60
+    minutes = minutes_total % 60
+    return f"{hours} hours {minutes} minutes"
+
+def compute_total_durations(summary_df):
+    # Sum up the instructional durations from the summary dataframe.
+    total_instructional_minutes = summary_df["Instructional Duration (in minutes)"].sum()
+    # Sum up the assessment durations from the summary dataframe.
+    total_assessment_minutes = summary_df["Assessment Duration (in minutes)"].sum()
+    # Total course duration is the sum of instructional and assessment durations.
+    total_course_minutes = total_instructional_minutes + total_assessment_minutes
+
+    # Convert totals to "x hours x minutes" format.
+    instructional_duration = convert_minutes_to_hours_minutes(total_instructional_minutes)
+    assessment_duration = convert_minutes_to_hours_minutes(total_assessment_minutes)
+    course_duration = convert_minutes_to_hours_minutes(total_course_minutes)
+
+    return instructional_duration, assessment_duration, course_duration
+
 def save_dataframe_to_excel(df, filepath):
     """
     Saves a Pandas DataFrame to a separate Excel file.
@@ -220,7 +240,7 @@ def process_excel_update(json_data_path, excel_template_path, output_excel_path,
             # ensemble_output_path = os.path.join('..', 'json_output', 'ensemble_output.json')
             # instructional_methods_path = os.path.join('..', 'json_output', 'instructional_methods.json')
             ensemble_output_path = "CourseProposal/json_output/ensemble_output.json"
-            instructional_methods_path = "CourseProposal/json_output/instructional_methods.json"
+            instructional_methods_path = "CourseProposal/json_output/im_agent_data.json"
             # Create the DataFrame using your helper function (provided separately)
             instructional_description_df = create_instruction_description_dataframe(ensemble_output_path, instructional_methods_path)
 
@@ -244,6 +264,17 @@ def process_excel_update(json_data_path, excel_template_path, output_excel_path,
                 save_dataframe_to_excel(summary_df, "CourseProposal/json_output/summary_dataframe.xlsx")
                 # For example, insert starting at row 18 and column 2 (B18)
                 insert_dataframe_into_sheet(sheet_xml_path, start_row=7, start_col=2, df=summary_df)
+                total_instructional_duration, total_assessment_duration, total_course_duration = compute_total_durations(summary_df)
+                print(f"Total Instructional Duration: {total_instructional_duration}")
+                print(f"Total Assessment Duration: {total_assessment_duration}")
+                print(f"Total Course Duration: {total_course_duration}")
+
+                # Write the total durations to specific cells in the Summary sheet
+                update_cell_in_sheet(sheet_xml_path, "G4", total_instructional_duration)
+                update_cell_in_sheet(sheet_xml_path, "I4", total_assessment_duration) 
+                update_cell_in_sheet(sheet_xml_path, "G3", total_course_duration)
+                update_cell_in_sheet(sheet_xml_path, "K4", "Classroom Facilitated Training")
+                update_cell_in_sheet(sheet_xml_path, "M4", total_instructional_duration)
             else:
                 print("Warning: DataFrame is empty. Nothing to insert.")
         else:
@@ -320,13 +351,15 @@ def update_cell_in_sheet(sheet_xml_path, cell_ref, new_value):
     for cell in root.xpath('.//main:c[@r="%s"]' % cell_ref, namespaces=ns):
         # Skip cells that have a formula (we don’t want to overwrite them)
         if cell.xpath('main:f', namespaces=ns):
-            print(f"Skipping formula cell {cell_ref}")
-            return False
+            print(f"Notice: Overwriting formula in cell {cell_ref}")
+
 
         # Remove any existing value elements (<v> or <is>)
+        # for child in list(cell):
+        #     if child.tag in {f"{{{ns['main']}}}v", f"{{{ns['main']}}}is"}:
+        #         cell.remove(child)
         for child in list(cell):
-            if child.tag in {f"{{{ns['main']}}}v", f"{{{ns['main']}}}is"}:
-                cell.remove(child)
+            cell.remove(child)
         # Set type attribute to inline string
         cell.set('t', 'inlineStr')
         is_elem = ET.Element(f"{{{ns['main']}}}is")
