@@ -26,21 +26,21 @@ with st.sidebar:
 if selected == "Generate CP":
     course_proposal_app.app()  # Display CP Generation app
 
-# elif selected == "Generate AP/FG/LG/LP":
-#     courseware_generation.app()  # Display Courseware Generation app
+elif selected == "Generate AP/FG/LG/LP":
+    courseware_generation.app()  # Display Courseware Generation app
 
-# elif selected == "Generate Assessment":
-#     assessment_generation.app()
-#     # Add Assessment Generation-specific functionality here
+elif selected == "Generate Assessment":
+    assessment_generation.app()
+    # Add Assessment Generation-specific functionality here
 
-# elif selected == "Generate Slides":
-#     # slide_generation.app()  # Display Courseware Generation app
-#     st.title("Generate Slides")
-#     st.write("Slides Generation not available.")
+elif selected == "Generate Slides":
+    # slide_generation.app()  # Display Courseware Generation app
+    st.title("Generate Slides")
+    st.write("Slides Generation not available.")
 
-# elif selected == "Generate Brochure":
-#     brochure_generation.app() # Display Brochure Generation app
-#     # Add Assessment Generation-specific functionality here
+elif selected == "Generate Brochure":
+    brochure_generation.app() # Display Brochure Generation app
+    # Add Assessment Generation-specific functionality here
 
-# elif selected == "Add Assessment to AP":
-#     annex_assessment.app()  # Display Annex Assessment app
+elif selected == "Add Assessment to AP":
+    annex_assessment.app()  # Display Annex Assessment app
