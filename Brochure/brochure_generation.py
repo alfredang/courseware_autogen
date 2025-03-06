@@ -532,8 +532,8 @@ def app():
         1. **Enter a valid course URL from the Tertiary Courses website**  
         - Format: `https://www.tertiarycourses.com.sg/[course_title].html`  
 
-        2. **Enter the Course Folder name from the `1 WSQ Documents` directory**  
-        - Format: `TGS-[Course Code] - [Course Title]`  
+        2. **Enter the exact Course Folder name from the `1 WSQ Documents` directory**  
+        - Format: `TGS-[Course Code] - [Course Title]` or `TGS-[Course Code] - [Course Title] (NEW)`
 
         3. **Click "Generate Brochure"** to scrape data and generate the course brochure automatically.  
         """)
