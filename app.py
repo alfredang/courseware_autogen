@@ -6,6 +6,7 @@ import Courseware.courseware_generation  as courseware_generation
 import Brochure.brochure_generation as brochure_generation
 import AnnexAssessment.annex_assessment as annex_assessment
 import CourseProposal.app as course_proposal_app
+import SupDocs.sup_doc as sup_doc
 # import CourseProposal_excel.app as course_proposal_excel_app
 # import Slides.slide_generation as slide_generation
 # from Slides.slide_generation import render_slide_generation_ui
@@ -37,6 +38,9 @@ elif selected == "Generate Slides":
     # slide_generation.app()  # Display Courseware Generation app
     st.title("Generate Slides")
     st.write("Slides Generation not available.")
+
+elif selected == "Check Documents":
+    sup_doc.app()
 
 elif selected == "Generate Brochure":
     brochure_generation.app() # Display Brochure Generation app
