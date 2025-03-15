@@ -51,6 +51,7 @@ from llama_index.core.query_pipeline.components.input import InputComponent
 from typing import Optional, List, Dict, Any
 from pydantic import Field
 from llama_index.core.schema import NodeWithScore
+import traceback
 
 config, embed_model = load_shared_resources()
 llm = Gemini(
@@ -109,6 +110,12 @@ class CreateCitationsEvent(Event):
     """Add citations to the nodes."""
 
     nodes: list[NodeWithScore]
+
+class QuestionGeneratedEvent(Event):
+    """Event containing the generated question."""
+    nodes: list[NodeWithScore]  # Pass the nodes forward
+    question: str               # The generated question
+    lu_details: LearningUnitDetails  # The learning unit details
 
 config, embed_model = load_shared_resources()
 llm = Gemini(
@@ -339,80 +346,144 @@ class PydanticWorkflow(Workflow):
                 print(f"New Node: {new_node.node.text}")
         return CreateCitationsEvent(nodes=new_nodes)
 
-    # 4. Update synthesize to save results back to lu_details
     @step
-    async def synthesize(
-        self, ctx: Context, ev: CreateCitationsEvent
-    ) -> StopEvent:
+    async def synthesize(self, ctx: Context, ev: CreateCitationsEvent) -> StopEvent:
         """Return a streaming response using the retrieved nodes."""
-        query = await ctx.get("query", default=None)
-        lu_details = await ctx.get("lu_details", default=None)
-        print(lu_details)
-        
-        # Convert list to string if needed
-        if isinstance(query, list):
-            query_str = "Based on the retrieved context, create a question and answer that takes into account the additional knowledge statements above."
-        else:
-            query_str = query
-        
-        synthesizer = get_response_synthesizer(
-            llm=llm,
-            text_qa_template=CITATION_QA_TEMPLATE,
-            refine_template=CITATION_REFINE_TEMPLATE,
-            response_mode=ResponseMode.COMPACT,
-            use_async=True,
-        )
+        try:
+            query = await ctx.get("query", default=None)
+            lu_details = await ctx.get("lu_details", default=None)
+            print(lu_details)
+            
+            # Convert list to string if needed
+            if isinstance(query, list):
+                query_str = "Based on the retrieved context, create a question and answer that takes into account the additional knowledge statements above."
+            else:
+                query_str = query
+            
+            synthesizer = get_response_synthesizer(
+                llm=llm,
+                text_qa_template=CITATION_QA_TEMPLATE,
+                refine_template=CITATION_REFINE_TEMPLATE,
+                response_mode=ResponseMode.REFINE,            
+                use_async=True,
+            )
 
-        # Use query_str instead of query
-        response = await synthesizer.asynthesize(query_str, nodes=ev.nodes)
-        print(f"Response: {response.response}")
-        
-        # Update the lu_details with the answer if lu_details is available
-        if lu_details:
-            lu_details.Answer = response.response
-            # Store question too
-            lu_details.Question = f"Tell me about: {query_str}"
+            # Use query_str instead of query
+            response = await synthesizer.asynthesize(query_str, nodes=ev.nodes)
+            response_text = response.response
+            
+            # Parse the response to extract question and answer
+            if "Question:" in response_text and "Answer:" in response_text:
+                # Split by "Answer:" to get question part and answer part
+                parts = response_text.split("Answer:", 1)
                 
-        return LUStopEvent(result=response, lu_details=lu_details)
+                if len(parts) == 2:
+                    # Extract question (remove "Question:" prefix and trim)
+                    question_part = parts[0].replace("Question:", "", 1).strip()
+                    # Extract answer (trim)
+                    answer_part = parts[1].strip()
+                    
+                    # Update the lu_details with the separated question and answer
+                    if lu_details:
+                        lu_details.Question = question_part
+                        lu_details.Answer = answer_part
+                        print(f"Extracted Question: {question_part}")
+                        print(f"Extracted Answer: {answer_part}")
+                else:
+                    # Fallback if parsing fails
+                    if lu_details:
+                        lu_details.Question = "Could not parse question"
+                        lu_details.Answer = response_text
+            else:
+                # Fallback if the response format is unexpected
+                if lu_details:
+                    lu_details.Question = "No question found in response"
+                    lu_details.Answer = response_text
+                    
+            # Clear context variables to help with cleanup
+            await ctx.clear()
+                    
+            return LUStopEvent(result=response, lu_details=lu_details)
+        except Exception as e:
+            print(f"Error in synthesize step: {str(e)}")
+            # Still try to clean up and return 
+            await ctx.clear()
+            traceback.print_exc()
+            return LUStopEvent(result=f"Error: {str(e)}")
 
 # left with synthesizer, decide on whether to use autogen groupchats
 # simple llm calls with pydantic output
 # or attempt to work with llamaindex synthesizers (seems limited in ability from testing so far)
 # or use a custom synthesizer
 # or use a custom synthesizer with a custom synthesizer prompt
+
 async def main():
     # Load data *once* outside the workflow loop
     lu_data = load_json_file("output_json/parsed_TSC.json")
-    learning_units = LearningUnits.model_validate(lu_data)  # Updated from parse_obj
+    learning_units = LearningUnits.model_validate(lu_data)
     
-    # 1. Define the Redis schema
+    # Define the Redis schema
     custom_schema = define_custom_schema()
 
-    # 2. Initialize the RedisVectorStore
+    # Initialize the RedisVectorStore
     vector_store = RedisVectorStore(
         schema=custom_schema, redis_url="redis://localhost:6379"
     )
 
-    # 3. Load the index from the existing Redis store
+    # Load the index from the existing Redis store
     index = VectorStoreIndex.from_vector_store(
         vector_store, embed_model=embed_model
     )
     
-    # Loop through each Learning Unit and run a *new* workflow for each
+    # Process each learning unit with better isolation
+    processed_units = {}  # Store processed results here
+    
+    # Loop through each Learning Unit
     for lu_name, lu_details in learning_units.root.items():
-        w = PydanticWorkflow(timeout=60, verbose=True)  # Set verbose=True for debugging
-        # Pass both lu_details and index to the workflow
-        result = await w.run(lu_details=lu_details, index=index)
+        print(f"\n==== Starting workflow for LU: {lu_name} ====")
         
-        # Store results back to your learning units data
-        if hasattr(result, 'lu_details') and result.lu_details:
-            learning_units.root[lu_name] = result.lu_details
-        
-        print(f"Workflow Result for {lu_name}: {result.result}")  # Access .result to get the response
+        try:
+            # Create new workflow in a more isolated way
+            w = PydanticWorkflow(timeout=300, verbose=True)
+            
+            # Process this LU in a controlled scope
+            result = await w.run(lu_details=lu_details, index=index)
+            
+            # Extract the important data
+            processed_lu_details = result.lu_details if hasattr(result, 'lu_details') else None
+            
+            # Store successful results
+            if processed_lu_details:
+                processed_units[lu_name] = processed_lu_details
+                print(f"Successfully processed: {lu_name}")
+                
+                if hasattr(result, 'result'):
+                    print(f"Response: {result.result.response}")
+            
+            # Force garbage collection of the workflow
+            del w
+            
+            # Add a small delay to ensure resources are released
+            await asyncio.sleep(1)
+            
+        except Exception as e:
+            print(f"Error processing {lu_name}: {str(e)}")
+            traceback.print_exc()
+            continue
+    
+    # After all LUs are processed, update the learning_units object
+    for lu_name, processed_details in processed_units.items():
+        learning_units.root[lu_name] = processed_details
+    
+    # Save the updated data
+    try:
+        with open("output_json/updated_TSC.json", "w") as f:
+            json.dump(learning_units.model_dump(), f, indent=2)
+        print("Successfully saved updated learning units to file")
+    except Exception as e:
+        print(f"Error saving updated data: {str(e)}")
 
-    # Optionally save the updated learning units back to file
-    with open("output_json/updated_TSC.json", "w") as f:
-        json.dump(learning_units.model_dump(), f, indent=2)
+    print(f"Processed {len(processed_units)}/{len(learning_units.root)} learning units")
 
 if __name__ == "__main__":
     import asyncio

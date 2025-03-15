@@ -1,0 +1,91 @@
+{
+  "LU1: Git and GitHub Fundamentals (A1, A2)": {
+    "LO": "LO1: Analyze Github components and coordinate release scheduling with collaborators to align processes.",
+    "Abilities": {
+      "A1": "Analyse release components",
+      "A2": "Coordinate with relevant stakeholders on release scheduling to align release processes and procedures"
+    },
+    "Knowledge": {},
+    "Keywords": [
+      "Here are 7 keywords highly relevant to the Learning Unit:\n\n1.  **GitHub**\n2.  **Release Scheduling**\n3.  **Release Components**\n4.  **Collaboration**\n5.  **Stakeholders**\n6.  **Release Processes**\n7.  **Alignment**"
+    ],
+    "Retrieval_Metadata": null,
+    "Question": "No question found in response",
+    "Answer": "I am sorry, but I am unable to create a question and answer based on the provided context. The source only contains a table of contents for a book about Git [1]. It does not contain enough information to formulate a question and answer.\n"
+  },
+  "LU2: GitHub Repository Management (K1, A3)": {
+    "LO": "LO2: Select appropriate Git scripts for integrating and deploying software products.",
+    "Abilities": {
+      "A3": "Select appropriate scripts and tools for integrating and deploying software products"
+    },
+    "Knowledge": {
+      "K1": "Types and usage of scripts and tools for integrating and deploying software products"
+    },
+    "Keywords": [
+      "Here are 7 keywords highly relevant to the Learning Unit:\n\n1.  **Git Scripts**\n2.  **Integration**\n3.  **Deployment**\n4.  **Software Products**\n5.  **Automation**\n6.  **CI/CD (Continuous Integration/Continuous Deployment)**\n7.  **Tools**"
+    ],
+    "Retrieval_Metadata": null,
+    "Question": "What topics are covered in Chapter 8 of the Pro Git book?",
+    "Answer": "Chapter 8 covers configuring your custom Git environment, including setting up hook scripts to enforce or encourage customized policies and using environment configuration settings [4]. It also covers building your own set of scripts to enforce a custom committing policy [4]."
+  },
+  "LU3: Collaborative Workflows on GitHub (K2, K3, A4, A5)": {
+    "LO": "LO3: Configure software products and deploy releases using Git configuration tests.",
+    "Abilities": {
+      "A4": "Configure software products to integrate and deploy software releases to various platforms",
+      "A5": "Execute configuration tests on platform specific versions of software products in line with testing procedures"
+    },
+    "Knowledge": {
+      "K2": "Software configuration procedures",
+      "K3": "Configuration tests and their purposes"
+    },
+    "Keywords": [
+      "Here are 7 keywords highly relevant to the Learning Unit:\n\n1.  **Git Configuration**\n2.  **Software Deployment**\n3.  **Configuration Tests**\n4.  **Release Management**\n5.  **Platform Integration**\n6.  **Software Configuration**\n7.  **Testing Procedures**"
+    ],
+    "Retrieval_Metadata": null,
+    "Question": "What topics are covered in Chapter 7 and Chapter 8 of the provided text?",
+    "Answer": "Chapter 7 covers advanced Git commands, including the 'reset' command, binary search for bug identification, history editing, and revision selection [2]. Chapter 8 covers configuring your custom Git environment, including setting up hook scripts and using environment configuration settings [2]."
+  },
+  "LU4: Modern GitHub Development Practices (K4, A6)": {
+    "LO": "LO4: Diagnose issues identified during Github configuration testing by interpreting configuration test results.",
+    "Abilities": {
+      "A6": "Diagnose issues surfaced from configuration testing"
+    },
+    "Knowledge": {
+      "K4": "Interpretation of configuration test results"
+    },
+    "Keywords": [
+      "Here are 6 keywords highly relevant to the Learning Unit:\n\n1.  **Configuration Testing**\n2.  **Test Results Interpretation**\n3.  **Issue Diagnosis**\n4.  **GitHub Configuration**\n5.  **Troubleshooting**\n6.  **Error Analysis**"
+    ],
+    "Retrieval_Metadata": null,
+    "Question": "The provided sources do not contain information about setting up a GitHub account. Therefore, the answer remains the same.\n\n What is the first step in setting up a GitHub account?",
+    "Answer": "The first thing you need to do is set up a free user account [1]. You can do this by visiting https://github.com, choosing a username, providing an email address and a password, and clicking the \"Sign up for GitHub\" button [1]."
+  },
+  "LU5: GitHub Project Automation (K5, A7)": {
+    "LO": "LO5: Identify potential improvements to the software configuration, deployment processes, and code elements.",
+    "Abilities": {
+      "A7": "Identify potential improvements and modifications to the software configuration and deployment process or the software code"
+    },
+    "Knowledge": {
+      "K5": "Elements of the software configuration and deployment process"
+    },
+    "Keywords": [
+      "Here are 7 keywords highly relevant to the learning unit:\n\n1.  **Software Improvement** (Core concept)\n2.  **Configuration Optimization** (Focus on configuration)\n3.  **Deployment Enhancement** (Focus on deployment)\n4.  **Code Refactoring** (Focus on code elements)\n5.  **Process Analysis** (Implied by improvement)\n6.  **Software Modifications** (Directly from the abilities)\n7.  **Efficiency Gains** (Implied by improvement and optimization)"
+    ],
+    "Retrieval_Metadata": null,
+    "Question": "The provided sources do not contain information that would allow me to refine the existing answer. Therefore, I will repeat the existing answer.\n\n What directory does Git create when you run `git init`, and what does it contain?",
+    "Answer": "Git creates the `.git` directory when you run `git init` [2]. This directory is where almost everything that Git stores and manipulates is located [2]. A newly initialized `.git` directory typically contains `config`, `description`, and `HEAD` [2]."
+  },
+  "LU6: GitHub Security and Administration (A8)": {
+    "LO": "LO6: Implement modifications to software products and processes for improved functionality.",
+    "Abilities": {
+      "A8": "Implement modifications to platform-specific software products and processes"
+    },
+    "Knowledge": {},
+    "Keywords": [
+      "Here are 6 keywords highly relevant to the Learning Unit:\n\n1.  **Software Modification**\n2.  **Implementation**\n3.  **Platform-Specific**\n4.  **Functionality Improvement**\n5.  **Process Modification**\n6.  **Software Updates**"
+    ],
+    "Retrieval_Metadata": null,
+    "Question": "The provided sources do not contain information that can be used to refine the existing answer.\n\n What is stored in the `.git` directory created by `git init`?",
+    "Answer": "The `.git` directory is where almost everything that Git stores and manipulates is located [2]. Copying this directory allows you to back up or clone your repository [2]."
+  }
+}

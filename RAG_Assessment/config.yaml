@@ -8,8 +8,10 @@ project_id: assessment-rag  # Replace with your actual project ID
 firestore_db_name: "tertiary-rag-docstore"  # Replace with your Firestore database name, or leave as (default)
 firestore_namespace: "hierarchical_docs"   # Replace with desired collection, can be left empty
 embedding_model: "huggingface"
-llm_model: "models/gemini-2.0-flash-exp"
-gemini_llm_model: "models/gemini-2.0-flash-exp"
+# llm_model: "models/gemini-2.0-flash-exp"
+# gemini_llm_model: "models/gemini-2.0-flash-exp"
+llm_model: "models/gemini-2.0-flash-lite"
+gemini_llm_model: "models/gemini-2.0-flash-lite"
 redis_host: localhost # Default Redis host
 redis_port: 6379      # Default Redis port
 redis_password: null  # Default Redis password (set to null or your password if needed)
