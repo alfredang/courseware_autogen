@@ -60,6 +60,7 @@ def create_course_agent(ensemble_output, model_choice: str) -> RoundRobinGroupCh
     Highlight the benefits your course offers including skils, competencies and needs that the course will address
     Explain how the course is relevant to the industry and how it may impact the learner's career in terms of employment/ job upgrading opportunities
     Indicate that the course is for beginner learners.
+    Do not have more than 1 key value pair under "course_overview", and that key value pair must be "course_description".
 
 
     Format your response in the given JSON structure under "course_overview".
