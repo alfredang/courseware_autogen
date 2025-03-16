@@ -8,6 +8,10 @@ from dotenv import load_dotenv
 from CourseProposal.model_configs import get_model_config
 import pydantic
 
+# use structured output for this group, perhaps a selector group chat, and then 
+# have it take into account the sources
+# and redo the question and answers to fit a coherent story, and then add it all back together
+
 def research_task(ensemble_output):
     system_message=f"""
         You are an expert question-answer crafter with deep domain expertise. Your task is to generate a scenario-based question and answer pair for a given knowledge statement while strictly grounding your response in the provided retrieved content. You must not hallucinate or fabricate details.
@@ -225,3 +229,317 @@ async def generate_saq(extracted_data: FacilitatorGuideExtraction, index, model_
         name="question_answer_generator",
         model_client=model_client,
     )
+
+async def generate_saq_for_k(qa_generation_agent, course_title, assessment_duration, k_statement, content):
+    """
+    Generate a question-answer pair for a specific K statement asynchronously.
+
+    :param qa_generation_agent: The Autogen AssistantAgent for question-answer generation.
+    :param course_title: Course title from extracted_data.
+    :param assessment_duration: Duration of the SAQ assessment.
+    :param k_statement: The K statement.
+    :param content: The retrieved content associated with the K statement.
+    :return: Generated question-answer dictionary.
+    """
+    agent_task = f"""
+        Please generate one question-answer pair using the following:
+        - Course Title: '{course_title}'
+        - Assessment duration: '{assessment_duration}',
+        - Knowledge Statement: '{k_statement}'
+        - Retrieved Content: {content}
+
+        Instructions:
+        1. Craft a realistic scenario in 2-3 sentences that provides context related to the retrieved content, but also explicitly addresses the knowledge statement.
+        2. Even if the retrieved content or course title seems unrelated to the knowledge statement, creatively bridge the gap by inferring or using general knowledge. For example, if the content is about Microsoft 365 Copilot and the knowledge statement is about "Organisation's processes," generate a scenario where a department is reexamining its internal workflows using Copilot as a tool.
+        3. Formulate a single, straightforward short-answer question that aligns the knowledge statement with the scenario. The question should prompt discussion on how the elements from the retrieved content could be used to address or improve the area indicated by the knowledge statement.
+        4. Provide concise, practical bullet points as the answer.    
+        Return the question and answer as a JSON object directly.
+    """
+
+    response = await qa_generation_agent.on_messages(
+        [TextMessage(content=agent_task, source="user")], CancellationToken()
+    )
+
+    if not response or not response.chat_message:
+        return None
+
+    # Log the raw response for debugging
+    # print(f"########### Raw Response for {k_statement}: {response.chat_message.content}\n\n###########")
+
+    qa_result = parse_json_content(response.chat_message.content)
+
+    # Directly extract keys from the parsed JSON object:
+    return {
+        "scenario": qa_result.get("scenario", "Scenario not provided."),
+        "question_statement": qa_result.get("question_statement", "Question not provided."),
+        "knowledge_id": k_statement.split(":")[0],
+        "answer": qa_result.get("answer", ["Answer not available."])
+    }
+
+async def generate_saq(extracted_data: FacilitatorGuideExtraction, index, model_client, premium_mode):
+    """
+    Generate SAQ questions and answers asynchronously for all K statements.
+
+    :param extracted_data: Extracted facilitator guide data.
+    :param index: The LlamaIndex vector store index.
+    :param model_client: The model client for question generation.
+    :param premium_mode: Whether to use premium parsing.
+    :return: Dictionary in the correct JSON format.
+    """
+    extracted_data = dict(extracted_data)
+    k_topics = get_topics_for_all_k_statements(extracted_data)
+    k_content_dict = await retrieve_content_for_knowledge_statement_async(k_topics, index, premium_mode)
+
+    # print(json.dumps(k_content_dict, indent=4))  
+
+    qa_generation_agent = AssistantAgent(
+        name="question_answer_generator",
+        model_client=model_client,
+        system_message=f"""
+        You are an expert question-answer crafter with deep domain expertise. Your task is to generate a scenario-based question and answer pair for a given knowledge statement while strictly grounding your response in the provided retrieved content. You must not hallucinate or fabricate details.
+
+        Guidelines:
+        1. Base your response entirely on the retrieved content. If the content does not directly address the knowledge statement, do not invent new details. Instead, use minimal general context only to bridge gaps, but ensure that every key element of the final question and answer is explicitly supported by the retrieved content.
+        2. Craft a realistic scenario in 2-3 sentences that reflects the context from the retrieved content while clearly addressing the given knowledge statement.
+        3. Formulate one direct, simple question that ties the scenario to the knowledge statement. The question should be directly answerable using the retrieved content.
+        4. Provide concise, practical bullet-point answers that list the key knowledge points explicitly mentioned in the retrieved content.         
+        5. Ensure the overall assessment strictly follows the SAQ structure.
+        6. Do not mention about the source of the content in the scenario or question.
+        7. Structure the final output in **valid JSON** with the format:
+
+        ```json
+        {{
+            "scenario": "<scenario>",
+            "question_statement": "<question>",
+            "knowledge_id": "<knowledge_id>",
+            "answer": [
+                "<bullet_point_1>",
+                "<bullet_point_2>",
+                "<bullet_point_3>"
+            ]
+        }}
+        ```
+        
+        7. Return the JSON between triple backticks followed by 'TERMINATE'.
+        """,
+    )
+
+    assessment_duration = next(
+        (assessment.get("duration", "") for assessment in extracted_data.get("assessments", []) if "SAQ" in assessment.get("code", "")),
+        ""
+    )
+    # print(f"############# ASSESSMENT DURATION\n{assessment_duration}\n#############")
+    
+    # Create async tasks for generating a Q&A pair for each knowledge statement
+    tasks = [
+        generate_saq_for_k(qa_generation_agent, extracted_data["course_title"], assessment_duration, k, content)
+        for k, content in k_content_dict.items()
+    ]
+    results = await asyncio.gather(*tasks)
+    questions = [q for q in results if q is not None]
+
+    # Return the output with the same structure as before
+    return {
+        "course_title": extracted_data["course_title"],
+        "duration": assessment_duration,
+        "questions": questions
+    }
+
+async def generate_pp_scenario(data, model_client) -> str:
+    """
+    Uses the autogen agent to generate a realistic practical performance assessment scenario.
+    
+    Args:
+        data (FacilitatorGuideExtraction): The extracted course data.
+        model_client: The model client used to initialize the agent.
+    
+    Returns:
+        str: The generated scenario.
+    """
+    course_title = data["course_title"]
+
+    learning_outcomes = [lu["learning_outcome"] for lu in data["learning_units"]]
+    abilities = [ability["text"] for lu in data["learning_units"] for topic in lu["topics"] for ability in topic["tsc_abilities"]]
+    
+    outcomes_text = "\n".join([f"- {lo}" for lo in learning_outcomes])
+    abilities_text = "\n".join([f"- {ability}" for ability in abilities])
+    
+    agent_task = f"""
+    You are tasked with designing a realistic practical performance assessment scenario for the course '{course_title}'.
+    
+    The scenario should align with the following:
+    
+    Learning Outcomes:
+    {outcomes_text}
+    
+    Abilities:
+    {abilities_text}
+    
+    The scenario should describe a company or organization facing practical challenges and provide background context aligning to the Learning Outcomes and abilities.
+    End the scenario by stating the learner's role in the company.
+    Ensure the scenario is concise (1 paragraph), realistic, and action-oriented.
+    """
+    
+    # Instantiate the autogen agent for scenario generation
+    scenario_agent = AssistantAgent(
+        name="scenario_generator",
+        model_client=model_client,
+        system_message="You are an expert in instructional design. Create a concise, realistic scenario based on the provided course details."
+    )
+    
+    response = await scenario_agent.on_messages(
+        [TextMessage(content=agent_task, source="user")],
+        CancellationToken()
+    )
+    
+    scenario = response.chat_message.content.strip()
+    return scenario
+
+async def generate_pp_for_lo(qa_generation_agent, course_title, assessment_duration, scenario, learning_outcome, learning_outcome_id, retrieved_content, ability_ids, ability_texts):
+    """
+    Generate a question-answer pair for a specific Learning Outcome asynchronously.
+    
+    Args:
+        qa_generation_agent: The Autogen AssistantAgent for question-answer generation.
+        course_title: Course title.
+        assessment_duration: Duration of the assessment.
+        scenario: The shared scenario for the practical performance assessment.
+        learning_outcome: The Learning Outcome statement.
+        learning_outcome_id: The identifier for the Learning Outcome (e.g., LO1).
+        retrieved_content: The retrieved content associated with the learning outcome.
+        ability_ids: A list of ability identifiers associated with this learning outcome.
+        ability_texts: A list of ability statements associated with this learning outcome.
+        
+    Returns:
+        Generated question-answer dictionary with keys: learning_outcome_id, question_statement, answer, ability_id.
+    """
+    agent_task = f"""
+        Generate one practical performance assessment question-answer pair using the following details:
+        - Course Title: '{course_title}'
+        - Assessment Duration: '{assessment_duration}'
+        - Scenario: '{scenario}'
+        - Learning Outcome: '{learning_outcome}'
+        - Learning Outcome ID: '{learning_outcome_id}'
+        - Associated Ability IDs: {', '.join(ability_ids)}
+        - Associated Ability Statements: {', '.join(ability_texts)}
+        - Retrieved Content: {retrieved_content}
+        
+        Instructions:
+        1. Formulate a direct, hands-on task question in 2 sentences maximum without any prefatory phrases.
+        2. The question must end with "Take snapshots of your commands at each step and paste them below."
+        4. The answer must start with "The snapshot should include: " followed solely by the final output or solution; do not include any written explanation or narrative.
+        5. Include the learning outcome id in your response as "learning_outcome_id".
+        6. Include the ability ids in your response as "ability_id".
+        7. Return your output in valid JSON.
+    """
+
+    response = await qa_generation_agent.on_messages(
+        [TextMessage(content=agent_task, source="user")], CancellationToken()
+    )
+
+    if not response or not response.chat_message:
+        return None
+
+    qa_result = parse_json_content(response.chat_message.content)
+    
+    return {
+        "learning_outcome_id": qa_result.get("learning_outcome_id", learning_outcome_id),
+        "question_statement": qa_result.get("question_statement", "Question not provided."),
+        "answer": qa_result.get("answer", ["Answer not available."]),
+        "ability_id": qa_result.get("ability_id", ability_ids)
+    }
+
+async def generate_pp(extracted_data, index, model_client, premium_mode):
+    """
+    Generate practical performance assessment questions and answers asynchronously for all learning outcomes.
+
+    Args:
+        extracted_data: Extracted facilitator guide data.
+        index: The LlamaIndex vector store index.
+        model_client: The model client for question generation.
+
+    Returns:
+        Dictionary in the correct JSON format with keys: course_title, duration, scenario, questions.
+    """
+    openai_api_key = st.secrets["OPENAI_API_KEY"]
+    extracted_data = dict(extracted_data)
+    
+    scenario = await generate_pp_scenario(extracted_data, model_client)
+
+    # Create a query engine for retrieving content related to learning outcomes
+    lo_retriever_llm = llama_openai(
+        model="gpt-4o-mini", 
+        api_key=openai_api_key, 
+        system_prompt="You are a content retrieval assistant. Retrieve inline segments that align strictly with the specified topics."
+    )
+    qa_generation_query_engine = index.as_query_engine(
+        similarity_top_k=10,
+        llm=lo_retriever_llm,
+        response_mode="compact",
+    )
+    lo_content_dict = await retrieve_content_for_learning_outcomes(extracted_data, qa_generation_query_engine, premium_mode)
+
+    # Autogen setup for generating question-answer pairs per Learning Outcome
+    qa_generation_agent = AssistantAgent(
+        name="question_answer_generator",
+        model_client=model_client,
+        system_message=f"""
+        You are an expert question-answer crafter with deep domain expertise. Your task is to generate a practical performance assessment question and answer pair for a given Learning Outcome and its associated abilities, strictly grounded in the provided retrieved content.
+        
+        Guidelines:
+        1. Base your response exclusively on the retrieved content.
+        2. Generate a direct, hands-on task question in 2 sentences maximum without any prefatory phrases.
+        3. The question must end with "Take snapshots of your commands at each step and paste them below."
+        4. The answer should start with "The snapshot should include: " followed solely by the exact final output or solution.
+        5. Include the learning outcome id in your response as "learning_outcome_id".
+        6. Return your output in valid JSON with the following format:
+        
+        ```json
+        {{
+            "learning_outcome_id": "<learning_outcome_id>",
+            "question_statement": "<question_text>",
+            "answer": ["<final output or solution>"],
+            "ability_id": ["<list_of_ability_ids>"]
+        }}
+        ```
+        
+        Return the JSON between triple backticks followed by 'TERMINATE'.
+        """
+    )
+    
+    assessment_duration = ""
+    for assessment in extracted_data["assessments"]:
+        if "PP" in assessment["code"]:
+            assessment_duration = assessment["duration"]
+            break
+
+    # Create async tasks for generating a Q&A pair for each Learning Outcome
+    tasks = []
+    for item in lo_content_dict:
+        learning_outcome = item["learning_outcome"]
+        learning_outcome_id = item.get("learning_outcome_id", "")
+        retrieved_content = item["retrieved_content"]
+        ability_ids = item.get("abilities", [])
+        ability_texts = item.get("ability_texts", [])
+        tasks.append(generate_pp_for_lo(
+            qa_generation_agent, 
+            extracted_data["course_title"], 
+            assessment_duration, 
+            scenario, 
+            learning_outcome, 
+            learning_outcome_id,
+            retrieved_content,
+            ability_ids,
+            ability_texts
+        ))
+    
+    results = await asyncio.gather(*tasks)
+    questions = [q for q in results if q is not None]
+
+    # Return the final structured output
+    return {
+        "course_title": extracted_data["course_title"],
+        "duration": assessment_duration,
+        "scenario": scenario,
+        "questions": questions
+    }
