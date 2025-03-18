@@ -1,6 +1,6 @@
 from autogen_agentchat.agents import AssistantAgent
 from autogen_agentchat.teams import RoundRobinGroupChat
-from CourseProposal.model_configs import get_model_config
+from model_configs import get_model_config
 from autogen_core.models import ChatCompletionClient
 
 
@@ -32,7 +32,7 @@ def create_tsc_agent(tsc_data, model_choice: str) -> RoundRobinGroupChat:
                 "A1": "Analyse release components",
                 "A2": "Coordinate with relevant stakeholders on release scheduling to align release processes and procedures"
             }},
-            "Knowledge": {}
+            "Knowledge": {{}}
             }},
             "LU2: GitHub Repository Management (K1, A3)": {{
             "LO": "LO2: Select appropriate Git scripts for integrating and deploying software products.",
@@ -77,7 +77,7 @@ def create_tsc_agent(tsc_data, model_choice: str) -> RoundRobinGroupChat:
             "Abilities": {{
                 "A8": "Implement modifications to platform-specific software products and processes"
             }},
-            "Knowledge": {}
+            "Knowledge": {{}}
             }}
         
         }}
@@ -97,7 +97,7 @@ def create_tsc_agent(tsc_data, model_choice: str) -> RoundRobinGroupChat:
                 "A1": "Analyse release components",
                 "A2": "Coordinate with relevant stakeholders on release scheduling to align release processes and procedures"
             }},
-            "Knowledge": {}
+            "Knowledge": {{}}
             }},
             "LU2: GitHub Repository Management (K1, A3)": {{
             "LO": "LO2: Select appropriate Git scripts for integrating and deploying software products.",
@@ -142,7 +142,7 @@ def create_tsc_agent(tsc_data, model_choice: str) -> RoundRobinGroupChat:
             "Abilities": {{
                 "A8": "Implement modifications to platform-specific software products and processes"
             }},
-            "Knowledge": {}
+            "Knowledge": {{}}
             }}
         
         }}

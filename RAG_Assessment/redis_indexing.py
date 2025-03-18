@@ -1,3 +1,4 @@
+import os
 from llama_index.core import SimpleDirectoryReader
 from llama_index.core.ingestion import (
     DocstoreStrategy,
@@ -9,8 +10,46 @@ from llama_index.storage.docstore.redis import RedisDocumentStore
 from llama_index.core.node_parser import SentenceSplitter
 from llama_index.vector_stores.redis import RedisVectorStore
 from redisvl.schema import IndexSchema
+from config_loader import load_shared_resources
+import logging
 from llama_cloud_services import LlamaParse
-import redis
+
+def create_ingestion_pipeline(embed_model, custom_schema):
+    """Creates and returns the ingestion pipeline."""
+    return IngestionPipeline(
+        transformations=[
+            SentenceSplitter(),
+            embed_model,
+        ],
+        docstore=RedisDocumentStore.from_host_and_port(
+            "localhost", 6379, namespace="document_store"
+        ),
+        vector_store=RedisVectorStore(
+            schema=custom_schema,
+            redis_url="redis://localhost:6379",
+        ),
+        cache=IngestionCache(
+            cache=RedisCache.from_host_and_port("localhost", 6379),
+            collection="redis_cache",
+        ),
+        docstore_strategy=DocstoreStrategy.UPSERTS,
+    )
+
+def load_documents(data_dir="./data"):
+    """(Unchanged) Loads documents from a local directory."""
+    parser = LlamaParse(result_type="markdown")
+    file_extractor = {".pdf": parser}
+
+    logging.info("Loading documents...")
+    documents = SimpleDirectoryReader(
+        data_dir, filename_as_id=True, file_extractor=file_extractor
+    ).load_data()
+    logging.info(f"Documents loaded: {len(documents)}")
+    if documents:
+        logging.info(f"First document loaded: {documents[0]}")
+    else:
+        logging.warning("No documents loaded from directory!")
+    return documents
 
 def define_custom_schema():
     """Defines the custom Redis index schema."""
@@ -36,83 +75,60 @@ def define_custom_schema():
         }
     )
 
-def create_ingestion_pipeline(embed_model, custom_schema, chunk_size=3, chunk_overlap=1):
-    """Creates and returns the ingestion pipeline with configurable chunking."""
-    return IngestionPipeline(
-        transformations=[
-            SentenceSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap),
-            embed_model,
-        ],
-        docstore=RedisDocumentStore.from_host_and_port(
-            "localhost", 6379, namespace="document_store"
-        ),
-        vector_store=RedisVectorStore(
-            schema=custom_schema,
-            redis_url="redis://localhost:6379",
-        ),
-        cache=IngestionCache(
-            cache=RedisCache.from_host_and_port("localhost", 6379),
-            collection="redis_cache",
-        ),
-        docstore_strategy=DocstoreStrategy.UPSERTS,
-    )
+def run_indexing():
+    """(Unchanged) Loads documents from ./data and indexes them."""
+    config, embed_model = load_shared_resources()
+    documents = load_documents()
+    if not documents:
+        logging.warning("No documents to index. Exiting indexing process.")
+        return
 
-def load_documents_from_files(file_paths):
-    """Loads documents from the specified file paths."""
+    custom_schema = define_custom_schema()
+    pipeline = create_ingestion_pipeline(embed_model, custom_schema)
+    nodes = pipeline.run(documents=documents)
+    logging.info(f"Ingested {len(nodes)} Nodes")
+    print(f"Ingested {len(nodes)} Nodes")  # for direct script execution
+
+def run_indexing_with_files(file_paths, embed_model):
+    """
+    New helper function to index user-uploaded files.
+
+    1. Parse each file with LlamaParse.  
+    2. Use the same ingestion pipeline logic (SentenceSplitter + embed_model).  
+    3. Return the number of ingested nodes.
+    """
+    # Prepare for PDF parsing
     parser = LlamaParse(result_type="markdown")
     file_extractor = {".pdf": parser}
-    
     documents = []
-    for file_path in file_paths:
-        doc = SimpleDirectoryReader(
-            input_files=[file_path],
-            filename_as_id=True,
-            file_extractor=file_extractor
-        ).load_data()
-        documents.extend(doc)
-    
-    return documents
 
-def run_indexing_with_files(file_paths, embed_model, chunk_size=3, chunk_overlap=1):
-    """Runs the indexing pipeline with the specified files."""
-    documents = load_documents_from_files(file_paths)
+    # Parse each uploaded file
+    for file_path in file_paths:
+        ext = os.path.splitext(file_path)[1].lower()
+        if ext == ".pdf":
+            # Load data using the parser
+            single_doc_reader = SimpleDirectoryReader(
+                input_files=[file_path],
+                filename_as_id=True,
+                file_extractor=file_extractor
+            )
+            docs_out = single_doc_reader.load_data()
+            documents.extend(docs_out)
+        else:
+            logging.warning(f"File {file_path} is not a PDF, skipping.")
+
     if not documents:
-        raise ValueError("No documents could be loaded from the provided files")
+        raise ValueError("No valid PDF documents to index.")
     
+    # Create pipeline exactly as in run_indexing()
     custom_schema = define_custom_schema()
-    pipeline = create_ingestion_pipeline(
-        embed_model, 
-        custom_schema,
-        chunk_size=chunk_size,
-        chunk_overlap=chunk_overlap
-    )
+    pipeline = create_ingestion_pipeline(embed_model, custom_schema)
     
+    # Run the pipeline on the newly parsed documents
     nodes = pipeline.run(documents=documents)
+    logging.info(f"Ingested {len(nodes)} Node(s) from uploaded files.")
     return len(nodes)
 
-def check_index_status():
-    """Check if the index exists and return its status."""
-    try:
-        r = redis.Redis(host='localhost', port=6379, db=0)
-        keys = r.keys("doc:*")
-        node_count = len(keys)
-        
-        # Get stats about the index
-        stats = {
-            "total_keys": node_count,
-            "document_keys": len(r.keys("doc:document:*")),
-            "node_keys": len(r.keys("doc:vector:*")),
-            "memory_usage": r.info("memory")["used_memory_human"],
-        }
-        
-        return {
-            "exists": node_count > 0,
-            "node_count": node_count,
-            "stats": stats
-        }
-    except Exception as e:
-        return {
-            "exists": False,
-            "node_count": 0,
-            "stats": {"error": str(e)},
-        }
+if __name__ == "__main__":
+    run_indexing()
+    logging.info("Indexing process completed.")

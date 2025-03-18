@@ -55,6 +55,7 @@ import traceback
 from agents.content_team import create_content
 from agents.tsc_extractor import tsc_team_task, create_tsc_agent
 from utils.document_parser import parse_document
+from utils.jinja_docu_replace import create_documents
 
 config, embed_model = load_shared_resources()
 llm = Gemini(
@@ -447,7 +448,7 @@ class PydanticWorkflow(Workflow):
 # or use a custom synthesizer
 # or use a custom synthesizer with a custom synthesizer prompt
 
-async def main():
+async def create_tsc_assessments():
 
     # processing input TSC into JSON
     model_choice = st.session_state.get('selected_model', "GPT-4o Mini (Default)")
@@ -535,9 +536,11 @@ async def main():
     
     await create_content()
 
+    create_documents()
+
 if __name__ == "__main__":
-    import asyncio
-    asyncio.run(main())
+    asyncio.run(create_tsc_assessments())
+
 
 # TODO: add streamlit pages for this, one step process, upload TSC then download the documents
 # TODO: write functions to handle creation of docx files for the assessment papers
