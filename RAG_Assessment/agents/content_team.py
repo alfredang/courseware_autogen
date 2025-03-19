@@ -202,13 +202,14 @@ async def generate_saq_from_tsc(tsc_data: Dict, model_client) -> Dict:
         2. Formulate a single, straightforward short-answer question that tests theoretical understanding of the knowledge statement.
         3. Provide concise, practical bullet points as the answer.
         4. IMPORTANT: Use the EXACT citation references provided above. Do not create new citation references.
-        5. Return the question and answer as a JSON object directly.
+        5. The question and answers must be complete and of a sufficient complexity for adult learners.
+        6. Return the question and answer as a JSON object directly.
 
         Your JSON output should have this structure:
         {{
         "scenario": "Your scenario here",
         "question_statement": "Your question here",
-        "answer": ["Bullet point 1 [citation reference]", "Bullet point 2 [citation reference]"],
+        "answer": ["Bullet point 1", "Bullet point 2", "Bullet point 3"],
         "citations_used": ["Source 1", "Source 2"]  // List only the citation references you actually used
         }}
         """
@@ -433,14 +434,15 @@ async def create_content():
     #     instructions="You are an expert in creating educational assessments."
     # )
 
-    GEMINI_API_KEY = "AIzaSyCmOGao7Q5KcchIcPtlFmXFDRdxjHnPsEA"
+    GEMINI_API_KEY = "AIzaSyCmOGao7Q5KcchIcPtlFmXFDRdxjHnPsEA" # currently being used for the front portion of the code, suggest cycling in order to prevent API rate limits
+    GEMINI_API_KEY2 = "AIzaSyAG-_wC_snVnx055KpsGrG0_05NHT4puD0"
 
     gemini_config = {
     "provider": "OpenAIChatCompletionClient",
     "config": {
         "model": "gemini-2.0-flash-lite",
         "base_url": "https://generativelanguage.googleapis.com/v1beta/openai/",
-        "api_key": GEMINI_API_KEY,
+        "api_key": GEMINI_API_KEY2,
         "model_info": {
             "family": "unknown",
             "function_calling": False,

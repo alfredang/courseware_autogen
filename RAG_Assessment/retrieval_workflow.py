@@ -5,6 +5,8 @@ import asyncio
 import traceback
 import streamlit as st
 
+from llama_index.core.postprocessor import LongContextReorder, SentenceTransformerRerank
+
 from llama_index.core.workflow import (
     Event,
     StartEvent,
@@ -106,12 +108,6 @@ class QuestionGeneratedEvent(Event):
     nodes: list[NodeWithScore]  # Pass the nodes forward
     question: str               # The generated question
     lu_details: LearningUnitDetails  # The learning unit details
-
-config, embed_model = load_shared_resources()
-llm = Gemini(
-    api_key=config.get("gemini_api_key") or config.get("GEMINI_API_KEY") or config.get("GEMINI_API"), 
-    model_name=config.get("llm_model", "gemini-1.5-pro")
-)
 
 CITATION_QA_TEMPLATE = PromptTemplate(
     "Please provide an answer based solely on the provided sources. "
@@ -264,6 +260,50 @@ class PydanticWorkflow(Workflow):
         # First step now *receives*, *updates*, and packages the data into LUDataEvent
         return LUDataEvent(lu_details=lu_details, query=query, index=ev.index)
 
+    # @step
+    # async def retrieve(
+    #     self, ctx: Context, ev: LUDataEvent
+    # ) -> Union[RetrieverEvent, None]:
+    #     "Entry point for RAG, triggered by a LUDataEvent with `query`."
+    #     query = ev.query
+    #     if not query:
+    #         return None
+        
+    #     print(f"Query the database with: {query}")
+        
+    #     # store the query in the global context
+    #     await ctx.set("query", query)
+    #     # Store lu_details in context for later use
+    #     await ctx.set("lu_details", ev.lu_details)
+        
+    #     index = ev.index
+    #     if index is None:
+    #         print("Index is empty, load some documents before querying!")
+    #         return None
+            
+    #     retriever = index.as_retriever(similarity_top_k=2)
+    #     # Join the keywords into a query string
+    #     query_str = " ".join(query) if isinstance(query, list) else query
+    #     nodes = retriever.retrieve(query_str)
+    #     print(f"Retrieved {len(nodes)} nodes.")
+        
+    #     # Save original nodes to lu_details
+    #     lu_details = ev.lu_details
+    #     if lu_details:
+    #         # Store the original retrieved sources
+    #         lu_details.RetrievedSources = [
+    #             {
+    #                 "text": node.node.get_content(metadata_mode=MetadataMode.NONE),
+    #                 "score": str(node.score),
+    #                 "metadata": str(node.node.metadata) if hasattr(node.node, "metadata") else ""
+    #             } 
+    #             for node in nodes
+    #         ]
+    #         # Update lu_details in context
+    #         await ctx.set("lu_details", lu_details)
+    
+    #     return RetrieverEvent(nodes=nodes)
+
     @step
     async def retrieve(
         self, ctx: Context, ev: LUDataEvent
@@ -275,7 +315,7 @@ class PydanticWorkflow(Workflow):
         
         print(f"Query the database with: {query}")
         
-        # store the query in the global context
+        # Store the query in the global context
         await ctx.set("query", query)
         # Store lu_details in context for later use
         await ctx.set("lu_details", ev.lu_details)
@@ -284,15 +324,60 @@ class PydanticWorkflow(Workflow):
         if index is None:
             print("Index is empty, load some documents before querying!")
             return None
+        
+        # Construct a more specific query for better retrieval
+        lu_details = ev.lu_details
+        enhanced_query = f"""
+        Learning Objective: {lu_details.LO}
+        Knowledge Points: {', '.join(list(lu_details.Knowledge.root.values()))}
+        I need learning content that focuses on these topics, excluding tables of contents.
+        """
+        print(f"Enhanced query: {enhanced_query}")
+        
+        # Initial retrieval - get more nodes initially (10-20)
+        retriever = index.as_retriever(similarity_top_k=15)
+        
+        # Use enhanced query instead of just keywords
+        nodes = retriever.retrieve(enhanced_query)
+        print(f"Retrieved {len(nodes)} initial nodes before reranking")
+        
+        # Apply reranking to improve relevance
+        # 1. First use cross-encoder for content quality assessment
+        reranker = SentenceTransformerRerank(
+            model="cross-encoder/ms-marco-MiniLM-L-12-v2",
+            top_n=6  # Keep top 6 results
+        )
+        
+        reranked_nodes = reranker.postprocess_nodes(
+            nodes, 
+            query_str=enhanced_query
+        )
+        print(f"Reranked to {len(reranked_nodes)} nodes")
+        
+        # 2. Optional: Add secondary reranking for long-context ordering
+        # This helps ensure diverse information is presented first
+        secondary_reranker = LongContextReorder()
+        final_nodes = secondary_reranker.postprocess_nodes(reranked_nodes)
+        
+        # Filter out obvious ToC nodes
+        filtered_nodes = []
+        for node in final_nodes:
+            text = node.node.get_content(metadata_mode=MetadataMode.NONE)
             
-        retriever = index.as_retriever(similarity_top_k=2)
-        # Join the keywords into a query string
-        query_str = " ".join(query) if isinstance(query, list) else query
-        nodes = retriever.retrieve(query_str)
-        print(f"Retrieved {len(nodes)} nodes.")
+            # Basic filtering for ToC indicators
+            is_toc = (
+                "table of contents" in text.lower() or
+                "contents" in text.lower() and len(text.split()) < 100 or
+                text.count("\n") > text.count(".") * 2 or  # Many newlines, few sentences
+                text.count("...") > 3  # ToC dot leaders
+            )
+            
+            if not is_toc:
+                filtered_nodes.append(node)
+        
+        print(f"Final node count after filtering: {len(filtered_nodes)}")
         
         # Save original nodes to lu_details
-        lu_details = ev.lu_details
         if lu_details:
             # Store the original retrieved sources
             lu_details.RetrievedSources = [
@@ -301,12 +386,12 @@ class PydanticWorkflow(Workflow):
                     "score": str(node.score),
                     "metadata": str(node.node.metadata) if hasattr(node.node, "metadata") else ""
                 } 
-                for node in nodes
+                for node in filtered_nodes
             ]
             # Update lu_details in context
             await ctx.set("lu_details", lu_details)
-    
-        return RetrieverEvent(nodes=nodes)
+
+        return RetrieverEvent(nodes=filtered_nodes)
 
     @step
     async def create_citation_nodes(
