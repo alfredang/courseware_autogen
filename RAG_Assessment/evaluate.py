@@ -54,7 +54,7 @@ def transform_assessment_data(saq_path, pp_path=None):
     
     # Save the transformed data for debugging
     os.makedirs("output_json", exist_ok=True)
-    with open("output_json/parsed_TSC.json", 'w', encoding='utf-8') as f:
+    with open("output_json/transformed_debug.json", 'w', encoding='utf-8') as f:
         json.dump(transformed_data, f, indent=2)
     
     return transformed_data
@@ -87,7 +87,7 @@ async def run_evaluation():
     # 1. Evaluate retrieval quality
     print("Evaluating retrieval quality...")
     try:
-        retrieval_results = await evaluate_retrieval_quality("output_json/parsed_TSC.json")
+        retrieval_results = await evaluate_retrieval_quality("output_json/transformed_debug.json")
     except Exception as e:
         print(f"Error during retrieval evaluation: {e}")
         retrieval_results = {"error": str(e)}
@@ -96,7 +96,7 @@ async def run_evaluation():
     print("Evaluating educational assessment quality...")
     try:
         # Use the transformed data directly
-        assessment_results = evaluate_educational_quality("output_json/parsed_TSC.json")
+        assessment_results = evaluate_educational_quality("output_json/transformed_debug.json")
     except Exception as e:
         print(f"Error during assessment evaluation: {e}")
         assessment_results = {"error": str(e)}

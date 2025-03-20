@@ -48,6 +48,15 @@ llm = Gemini(
     model_name=config.get("llm_model")
 )
 
+def load_learning_units():
+    """Load and validate learning units only when needed."""
+    lu_data = load_json_file("output_json/parsed_TSC.json")
+    try:
+        return LearningUnits.model_validate(lu_data)
+    except Exception as e:
+        print(f"Error validating learning units: {str(e)}")
+        return None
+
 def load_json_file(file_path):
     """Loads JSON data from a file."""
     try:
@@ -535,9 +544,15 @@ async def create_tsc_assessments(input_tsc):
     with open("output_json/parsed_TSC.json", "w", encoding="utf-8") as out:
         json.dump(tsc_data, out, indent=2)
 
-    # Load data *once* outside the workflow loop
-    lu_data = load_json_file("output_json/parsed_TSC.json")
-    learning_units = LearningUnits.model_validate(lu_data)
+    # # Load data *once* outside the workflow loop
+    # lu_data = load_json_file("output_json/parsed_TSC.json")
+    # learning_units = LearningUnits.model_validate(lu_data)
+
+    # Load data when needed, not at import time
+    learning_units = load_learning_units()
+    if not learning_units:
+        print("Failed to load learning units, aborting")
+        return
     
     # Define the Redis schema
     custom_schema = define_custom_schema()
