@@ -95,11 +95,13 @@ class LearningUnits(RootModel): # LearningUnits can still be RootModel if you wa
     """Pydantic model for the entire structure of Learning Units."""
     root: Dict[str, LearningUnitDetails]
 
-# Example usage and parsing (assuming your data is in a dictionary called `lu_data`)
-lu_data = load_json_file("output_json/parsed_TSC.json")
+# # Example usage and parsing (assuming your data is in a dictionary called `lu_data`)
+# lu_data = load_json_file("output_json/parsed_TSC.json")
 
-# Parse the dictionary into the Pydantic model
-learning_units = LearningUnits.model_validate(lu_data) # Use .parse_obj for RootModel
+# # Parse the dictionary into the Pydantic model
+# learning_units = LearningUnits.model_validate(lu_data) # Use .parse_obj for RootModel
+
+learning_units = None
 
 class RetrieverEvent(Event):
     """Result of running retrieval"""

@@ -1,13 +1,13 @@
 {
   "questions": [
     {
-      "scenario": "You are working on a project that requires integration with a legacy Subversion repository while also using Git for new development. The team needs to understand how to manage both systems effectively to ensure smooth software deployment.",
-      "question_statement": "What tools or scripts might be employed to facilitate the integration and deployment of software in this dual-repository (Git and Subversion) environment, and what considerations are crucial?",
+      "scenario": "Your team is transitioning a large software project from Subversion to Git. You're tasked with setting up the development environment. Some team members are unfamiliar with Git and its integration capabilities.",
+      "question_statement": "Considering the need for a smooth transition and continued collaboration, what types of tools and scripting strategies could you employ to integrate Git into the existing development workflow, acknowledging the potential for interaction with legacy systems?",
       "knowledge_id": "K1",
       "answer": [
-        "Utilize `git svn` to interact with the Subversion repository from your Git environment. This allows developers to work with Git's features while still interacting with the legacy system. [Source 4]",
-        "Consider the interoperability of Git with other languages and environments, which could impact your deployment strategies. [Source 7]",
-        "Recognize that complete project migration to Git may not always be immediately feasible, and integration tools bridge the gap. [Source 3]"
+        "Utilize `git svn` for interoperability with Subversion during the transition phase, allowing gradual migration of the codebase and team familiarity. [Source 4]",
+        "If your application is for developers, chances are you'll want to embed Git into your applications. This can be done by using Git as a library, integrating Git functionalities and tools to streamline the developer experience, such as automating common Git tasks or providing customized version control workflows. [Source 2]",
+        "Explore scripts or tools to automate tasks such as commit staging, manipulation, and creating branches that enhance efficiency, especially with the advanced tools Git provides. [Source 6]"
       ],
       "citations": [
         "Source 1: # Summary\n\nYou should feel fairly comfortable contributing to a project in Git as well as maintainin...",
@@ -61,13 +61,13 @@
       ]
     },
     {
-      "scenario": "You are setting up a new development environment and need to configure Git for your personal preferences and project settings. You want to ensure that your configurations are correctly applied and override default behaviors where necessary.",
-      "question_statement": "What are some key aspects of software configuration procedures within a Git environment, and where might these configurations be stored or applied?",
+      "scenario": "You are a software developer working on a project using Git. You need to configure Git to align with your team's coding standards and personal preferences. You need to understand the different configuration options available.",
+      "question_statement": "Describe the different levels at which Git configuration can be applied, and provide examples of configurations that might be set at each level.",
       "knowledge_id": "K2",
       "answer": [
-        "Git configuration primarily involves customizing client-side preferences. [Source 2]",
-        "Git looks for configuration files in various locations, including project-specific and global configuration files. [Source 7]",
-        "Common configuration paths include system-level configurations (e.g., C:\\ProgramData\\Git\\config on Windows) which might contain settings that can only be modified by an administrator. [Source 8]"
+        "Client-side configurations: The majority of Git configuration options are client-side and relate to your personal working preferences. [Source 2]",
+        "Global Configuration: These can include settings that apply to all Git repositories on your system.  This can involve options like your user name and email address. [Source 1]",
+        "System-level configuration: on Windows, this is typically found in C:\\ProgramData\\Git\\config, and it can only be modified by an administrator. [Source 8]"
       ],
       "citations": [
         "Source 1: # Customizing Git\n\nSo far, we\u2019ve covered the basics of how Git works and how to use it, and we\u2019ve in...",
@@ -123,13 +123,13 @@
       ]
     },
     {
-      "scenario": "You have made significant configuration changes to your Git environment, including updates to global settings and project-specific preferences. Before deploying any code, you want to verify that the configurations are correctly applied and do not introduce any unintended consequences.",
-      "question_statement": "What are the crucial aspects of configuration tests within a Git environment, and what are their primary purposes?",
+      "scenario": "As a senior developer, you're responsible for ensuring that a new Git configuration adheres to team standards and doesn't introduce unexpected behavior. You need to implement configuration tests.",
+      "question_statement": "What are the primary purposes of configuration tests in a software development project, specifically focusing on Git configuration, and how can they be implemented?",
       "knowledge_id": "K3",
       "answer": [
-        "Configuration tests often involve verifying that client-side preferences, such as user information and editor settings, are correctly set. [Source 2]",
-        "Tests should confirm that global and local configuration files are correctly loaded and that settings cascade as expected, with local configurations overriding global ones where appropriate. [Source 7]",
-        "A critical purpose of configuration tests is to ensure that builds are reproducible and that developers have consistent environments to prevent unexpected behaviors. [Source 1]"
+        "Verification of settings: Configuration tests primarily ensure that the settings applied at different levels (global, system-level, or local) are correctly set. [Source 2, Source 8]",
+        "Validation of user preferences: Tests ensure that the client-side configurations are correctly applied and that individual preferences are reflected as intended, as many of these settings are client-side. [Source 2]",
+        "Environment validation: Ensure that the configuration works as expected in the target environment. This could involve checking file paths or other environmental dependencies relevant to Git operation. [Source 7]"
       ],
       "citations": [
         "Source 1: # Customizing Git\n\nSo far, we\u2019ve covered the basics of how Git works and how to use it, and we\u2019ve in...",
@@ -185,13 +185,13 @@
       ]
     },
     {
-      "scenario": "After running a suite of configuration tests, you receive a set of results indicating both successful validations and potential issues with your Git setup. You need to analyze these results to understand their implications and determine the appropriate actions.",
-      "question_statement": "How should you interpret the results of configuration tests in a Git environment, and what are some potential actions based on different outcomes?",
+      "scenario": "You have run a suite of configuration tests on your Git repository and are now reviewing the results. Some tests have failed, and some have passed, indicating potential issues with the current setup.",
+      "question_statement": "How would you interpret the different outcomes of your configuration tests, and what actions would you take based on these interpretations to ensure a stable and functional Git environment?",
       "knowledge_id": "K4",
       "answer": [
-        "Successful test results confirm that configurations function as expected, which may mean that the tested environment is properly set up. [Source 1]",
-        "Unsuccessful test results may indicate incorrect settings. The root cause could be incorrectly configured files, or inconsistencies between global and local settings. [Source 2]",
-        "Based on the interpretation, actions may involve modifying configuration files, adjusting user preferences, or investigating interactions between Git and external services such as GitHub. [Source 4]"
+        "Failed tests: A failed test indicates that the configuration does not meet the expected criteria. This suggests a problem with the setup, such as a missing file or an incorrect setting. Investigate the cause, correct the configuration, and rerun the tests. [Source 2]",
+        "Passed tests: A passed test confirms that the configuration meets the expected criteria. This indicates that the settings are correct and the Git environment is functioning as expected. [Source 1]",
+        "Review and Analyze:  The output of the tests should be reviewed to analyze for potential issues. [Source 3, Source 4]"
       ],
       "citations": [
         "Source 1: # Summary\n\nYou\u2019ve seen a number of advanced tools that allow you to manipulate your commits and stag...",
@@ -229,13 +229,13 @@
       ]
     },
     {
-      "scenario": "You are establishing a new software development workflow and need to understand the essential components involved in the configuration and deployment phases. This knowledge will help you set up your environment, configure Git, and prepare for smooth software releases.",
-      "question_statement": "What are the critical elements of the software configuration and deployment process, especially in the context of Git, and how do they contribute to a successful workflow?",
+      "scenario": "You are setting up a new development environment for a project that uses Git for version control. You need to understand the key elements involved in configuring Git and deploying software.",
+      "question_statement": "What are the critical elements involved in the software configuration and deployment process when using Git, and how do they interrelate?",
       "knowledge_id": "K5",
       "answer": [
-        "Configuration involves setting up user preferences and the editor for commit messages using commands like `git config`. [Source 4, Source 5]",
-        "Deployment leverages version control, using commands like `git init` to initialize a repository, which is the starting point for tracking changes. [Source 3]",
-        "Interoperability with various programming languages, such as Swift, is a crucial element of the configuration, meaning Git can be used with any programming environment. [Source 1]"
+        "Initialization:  A core element is initializing a Git repository using `git init`. This creates the `.git` directory, which stores Git's internal data and the project's history. [Source 3]",
+        "Editor Configuration:  Setting up the text editor is an element of the deployment process. This ensures that you can properly edit the files to be deployed with options for editors like Atom, Visual Studio Code and VSCodium. [Source 4, Source 5]",
+        "Interoperability Considerations: Determine if there are interoperability needs of the software. Consider the need for Swift integration for the software. [Source 1]"
       ],
       "citations": [
         "Source 1: # Objective\n\ngit is fully interoperable with Swift, so don\u2019t fear if you\u2019ve left Objective-C behind....",

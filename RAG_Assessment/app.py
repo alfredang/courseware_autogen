@@ -153,9 +153,9 @@ elif page == "Document Generation":
     The system will parse the TSC, create learning units, and generate assessment materials.
     """)
     
-    model_options = ["GPT-4o Mini (Default)", "GPT-4o", "Claude-3-Opus"]
-    selected_model = st.selectbox("Select LLM Model", options=model_options, index=0)
-    st.session_state.selected_model = selected_model
+    # model_options = ["GPT-4o Mini (Default)", "GPT-4o", "Claude-3-Opus"]
+    # selected_model = st.selectbox("Select LLM Model", options=model_options, index=0)
+    # st.session_state.selected_model = selected_model
     
     tsc_file = st.file_uploader(
         "Upload your TSC document", 
