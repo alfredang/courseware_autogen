@@ -63,7 +63,8 @@ def replace_placeholders_with_docxtpl(json_path, doc_path, new_doc_name):
     # # Render the document with the context
     # tpl.render(context, autoescape=True)
 
-    context = data
+    data = context
+    
     try:
         print("DEBUG: About to render template...")
         tpl.render(context, autoescape=True)
