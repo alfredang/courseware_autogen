@@ -29,6 +29,16 @@ from autogen_agentchat.messages import TextMessage
 from autogen_core import CancellationToken
 from autogen_ext.models.openai import OpenAIChatCompletionClient
 from utils.helper import save_uploaded_file, parse_json_content
+# Import organisation CRUD utilities and model
+from Courseware.utils.organization_utils import (
+    load_organizations,
+    save_organizations,
+    add_organization,
+    update_organization,
+    delete_organization,
+    Organization
+)
+from streamlit_modal import Modal
 
 # Initialize session state variables
 if 'courseware_processing_done' not in st.session_state:
@@ -419,33 +429,128 @@ def app():
     # Step 1: Upload Course Proposal (CP) Document
     # ================================================================
     st.subheader("Step 1: Upload Course Proposal (CP) Document")
-    cp_file = st.file_uploader("Upload Course Proposal (CP) Document", type=["docx"])
+    cp_file = st.file_uploader("Upload Course Proposal (CP) Document", type=["docx, xlsx"])
 
     # ================================================================
     # Step 2: Select Name of Organisation
     # ================================================================
+    # Create a modal instance with a unique key and title
+    crud_modal = Modal(key="crud_modal", title="Manage Organisations")
+
+    # ---------------------------
+    # Step 2: Select Name of Organisation with Manage Button
+    # ---------------------------
     st.subheader("Step 2: Select Name of Organisation")
 
-    organisations = [
-        "Tertiary Infotech Pte Ltd",
-        "CareTech168 LLP",  
-        "Chelsea Kidz Academy Pte Ltd",
-        "Firstcom Academy Pte Ltd",
-        "Fleuriste Pte Ltd",
-        "Genetic Computer School Pte Ltd",
-        "Hai Leck Engineering Pte Ltd",
-        "IES Academy Pte Ltd",
-        "Info-Tech Systems Integrators Pte Ltd",
-        "InnoHat Training Pte Ltd",
-        "Laures Solutions Pte Ltd",
-        "QE Safety Consultancy Pte Ltd",
-        "OOm Pte Ltd",
-        "Raffles Skills Lab International Training Centre Pte Ltd",
-        "TRAINOCATE (S) Pte Ltd",
-        "SOQ International Academy Pte Ltd"
-    ]
+    # Load organisations from JSON using the utility function
+    org_list = load_organizations()
+    org_names = [org["name"] for org in org_list] if org_list else []
 
-    selected_org = st.selectbox("Select Name of Organisation", organisations)
+    col1, col2 = st.columns([0.8, 0.2], vertical_alignment="center")
+    with col1:
+        if org_names:
+            selected_org = st.selectbox("Select Name of Organisation", org_names, key="org_dropdown_main")
+        else:
+            selected_org = st.selectbox("Select Name of Organisation", [], key="org_dropdown_main")
+            st.warning("No organisations found. Click 'Manage' to add organisations.")
+
+    with col2:
+        # Wrap the Manage button in a div that uses flexbox for vertical centering.
+        st.markdown("<br/>", unsafe_allow_html=True)
+        if st.button("Manage", key="manage_button"):
+            crud_modal.open()
+
+    # ---------------------------
+    # Modal: CRUD Interface
+    # ---------------------------
+    if crud_modal.is_open():
+        with crud_modal.container():
+            
+            # ---- Add New Organisation Form ----
+            st.write("#### Add New Organisation")
+            with st.form("new_org_form"):
+                new_name = st.text_input("Organisation Name", key="new_org_name")
+                new_uen = st.text_input("UEN", key="new_org_uen")
+                # Use file uploader for the logo instead of a text input
+                new_logo_file = st.file_uploader("Upload Logo (optional)", type=["png", "jpg", "jpeg"], key="new_org_logo_file")
+                new_submitted = st.form_submit_button("Add Organisation")
+                if new_submitted:
+                    logo_path = None
+                    if new_logo_file is not None:
+                        # Construct a safe filename based on the organisation name and file extension
+                        _, ext = os.path.splitext(new_logo_file.name)
+                        safe_filename = new_name.lower().replace(" ", "_") + ext
+                        save_path = os.path.join("Courseware", "utils", "logo", safe_filename)
+                        with open(save_path, "wb") as f:
+                            f.write(new_logo_file.getvalue())
+                        logo_path = save_path
+                    new_org = Organization(name=new_name, uen=new_uen, logo=logo_path)
+                    add_organization(new_org)
+                    st.success(f"Organisation '{new_name}' added.")
+                    st.rerun()
+            
+            # ---- Display Existing Organisations with Edit/Delete Buttons ----
+            st.write("#### Existing Organisations")
+            org_list = load_organizations()  # Refresh the list
+
+            # Table header
+            col_sno, col_name, col_uen, col_logo, col_edit, col_delete = st.columns([1, 3, 2, 2, 1, 2])
+            col_sno.markdown("**SNo**")
+            col_name.markdown("**Name**")
+            col_uen.markdown("**UEN**")
+            col_logo.markdown("**Logo**")
+            col_edit.markdown("**Edit**")
+            col_delete.markdown("**Delete**")
+
+            # Table rows
+            for display_idx, org in enumerate(org_list, start=1):
+                # The actual index in the list is display_idx - 1
+                real_index = display_idx - 1
+
+                row_sno, row_name, row_uen, row_logo, row_edit, row_delete = st.columns([1, 3, 2, 2, 1, 2])
+                row_sno.write(display_idx)
+                row_name.write(org["name"])
+                row_uen.write(org["uen"])
+                
+                if org["logo"] and os.path.exists(org["logo"]):
+                    row_logo.image(org["logo"], width=70)
+                else:
+                    row_logo.write("No Logo")
+
+                # Edit/Delete Buttons
+                if row_edit.button("Edit", key=f"edit_{display_idx}", type="secondary"):
+                    st.session_state["org_edit_index"] = real_index
+                    st.rerun()
+                if row_delete.button("Delete", key=f"delete_{display_idx}", type="primary"):
+                    delete_organization(real_index)
+                    st.success(f"Organisation '{org['name']}' deleted.")
+                    st.rerun()
+
+            # ---- Edit Organisation Form (if a row is selected for editing) ----
+            if "org_edit_index" in st.session_state:
+                edit_index = st.session_state["org_edit_index"]
+                org_to_edit = load_organizations()[edit_index]
+                st.write(f"#### Edit Organisation: {org_to_edit['name']}")
+                with st.form("edit_org_form"):
+                    edited_name = st.text_input("Organisation Name", value=org_to_edit["name"], key="edited_name")
+                    edited_uen = st.text_input("UEN", value=org_to_edit["uen"], key="edited_uen")
+                    # File uploader for updating the logo image
+                    edited_logo_file = st.file_uploader("Upload Logo (optional)", type=["png", "jpg", "jpeg"], key="edited_logo_file")
+                    edit_submitted = st.form_submit_button("Update Organisation")
+                    if edit_submitted:
+                        logo_path = org_to_edit.get("logo", None)
+                        if edited_logo_file is not None:
+                            _, ext = os.path.splitext(edited_logo_file.name)
+                            safe_filename = edited_name.lower().replace(" ", "_") + ext
+                            save_path = os.path.join("Courseware", "utils", "logo", safe_filename)
+                            with open(save_path, "wb") as f:
+                                f.write(edited_logo_file.getvalue())
+                            logo_path = save_path
+                        updated_org = Organization(name=edited_name, uen=edited_uen, logo=logo_path)
+                        update_organization(edit_index, updated_org)
+                        st.success(f"Organisation '{edited_name}' updated.")
+                        del st.session_state["org_edit_index"]
+                        st.rerun()
 
     # ================================================================
     # Step 3 (Optional): Upload Updated SFW Dataset
