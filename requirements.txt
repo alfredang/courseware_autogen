@@ -40,4 +40,5 @@ pymupdf
 gspread
 rapidfuzz
 oauth2client
+streamlit-modal
 git+https://github.com/FlagOpen/FlagEmbedding.git#egg=FlagEmbedding
