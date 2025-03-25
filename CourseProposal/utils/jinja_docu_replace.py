@@ -10,10 +10,10 @@ def replace_placeholders_with_docxtpl(json_path, doc_path, new_doc_name):
         json_data = json.load(file)
 
         # Debug print to see the structure
-    print("DEBUG: JSON data structure keys:", data.keys())
+    print("DEBUG: JSON data structure keys:", json_data.keys())
     
     # Check for None values in the data that might be iterated
-    for key, value in data.items():
+    for key, value in json_data.items():
         if value is None:
             print(f"WARNING: Key '{key}' has None value")
         elif isinstance(value, dict):
