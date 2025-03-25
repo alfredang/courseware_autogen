@@ -1,4 +1,5 @@
 import re
+import streamlit as st
 
 def flatten_list(nested_list):
     flat_list = []
@@ -159,7 +160,10 @@ def map_values(mapping_source, ensemble_output, research_output):
     mapping_source["#Hours[3]"] = [ensemble_output["Assessment Methods"]["Amount of Practice Hours"]]
 
     mapping_source["#Conclusion[0]"] = [research_output["Sequencing Analysis"]["Conclusion"]]
-    mapping_source["#AssessmentJustification"] = [research_output["Assessment Phrasing"]]
+
+    cp_type = st.session_state.get('cp_type', "New CP")
+    if cp_type == "Old CP":
+        mapping_source["#AssessmentJustification"] = [research_output["Assessment Phrasing"]]
 
     # Mapping for Course Title
     mapping_source["#CourseTitle"] = [ensemble_output["Course Information"]["Course Title"]]

@@ -28,6 +28,19 @@ def app():
     )
     st.session_state['selected_model'] = model_choice
 
+    st.subheader("Course Proposal Type")
+    cp_type_display = st.selectbox(
+        "Select CP Type:",
+        options=["Excel CP", "Docx CP"],
+        index=0  # default: "Excel CP: New CP"
+    )
+    # Map display values to backend values
+    cp_type_mapping = {
+        "Excel CP": "New CP",
+        "Docx CP": "Old CP"
+    }
+    st.session_state['cp_type'] = cp_type_mapping[cp_type_display]
+
     # Add a description of the page with improved styling
     st.markdown(
         """
@@ -133,39 +146,68 @@ def app():
             run_processing(input_tsc_path)
             st.session_state['processing_done'] = True
 
-    # 3) Display download buttons after processing
-    if st.session_state.get('processing_done'):
-        st.subheader("Download Processed Files")
-
-        # CP docx
-        cp_docx_temp = st.session_state.get('cp_docx_temp')
-        if cp_docx_temp and os.path.exists(cp_docx_temp):
-            with open(cp_docx_temp, 'rb') as f:
-                data = f.read()
-            st.download_button(
-                label="Download CP Output",
-                data=data,
-                file_name="CP_output.docx",
-                mime='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-            )
-        else:
-            st.warning("No CP docx found in session state.")
-
-        # CV docs
-        cv_docx_temps = st.session_state.get('cv_docx_temps', [])
-        # Now cv_docx_temps is a list of tuples: (temp_path, final_filename)
-        for idx, (temp_path, final_name) in enumerate(cv_docx_temps, start=1):
-            if os.path.exists(temp_path):
-                with open(temp_path, 'rb') as f:
-                    data = f.read()
-                st.download_button(
-                    label=f"Download CV Output {idx}",
-                    data=data,
-                    file_name=final_name,  # Show user the actual name we want
-                    mime='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-                )
-            else:
-                st.warning(f"No CV docx found at {temp_path}")
+        # 3) Display download buttons after processing
+        if st.session_state.get('processing_done'):
+            st.subheader("Download Processed Files")
+            
+            # Get CP type to show relevant information
+            cp_type = st.session_state.get('cp_type', "New CP")
+            
+            # Get file download data
+            file_downloads = st.session_state.get('file_downloads', {})
+            
+            # Display CP Word document
+            cp_docx = file_downloads.get('cp_docx')
+            if cp_type == "Old CP":
+                if cp_docx and os.path.exists(cp_docx['path']):
+                    with open(cp_docx['path'], 'rb') as f:
+                        data = f.read()
+                    st.download_button(
+                        label="📄 Download CP Document",
+                        data=data,
+                        file_name=cp_docx['name'],
+                        mime='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+                    )
+            
+            # Display Excel file for New CP
+            if cp_type == "New CP":
+                excel_file = file_downloads.get('excel')
+                if excel_file and os.path.exists(excel_file['path']):
+                    with open(excel_file['path'], 'rb') as f:
+                        data = f.read()
+                    st.download_button(
+                        label="📊 Download CP Excel",
+                        data=data,
+                        file_name=excel_file['name'],
+                        mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                    )
+                elif cp_type == "New CP":
+                    st.warning("Excel file was not generated. This may be normal if processing was interrupted.")
+            
+            # Display CV validation documents
+            cv_docs = file_downloads.get('cv_docs', [])
+            if cv_docs:
+                st.markdown("### Course Validation Documents")
+                
+                # Use columns to organize multiple download buttons
+                cols = st.columns(min(3, len(cv_docs)))
+                for idx, doc in enumerate(cv_docs):
+                    if os.path.exists(doc['path']):
+                        with open(doc['path'], 'rb') as f:
+                            data = f.read()
+                        
+                        # Extract name from the filename (e.g. extract "Bernard" from "CP_validation_template_bernard_updated.docx")
+                        file_base = os.path.basename(doc['name'])
+                        validator_name = file_base.split('_')[3].capitalize()
+                        
+                        col_idx = idx % len(cols)
+                        with cols[col_idx]:
+                            st.download_button(
+                                label=f"📝 {validator_name}",
+                                data=data,
+                                file_name=doc['name'],
+                                mime='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+                            )
 
 def run_processing(input_file: str):
     """
@@ -173,41 +215,63 @@ def run_processing(input_file: str):
     2. Copies those docs into NamedTemporaryFiles and stores them in session state.
     """
     st.info("Running pipeline (this might take some time) ...")
+    
+    # Get CP type from session state
+    cp_type = st.session_state.get('cp_type', "New CP")
 
     # 1) Run the pipeline (async), passing the TSC doc path
     asyncio.run(main(input_file))
 
     # 2) Now copy the relevant docx files from 'output_docs' to NamedTemporaryFiles
+    # Common files for both CP types
     cp_doc_path = "CourseProposal/output_docs/CP_output.docx"
     cv_doc_paths = [
         "CourseProposal/output_docs/CP_validation_template_bernard_updated.docx",
         "CourseProposal/output_docs/CP_validation_template_dwight_updated.docx",
         "CourseProposal/output_docs/CP_validation_template_ferris_updated.docx",
-        # "CourseProposal/output_docs/CP_template_metadata_preserved.xlsx"
     ]
+    
+    # Excel file - only for "New CP"
+    excel_path = "CourseProposal/output_docs/CP_template_metadata_preserved.xlsx"
+    
+    # Store file info based on CP type
+    st.session_state['file_downloads'] = {
+        'cp_docx': None,
+        'cv_docs': [],
+        'excel': None
+    }
 
     # Copy CP doc into tempfile
     if os.path.exists(cp_doc_path):
         with open(cp_doc_path, 'rb') as infile, tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as outfile:
             outfile.write(infile.read())
-            st.session_state['cp_docx_temp'] = outfile.name
+            st.session_state['file_downloads']['cp_docx'] = {
+                'path': outfile.name,
+                'name': "CP_output.docx"
+            }
 
     # Copy CV docs
-    cv_temp_paths = []
     for doc_path in cv_doc_paths:
         if os.path.exists(doc_path):
             with open(doc_path, 'rb') as infile, tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as outfile:
                 outfile.write(infile.read())
-                # The final file name we want to present to the user:
-                desired_name = os.path.basename(doc_path)  
-                # e.g. "CP_validation_template_bernard_updated.docx"
+                desired_name = os.path.basename(doc_path)
+                st.session_state['file_downloads']['cv_docs'].append({
+                    'path': outfile.name,
+                    'name': desired_name
+                })
 
-                # Store tuple: (tempfile_path, final_file_name)
-                cv_temp_paths.append((outfile.name, desired_name))
-
-    st.session_state['cv_docx_temps'] = cv_temp_paths
+    # Copy Excel file - only for New CP
+    if cp_type == "New CP" and os.path.exists(excel_path):
+        with open(excel_path, 'rb') as infile, tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as outfile:
+            outfile.write(infile.read())
+            st.session_state['file_downloads']['excel'] = {
+                'path': outfile.name,
+                'name': "CP_Excel_output.xlsx"
+            }
 
     st.success("Processing complete. Download your files below!")
+
 
 if __name__ == "__main__":
     app()
