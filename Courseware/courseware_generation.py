@@ -7,7 +7,7 @@ from Courseware.utils.agentic_LP import generate_lesson_plan
 from Courseware.utils.agentic_FG import generate_facilitators_guide
 from Courseware.utils.model_configs import MODEL_CHOICES, get_model_config
 import os
-import re
+import tempfile
 import json 
 import time
 import asyncio
@@ -41,8 +41,6 @@ from Courseware.utils.organization_utils import (
 from streamlit_modal import Modal
 
 # Initialize session state variables
-if 'courseware_processing_done' not in st.session_state:
-    st.session_state['courseware_processing_done'] = False
 if 'lg_output' not in st.session_state:
     st.session_state['lg_output'] = None
 if 'ap_output' not in st.session_state:
@@ -126,49 +124,116 @@ class LessonPlan(BaseModel):
 ############################################################
 # 2. Course Proposal Document Parsing
 ############################################################
-def parse_cp_document(input_file):
-    """
-    Parses a Course Proposal (CP) document and extracts structured data.
+from llama_cloud_services import LlamaParse
+from llama_index.core import SimpleDirectoryReader
+import os
+import re
 
-    This function reads a `.docx` file, extracts text and tables, 
-    and organizes them into a structured dictionary format.
+def parse_cp_document(uploaded_file):
+    """
+    Parses a Course Proposal (CP) document (UploadedFile) and returns its content as Markdown text,
+    trimmed based on the document type using regex patterns.
+
+    For Word CP (.docx):
+      - Excludes everything before a line matching "Part 1" and "Particulars of Course"
+      - Excludes everything after a line matching "Part 4" and "Facilities and Resources"
+    
+    For Excel CP (.xlsx):
+      - Excludes everything before a line matching "1 - Course Particulars"
+      - Excludes everything after a line matching "3 - Summary"
 
     Args:
-        input_file (str or file-like object): 
-            The path to the CP document or an uploaded file object.
+        uploaded_file (UploadedFile): The file uploaded via st.file_uploader.
 
     Returns:
-        dict: 
-            A dictionary containing extracted course proposal details, 
-            categorized into different sections.
+        str: A trimmed Markdown string containing the parsed document content.
     """
+    # Write the uploaded file to a temporary file.
+    with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(uploaded_file.name)[1]) as tmp:
+        tmp.write(uploaded_file.read())
+        temp_file_path = tmp.name
 
-    doc = Document(input_file)
-    data = {"Course_Proposal_Form": {}}
+    try:
+        # Set up parser for markdown result
+        parser = LlamaParse(result_type="markdown")
+    
+        # Determine the file extension for mapping
+        ext = os.path.splitext(temp_file_path)[1].lower()
+        file_extractor = {ext: parser}
+    
+        # Use SimpleDirectoryReader to load and parse the file
+        documents = SimpleDirectoryReader(input_files=[temp_file_path], file_extractor=file_extractor).load_data()
+    
+        # Concatenate the parsed text from each Document object into a single Markdown string
+        markdown_text = "\n\n".join(doc.text for doc in documents)
+    
+        # Set up regex patterns based on file extension
+        if ext == ".docx":
+            start_pattern = re.compile(r"Part\s*1.*?Particulars\s+of\s+Course", re.IGNORECASE)
+            end_pattern = re.compile(r"Part\s*4.*?Facilities\s+and\s+Resources", re.IGNORECASE)
+        elif ext == ".xlsx":
+            start_pattern = re.compile(r"1\s*-\s*Course\s*Particulars", re.IGNORECASE)
+            end_pattern = re.compile(r"4\s*-\s*Declarations", re.IGNORECASE)
+        else:
+            start_pattern = None
+            end_pattern = None
+    
+        # If both patterns exist, search for the matches and trim the text
+        if start_pattern and end_pattern:
+            start_match = start_pattern.search(markdown_text)
+            end_match = end_pattern.search(markdown_text)
+            if start_match and end_match and end_match.start() > start_match.start():
+                markdown_text = markdown_text[start_match.start():end_match.start()].strip()
+    
+    finally:
+        # Clean up the temporary file
+        os.remove(temp_file_path)
+    
+    return markdown_text
 
-    def parse_table(table):
-        return [[cell.text.strip() for cell in row.cells] for row in table.rows]
+# def parse_cp_document(input_file):
+#     """
+#     Parses a Course Proposal (CP) document and extracts structured data.
 
-    def add_content_to_section(section_name, content):
-        if section_name not in data["Course_Proposal_Form"]:
-            data["Course_Proposal_Form"][section_name] = []
-        if content not in data["Course_Proposal_Form"][section_name]:
-            data["Course_Proposal_Form"][section_name].append(content)
+#     This function reads a `.docx` file, extracts text and tables, 
+#     and organizes them into a structured dictionary format.
 
-    current_section = None
-    for element in doc.element.body:
-        if isinstance(element, CT_P):  
-            para = Paragraph(element, doc)
-            text = para.text.strip()
-            if text.startswith("Part"):
-                current_section = text
-            elif text:
-                add_content_to_section(current_section, text)
-        elif isinstance(element, CT_Tbl):  
-            tbl = Table(element, doc)
-            if current_section:
-                add_content_to_section(current_section, {"table": parse_table(tbl)})
-    return data
+#     Args:
+#         input_file (str or file-like object): 
+#             The path to the CP document or an uploaded file object.
+
+#     Returns:
+#         dict: 
+#             A dictionary containing extracted course proposal details, 
+#             categorized into different sections.
+#     """
+
+#     doc = Document(input_file)
+#     data = {"Course_Proposal_Form": {}}
+
+#     def parse_table(table):
+#         return [[cell.text.strip() for cell in row.cells] for row in table.rows]
+
+#     def add_content_to_section(section_name, content):
+#         if section_name not in data["Course_Proposal_Form"]:
+#             data["Course_Proposal_Form"][section_name] = []
+#         if content not in data["Course_Proposal_Form"][section_name]:
+#             data["Course_Proposal_Form"][section_name].append(content)
+
+#     current_section = None
+#     for element in doc.element.body:
+#         if isinstance(element, CT_P):  
+#             para = Paragraph(element, doc)
+#             text = para.text.strip()
+#             if text.startswith("Part"):
+#                 current_section = text
+#             elif text:
+#                 add_content_to_section(current_section, text)
+#         elif isinstance(element, CT_Tbl):  
+#             tbl = Table(element, doc)
+#             if current_section:
+#                 add_content_to_section(current_section, {"table": parse_table(tbl)})
+#     return data
 ############################################################
 # 2. Web Scrape TGS and UEN information from MySkillsFuture portal
 ############################################################
@@ -303,8 +368,8 @@ async def interpret_cp(raw_data: dict, model_client: OpenAIChatCompletionClient)
         - Course Title
         - TSC Title
         - TSC Code
-        - Total Training Hours (calculated as the sum of Classroom Facilitation, Workplace Learning: On-the-Job (OJT), Practicum, Practical, E-learning: Synchronous and Asynchronous), formatted with units (e.g., "30 hrs", "1 hr")
-        - Total Assessment Hours, formatted with units (e.g., "2 hrs")
+        - Total Training Hours/ Total Instructional Duration (calculated as the sum of Classroom Facilitation, Workplace Learning: On-the-Job (OJT), Practicum, Practical, E-learning: Synchronous and Asynchronous), formatted with units (e.g., "30 hrs", "1 hr")
+        - Total Assessment Hours/ Total Assessment Duration, formatted with units (e.g., "2 hrs")
         - Total Course Duration Hours, formatted with units (e.g., "42 hrs")
 
         ### Part 3: Curriculum Design
@@ -316,11 +381,15 @@ async def interpret_cp(raw_data: dict, model_client: OpenAIChatCompletionClient)
         - Topics Covered Under Each LU:
         - For each Topic:
             - **Topic_Title** (include the "Topic x: " prefix and the associated K and A statements in parentheses)
-            - **Bullet_Points** (a list of bullet points under the topic)
+            - **Bullet_Points** (a list of bullet points under the topic; remove any leading bullet symbols such as "-" so that only the content remains)
         - Learning Outcomes (LOs) (include the "LOx: " prefix for each LO)
         - Numbering and Description for the "K" (Knowledge) Statements (as a list of dictionaries with keys "K_number" and "Description")
         - Numbering and Description for the "A" (Ability) Statements (as a list of dictionaries with keys "A_number" and "Description")
         - **Assessment_Methods** (a list of assessment method abbreviations; e.g., ["WA-SAQ", "CS"]). Note: If the CP contains the term "Written Exam", output it as "Written Assessment - Short Answer Questions". If it contains "Practical Exam", output it as "Practical Performance".
+        - **Duration Calculation:** When extracting the duration for each assessment method:
+            1. If the extracted duration is not exactly 0.5 or a whole number (e.g., 0.5, 1, 2, etc.), interpret it as minutes.
+            2. If duplicate entries for the same assessment method occur within the same LU, sum their durations to obtain a total duration.
+            3. For CPs in Excel format, under 3 - Summary sheet, the duration appears in the format "(Assessor-to-Candidate Ratio, duration)"—for example, "Written Exam (1:20, 20)" means 20 minutes, and "Others: Case Study (1:20, 25)" appearing twice should result in a total of 50 minutes for Case Study.       
         - **Instructional_Methods** (a list of instructional method abbreviations or names)
 
         ### Part E: Details of Assessment Methods Proposed
@@ -361,6 +430,7 @@ async def interpret_cp(raw_data: dict, model_client: OpenAIChatCompletionClient)
             4. If duplicate or multiple variations exist, use the standard abbreviation.
         - **Important:** Verify that the sum of `Total_Delivery_Hours` for all assessment methods equals the `Total_Assessment_Hours`. If individual delivery hours for assessment methods are not specified, divide the `Total_Assessment_Hours` equally among them.
         - For bullet points in each topic, ensure that the number of bullet points exactly matches those in the CP. Re-extract if discrepancies occur.
+        - **If the same K or A statement (same numbering and description) appears multiple times within the same LU, keep only one instance. If the same K or A statement appears in different LUs, keep it as it is.**
         - Do not include any extraneous information or duplicate entries.
 
         Generate structured output matching this schema:
@@ -730,34 +800,28 @@ def app():
 
                     except Exception as e:
                         st.error(f"Error generating Facilitator's Guide: {e}")
-                
-                st.session_state['courseware_processing_done'] = True  # Indicate that processing is done
-
             else:
                 st.error("Context is empty. Cannot proceed with document generation.")
         else:
             st.error("Please upload a CP document and select a Name of Organisation.")
  
-    if st.session_state.get('courseware_processing_done'):
+    if any([
+        st.session_state.get('lg_output'),
+        st.session_state.get('ap_output'),
+        st.session_state.get('lp_output'),
+        st.session_state.get('fg_output')
+    ]):
         st.subheader("Download Generated Documents")
 
-        # Ensure 'context' exists in session state
-        if 'context' in st.session_state:
-            context = st.session_state['context']
-        else:
-            st.error("Context not found in session state.")
-            st.stop()  # Stops the script execution
-            
         # Learning Guide
         lg_output = st.session_state.get('lg_output')
         if lg_output and os.path.exists(lg_output):
             with open(lg_output, "rb") as f:
                 file_bytes = f.read()
-            # Check if 'TGS_Ref_No' is in context
-            if 'TGS_Ref_No' in context and context['TGS_Ref_No']:
-                file_name = f"LG_{context['TGS_Ref_No']}_{context['Course_Title']}_v1.docx"
+            if 'TGS_Ref_No' in st.session_state['context'] and st.session_state['context']['TGS_Ref_No']:
+                file_name = f"LG_{st.session_state['context']['TGS_Ref_No']}_{st.session_state['context']['Course_Title']}_v1.docx"
             else:
-                file_name = f"LG_{context['Course_Title']}_v1.docx"
+                file_name = f"LG_{st.session_state['context']['Course_Title']}_v1.docx"
             st.download_button(
                 label="Download Learning Guide",
                 data=file_bytes,
@@ -770,11 +834,10 @@ def app():
         if ap_output and os.path.exists(ap_output):
             with open(ap_output, "rb") as f:
                 file_bytes = f.read()
-            # Check if 'TGS_Ref_No' is in context
-            if 'TGS_Ref_No' in context and context['TGS_Ref_No']:
-                file_name = f"Assessment Plan_{context['TGS_Ref_No']}_{context['Course_Title']}_v1.docx"
+            if 'TGS_Ref_No' in st.session_state['context'] and st.session_state['context']['TGS_Ref_No']:
+                file_name = f"Assessment Plan_{st.session_state['context']['TGS_Ref_No']}_{st.session_state['context']['Course_Title']}_v1.docx"
             else:
-                file_name = f"Assessment Plan_{context['Course_Title']}_v1.docx"
+                file_name = f"Assessment Plan_{st.session_state['context']['Course_Title']}_v1.docx"
             st.download_button(
                 label="Download Assessment Plan",
                 data=file_bytes,
@@ -787,11 +850,10 @@ def app():
         if asr_output and os.path.exists(asr_output):
             with open(asr_output, "rb") as f:
                 file_bytes = f.read()
-            # Check if 'TGS_Ref_No' is in context
-            if 'TGS_Ref_No' in context and context['TGS_Ref_No']:
-                file_name = f"Assessment Summary Record_{context['TGS_Ref_No']}_{context['Course_Title']}_v1.docx"
+            if 'TGS_Ref_No' in st.session_state['context'] and st.session_state['context']['TGS_Ref_No']:
+                file_name = f"Assessment Summary Record_{st.session_state['context']['TGS_Ref_No']}_{st.session_state['context']['Course_Title']}_v1.docx"
             else:
-                file_name = f"Assessment Summary Record_{context['Course_Title']}_v1.docx"
+                file_name = f"Assessment Summary Record_{st.session_state['context']['Course_Title']}_v1.docx"
             st.download_button(
                 label="Download Assessment Summary Record",
                 data=file_bytes,
@@ -804,11 +866,10 @@ def app():
         if lp_output and os.path.exists(lp_output):
             with open(lp_output, "rb") as f:
                 file_bytes = f.read()
-            # Check if 'TGS_Ref_No' is in context
-            if 'TGS_Ref_No' in context and context['TGS_Ref_No']:
-                file_name = f"LP_{context['TGS_Ref_No']}_{context['Course_Title']}_v1.docx"
+            if 'TGS_Ref_No' in st.session_state['context'] and st.session_state['context']['TGS_Ref_No']:
+                file_name = f"LP_{st.session_state['context']['TGS_Ref_No']}_{st.session_state['context']['Course_Title']}_v1.docx"
             else:
-                file_name = f"LP_{context['Course_Title']}_v1.docx"
+                file_name = f"LP_{st.session_state['context']['Course_Title']}_v1.docx"
             st.download_button(
                 label="Download Lesson Plan",
                 data=file_bytes,
@@ -821,11 +882,10 @@ def app():
         if fg_output and os.path.exists(fg_output):
             with open(fg_output, "rb") as f:
                 file_bytes = f.read()
-            # Check if 'TGS_Ref_No' is in context
-            if 'TGS_Ref_No' in context and context['TGS_Ref_No']:
-                file_name = f"FG_{context['TGS_Ref_No']}_{context['Course_Title']}_v1.docx"
+            if 'TGS_Ref_No' in st.session_state['context'] and st.session_state['context']['TGS_Ref_No']:
+                file_name = f"FG_{st.session_state['context']['TGS_Ref_No']}_{st.session_state['context']['Course_Title']}_v1.docx"
             else:
-                file_name = f"FG_{context['Course_Title']}_v1.docx"
+                file_name = f"FG_{st.session_state['context']['Course_Title']}_v1.docx"
             st.download_button(
                 label="Download Facilitator's Guide",
                 data=file_bytes,

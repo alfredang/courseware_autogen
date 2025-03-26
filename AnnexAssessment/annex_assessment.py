@@ -870,8 +870,8 @@ def app():
 
     The app performs the following steps:
       1. Authenticates with Google Drive.
-      2. Prompts the user to enter a course folder name.
-      3. Searches for the course folder within "1 WSQ Documents".
+      2. Prompts the user to enter a course TGS code.
+      3. Searches for the course folder within "1 WSQ Documents" by querying for folders whose name contains the TGS code.
       4. Processes the course folder to classify and select files from the 'Assessment Plan' and 'Assessment' subfolders.
       5. Downloads the assessment plan and Q&A files.
       6. Merges the Q&A documents into the annex of the assessment plan.
@@ -883,24 +883,26 @@ def app():
     st.title("📄 Integrate Assessment to Annex of AP")
     st.subheader("Instructions:")
     st.markdown("""
-    Enter the exact course folder name from Google Drive. The app will integrate assessment questions 
-    and answers into the annex of the assessment plan document.
+    **What you must input:**  
+    Please enter the **TGS code** for the course folder.  
+    *Example: `TGS-2023039343`*  
+
+    #### Prerequisite for the folder:  
+    The course folder must be located under the **"1 WSQ Documents"** folder in Google Drive, and its name must contain the TGS code you provide.
     """)
     st.markdown("""
-    #### 📂 File Organization and Naming Instructions
+    **📂 File Organization and Naming Instructions**
 
     - **`Assessment Plan`** folder:  
-    Place the **assessment plan file** here.  
-    Example: `Assessment Plan_TGS-[Course Code] - [Course Title]_vX.docx`
+      Place the **assessment plan file** here.  
+      Example: `Assessment Plan_TGS-[Course Code] - [Course Title]_vX.docx`
 
     - **`Assessment`** folder:  
-    Place **question and answer files** here.  
-    Examples:  
-    - `WA (SAQ) - [Course Title] - vX.docx`  
-    - `Answer to WA (SAQ) - [Course Title] - vX.docx`
-
+      Place **question and answer files** here.  
+      Examples:  
+      - `WA (SAQ) - [Course Title] - vX.docx`  
+      - `Answer to WA (SAQ) - [Course Title] - vX.docx`
     """)
-
 
     # Abbreviations and heading map
     abbreviations = ["WA (SAQ)", "PP", "CS", "RP", "Oral Questioning"]
@@ -920,16 +922,22 @@ def app():
 
     drive_service = build("drive", "v3", credentials=creds)
 
-    # Input: Course folder name
-    course_folder_name = st.text_input("Enter the course folder name:", "")
+    # Helper function to extract TGS code from text
+    import re
+    def extract_tgs_code(text):
+        match = re.search(r'TGS-\d+', text, re.IGNORECASE)
+        return match.group(0).upper() if match else None
+
+    # Input: Course TGS code
+    course_tgs_code = st.text_input("Enter the Course TGS code:", "").strip().upper()
 
     if st.button("Process Document"):
-        if not course_folder_name.strip():
-            st.error("Please provide a course folder name to proceed.")
+        if not course_tgs_code:
+            st.error("Please provide a course TGS code to proceed.")
             return
 
         try:
-            # Retrieve the top-level folder
+            # Retrieve the top-level folder "1 WSQ Documents"
             with st.spinner("Looking for the top-level folder..."):
                 top_folder_name = "1 WSQ Documents"
                 wsq_folder_list = drive_service.files().list(
@@ -943,26 +951,32 @@ def app():
 
                 wsq_documents_folder_id = wsq_folder_list[0]["id"]
 
-            # Search for the course folder
+            # Search for the course folder using a query that checks if the folder name contains the TGS code
             with st.spinner("Searching for the course folder..."):
+                query = (
+                    f"'{wsq_documents_folder_id}' in parents and "
+                    "mimeType='application/vnd.google-apps.folder' and "
+                    f"name contains '{course_tgs_code}'"
+                )
                 course_folders = drive_service.files().list(
-                    q=f"'{wsq_documents_folder_id}' in parents and mimeType='application/vnd.google-apps.folder'",
+                    q=query,
                     fields="files(id, name)"
                 ).execute().get("files", [])
 
+                # Further filter by extracting the TGS code from folder names
                 matching_course_folder = next(
-                    (folder for folder in course_folders if folder["name"].strip().lower() == course_folder_name.strip().lower()),
+                    (folder for folder in course_folders if extract_tgs_code(folder["name"]) == course_tgs_code),
                     None
                 )
 
                 if not matching_course_folder:
-                    st.error(f"Course folder '{course_folder_name}' not found.")
+                    st.error(f"Course folder containing TGS Code '{course_tgs_code}' not found.")
                     return
 
                 course_folder_id = matching_course_folder["id"]
-                st.success(f"Found course folder: {course_folder_name}")
+                st.success(f"Found course folder with TGS Code: {course_tgs_code}")
 
-            # Process the folder
+            # Process the course folder
             with st.spinner("Processing the course folder..."):
                 result = process_course_folder_direct(course_folder_id, drive_service, abbreviations)
                 if not result:
@@ -982,7 +996,7 @@ def app():
                     st.error(f"Failed to download assessment plan: {assessment_plan['name']}")
                     return
 
-                # Download and append Q&A
+                # Download and append Q&A documents
                 with st.spinner("Downloading and appending Q&A documents..."):
                     for abbr, doc_dict in method_data.items():
                         for doc_type in ["question", "answer"]:
@@ -996,13 +1010,6 @@ def app():
                 with st.spinner("Merging Q&A into the annex..."):
                     merged_doc_path, changes_made = insert_answers_under_heading(plan_path, heading_map, method_data)
                 if changes_made:
-                    # with st.spinner("Updating version control..."):
-                    #     updated_doc_path = update_cover_page_version(merged_doc_path)
-                    #     update_version_control_record(
-                    #         doc_path=updated_doc_path,
-                    #         changes="Added Assessment Questions & Answers into Annex D",
-                    #         developer="Tertiary Infotech"
-                    #     )
                     with st.spinner("Renaming and uploading the file..."):
                         final_doc_path = bump_filename_version(merged_doc_path)
                         upload_updated_doc(
@@ -1014,6 +1021,8 @@ def app():
                     st.success(f"Updated assessment plan uploaded: {assessment_plan['name']}")
                 else:
                     st.info("No changes made to the assessment plan.")
-
+                
+                # Delete downloaded files now that processing is complete
+                delete_irrelevant_files(download_dir="./downloads")
         except Exception as e:
             st.error(f"An error occurred: {e}")
