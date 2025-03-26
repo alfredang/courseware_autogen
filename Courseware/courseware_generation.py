@@ -191,139 +191,96 @@ def parse_cp_document(uploaded_file):
     
     return markdown_text
 
-# def parse_cp_document(input_file):
-#     """
-#     Parses a Course Proposal (CP) document and extracts structured data.
-
-#     This function reads a `.docx` file, extracts text and tables, 
-#     and organizes them into a structured dictionary format.
-
-#     Args:
-#         input_file (str or file-like object): 
-#             The path to the CP document or an uploaded file object.
-
-#     Returns:
-#         dict: 
-#             A dictionary containing extracted course proposal details, 
-#             categorized into different sections.
-#     """
-
-#     doc = Document(input_file)
-#     data = {"Course_Proposal_Form": {}}
-
-#     def parse_table(table):
-#         return [[cell.text.strip() for cell in row.cells] for row in table.rows]
-
-#     def add_content_to_section(section_name, content):
-#         if section_name not in data["Course_Proposal_Form"]:
-#             data["Course_Proposal_Form"][section_name] = []
-#         if content not in data["Course_Proposal_Form"][section_name]:
-#             data["Course_Proposal_Form"][section_name].append(content)
-
-#     current_section = None
-#     for element in doc.element.body:
-#         if isinstance(element, CT_P):  
-#             para = Paragraph(element, doc)
-#             text = para.text.strip()
-#             if text.startswith("Part"):
-#                 current_section = text
-#             elif text:
-#                 add_content_to_section(current_section, text)
-#         elif isinstance(element, CT_Tbl):  
-#             tbl = Table(element, doc)
-#             if current_section:
-#                 add_content_to_section(current_section, {"table": parse_table(tbl)})
-#     return data
 ############################################################
 # 2. Web Scrape TGS and UEN information from MySkillsFuture portal
 ############################################################
-def web_scrape(course_title: str, name_of_org: str) -> str:
-    """
-    Scrapes TGS Ref No and UEN from the MySkillsFuture portal.
+# def web_scrape(course_title: str, name_of_org: str) -> str:
+#     """
+#     Scrapes TGS Ref No and UEN from the MySkillsFuture portal.
 
-    This function automates a browser session using Selenium, searches for the 
-    given course title, and extracts relevant identifiers from the first matching course.
+#     This function automates a browser session using Selenium, searches for the 
+#     given course title, and extracts relevant identifiers from the first matching course.
 
-    Args:
-        course_title (str): 
-            The title of the course to search for.
-        name_of_org (str): 
-            The name of the organization offering the course.
+#     Args:
+#         course_title (str): 
+#             The title of the course to search for.
+#         name_of_org (str): 
+#             The name of the organization offering the course.
 
-    Returns:
-        dict or str: 
-            A dictionary containing `TGS_Ref_No` and `UEN` if found,
-            otherwise, a string indicating that no matching course was found.
+#     Returns:
+#         dict or str: 
+#             A dictionary containing `TGS_Ref_No` and `UEN` if found,
+#             otherwise, a string indicating that no matching course was found.
 
-    Raises:
-        WebDriverException: 
-            If there is an issue initializing or running the browser.
-    """
+#     Raises:
+#         WebDriverException: 
+#             If there is an issue initializing or running the browser.
+#     """
     
-    # Format the course title for the URL
-    formatted_course_title = urllib.parse.quote(course_title)
-    search_url = f"https://www.myskillsfuture.gov.sg/content/portal/en/portal-search/portal-search.html?q={formatted_course_title}"
-    print(search_url)
+#     # Format the course title for the URL
+#     formatted_course_title = urllib.parse.quote(course_title)
+#     search_url = f"https://www.myskillsfuture.gov.sg/content/portal/en/portal-search/portal-search.html?q={formatted_course_title}"
+#     print(search_url)
 
-    # Set up the Selenium WebDriver (using Chrome here)
-    options = webdriver.ChromeOptions()
-    options.add_argument("--headless")
-    options.add_argument("--no-sandbox")
-    options.add_argument("--disable-dev-shm-usage")
-    driver = webdriver.Chrome(options=options)
+#     # Set up the Selenium WebDriver (using Chrome here)
+#     options = webdriver.ChromeOptions()
+#     options.add_argument("--headless")
+#     options.add_argument("--no-sandbox")
+#     options.add_argument("--disable-dev-shm-usage")
+#     driver = webdriver.Chrome(options=options)
 
-    try:
-        # Load the page with Selenium
-        driver.get(search_url)
-        time.sleep(3)  # Wait for JavaScript to load content
+#     try:
+#         # Load the page with Selenium
+#         driver.get(search_url)
+#         time.sleep(3)  # Wait for JavaScript to load content
 
-        # Parse the loaded page with BeautifulSoup
-        soup = BeautifulSoup(driver.page_source, 'html.parser')
+#         # Parse the loaded page with BeautifulSoup
+#         soup = BeautifulSoup(driver.page_source, 'html.parser')
 
-        # Locate the specific course-holder div with the class "courses-card-holder is-horizontal"
-        course_holder = soup.find('div', class_='courses-card-holder is-horizontal')
-        if not course_holder:
-            return "No courses found in the specified format."
+#         # Locate the specific course-holder div with the class "courses-card-holder is-horizontal"
+#         course_holder = soup.find('div', class_='courses-card-holder is-horizontal')
+#         if not course_holder:
+#             return "No courses found in the specified format."
 
-        # Find all relevant course cards within this container
-        course_cards = course_holder.find_all('div', class_='card')
+#         # Find all relevant course cards within this container
+#         course_cards = course_holder.find_all('div', class_='card')
 
-        for card in course_cards:
-            # Check if the card has the necessary elements for a course listing
-            provider_div = card.find('div', class_='course-provider')
-            title_element = card.find('h5', class_='card-title')
+#         for card in course_cards:
+#             # Check if the card has the necessary elements for a course listing
+#             provider_div = card.find('div', class_='course-provider')
+#             title_element = card.find('h5', class_='card-title')
             
-            if provider_div and title_element:
-                provider_name_element = provider_div.find('a')
-                if provider_name_element:
-                    provider_name = provider_name_element.get_text(strip=True)
-                    # Check if this matches the given organization name
-                    if name_of_org.lower() in provider_name.lower():
-                        # Find the link to the course detail page
-                        course_link_element = title_element.find('a')
-                        if course_link_element and 'href' in course_link_element.attrs:
-                            course_detail_url = "https://www.myskillsfuture.gov.sg" + course_link_element['href']
+#             if provider_div and title_element:
+#                 provider_name_element = provider_div.find('a')
+#                 if provider_name_element:
+#                     provider_name = provider_name_element.get_text(strip=True)
+#                     # Check if this matches the given organization name
+#                     if name_of_org.lower() in provider_name.lower():
+#                         # Find the link to the course detail page
+#                         course_link_element = title_element.find('a')
+#                         if course_link_element and 'href' in course_link_element.attrs:
+#                             course_detail_url = "https://www.myskillsfuture.gov.sg" + course_link_element['href']
                             
-                            # Request the course detail page
-                            driver.get(course_detail_url)
-                            time.sleep(5)  # Wait for JavaScript to load the detail page
-                            detail_soup = BeautifulSoup(driver.page_source, 'html.parser')
+#                             # Request the course detail page
+#                             driver.get(course_detail_url)
+#                             time.sleep(5)  # Wait for JavaScript to load the detail page
+#                             detail_soup = BeautifulSoup(driver.page_source, 'html.parser')
 
-                            # Extract TGS Ref No (Course ID)
-                            tgs_ref_no_element = detail_soup.find('div', class_='course-details-header').find('small')
-                            tgs_ref_no = tgs_ref_no_element.find('span').get_text(strip=True) if tgs_ref_no_element else None
+#                             # Extract TGS Ref No (Course ID)
+#                             tgs_ref_no_element = detail_soup.find('div', class_='course-details-header').find('small')
+#                             tgs_ref_no = tgs_ref_no_element.find('span').get_text(strip=True) if tgs_ref_no_element else None
 
-                            # Extract UEN number
-                            uen_element = detail_soup.find('div', class_='course-provider-info-holder').find_next('small')
-                            uen_number = uen_element.find('span').get_text(strip=True) if uen_element else None
+#                             # Extract UEN number
+#                             uen_element = detail_soup.find('div', class_='course-provider-info-holder').find_next('small')
+#                             uen_number = uen_element.find('span').get_text(strip=True) if uen_element else None
 
-                            # Return both TGS Ref No and UEN if available
-                            return {
-                                "TGS_Ref_No": tgs_ref_no,
-                            }
-        return "TGS Ref No not found"
-    finally:
-        driver.quit()
+#                             # Return both TGS Ref No and UEN if available
+#                             return {
+#                                 "TGS_Ref_No": tgs_ref_no,
+#                             }
+#         return "TGS Ref No not found"
+#     finally:
+#         driver.quit()
 
 ############################################################
 # 3. Interpret Course Proposal Data
@@ -504,13 +461,12 @@ def app():
     # Create a modal instance with a unique key and title
     crud_modal = Modal(key="crud_modal", title="Manage Organisations")
 
-    st.subheader("Step 2: Select Name of Organisation")
-
+    st.subheader("Step 2: Enter Relevant Details")
+    tgs_code_input = st.text_input("Enter the Course TGS Code:", "").strip().upper()
+    col1, col2 = st.columns([0.8, 0.2], vertical_alignment="center")
     # Load organisations from JSON using the utility function
     org_list = load_organizations()
     org_names = [org["name"] for org in org_list] if org_list else []
-
-    col1, col2 = st.columns([0.8, 0.2], vertical_alignment="center")
     with col1:
         if org_names:
             selected_org = st.selectbox("Select Name of Organisation", org_names, key="org_dropdown_main")
@@ -521,7 +477,7 @@ def app():
     with col2:
         # Wrap the Manage button in a div that uses flexbox for vertical centering.
         st.markdown("<br/>", unsafe_allow_html=True)
-        if st.button("Manage", key="manage_button"):
+        if st.button("Manage", key="manage_button", use_container_width=True):
             crud_modal.open()
 
     # ---------------------------
@@ -720,19 +676,22 @@ def app():
                 if selected_org_data:
                     context["UEN"] = selected_org_data["uen"]
                 st.session_state['context'] = context  # Store context in session state
-    
+
+                if tgs_code_input:
+                    context["TGS_Ref_No"] = tgs_code_input
+                    st.session_state['context'] = context    
                 # Run web_scrape function to get TGS Ref No
-                try:
-                    with st.spinner('Retrieving TGS Ref No...'):
-                        web_scrape_result = web_scrape(context['Course_Title'], context['Name_of_Organisation'])
-                        if isinstance(web_scrape_result, dict):
-                            # Update context with web_scrape_result
-                            context.update(web_scrape_result)
-                        else:   
-                            st.warning(f"Web scrape result: {web_scrape_result}")
-                    st.session_state['context'] = context  # Store context in session state
-                except Exception as e:
-                    st.error(f"Error in web scraping: {e}")
+                # try:
+                #     with st.spinner('Retrieving TGS Ref No...'):
+                #         web_scrape_result = web_scrape(context['Course_Title'], context['Name_of_Organisation'])
+                #         if isinstance(web_scrape_result, dict):
+                #             # Update context with web_scrape_result
+                #             context.update(web_scrape_result)
+                #         else:   
+                #             st.warning(f"Web scrape result: {web_scrape_result}")
+                #     st.session_state['context'] = context  # Store context in session state
+                # except Exception as e:
+                #     st.error(f"Error in web scraping: {e}")
 
                 # Generate Learning Guide
                 if generate_lg:
