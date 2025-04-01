@@ -1,6 +1,8 @@
 import streamlit as st
 import nest_asyncio
 import os
+import io
+import zipfile
 import asyncio
 import json
 import pymupdf
@@ -35,8 +37,6 @@ if 'index' not in st.session_state:
     st.session_state['index'] = None
 if 'fg_data' not in st.session_state:
     st.session_state['fg_data'] = None
-if 'assessment_processing_done' not in st.session_state:
-    st.session_state['assessment_processing_done'] = False
 if 'saq_output' not in st.session_state:
     st.session_state['saq_output'] = None
 if 'pp_output' not in st.session_state:
@@ -48,7 +48,7 @@ if "premium_parsing" not in st.session_state:
 if 'assessment_generated_files' not in st.session_state:
     st.session_state['assessment_generated_files'] = {}
 if 'selected_model' not in st.session_state:
-    st.session_state['selected_model'] = "Gemini-Flash-2.0-Exp"
+    st.session_state['selected_model'] = "Gemini-Pro-2.5-Exp-03-25"
 
 ################################################################################
 # Helper function for robust text extraction from slide pages.
@@ -293,7 +293,7 @@ def app():
     model_info = selected_config["config"].get("model_info", None)
 
     # Conditionally set response_format: use structured output only for valid OpenAI models.
-    if st.session_state['selected_model'] in ["DeepSeek-V3", "Gemini-Flash-2.0-Exp"]:
+    if st.session_state['selected_model'] in ["DeepSeek-V3", "Gemini-Pro-2.5-Exp-03-25"]:
         fg_response_format = None  # DeepSeek and Gemini might not support structured output this way.
     else:
         fg_response_format = FacilitatorGuideExtraction  # For structured extraction
@@ -368,7 +368,6 @@ def app():
 
     if st.button("Generate Assessments"):
         st.session_state['assessment_generated_files'] = {}
-        st.session_state['assessment_processing_done'] = False
 
         if not st.session_state.get('fg_data') or not st.session_state.get('index'):
             st.error("❌ Please parse the documents first.")
@@ -405,36 +404,49 @@ def app():
                             st.session_state['assessment_generated_files'][assessment_type] = files
 
                 if st.session_state['assessment_generated_files']:
-                    st.session_state['assessment_processing_done'] = True
                     st.success("✅ Assessments successfully generated!")
 
             except Exception as e:
                 st.error(f"Error generating assessments: {e}")
 
-    if st.session_state.get('assessment_processing_done'):
-        st.subheader("Download Generated Documents")
-        if 'assessment_generated_files' in st.session_state and st.session_state['assessment_generated_files']:
-            for assessment_type, file_paths in st.session_state['assessment_generated_files'].items():
+    generated_files = st.session_state.get('assessment_generated_files', {})
+    # Check if any assessment type has a valid QUESTION or ANSWER file
+    if generated_files and any(
+        ((file_paths.get('QUESTION') and os.path.exists(file_paths.get('QUESTION'))) or 
+        (file_paths.get('ANSWER') and os.path.exists(file_paths.get('ANSWER'))))
+        for file_paths in generated_files.values()
+    ):
+        course_title = "Course Title"
+        # If fg_data is available, update course_title accordingly.
+        if st.session_state.get('fg_data'):
+            course_title = st.session_state['fg_data'].get("course_title", "Course Title")
+        
+        # Create an in-memory ZIP file containing all available assessment documents.
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zipf:
+            for assessment_type, file_paths in generated_files.items():
                 q_path = file_paths.get('QUESTION')
                 a_path = file_paths.get('ANSWER')
                 
-                course_title = "Course Title"
-                if st.session_state.get('fg_data'):
-                    course_title = st.session_state['fg_data'].get("course_title", "Course Title")
-
                 if q_path and os.path.exists(q_path):
-                    with open(q_path, "rb") as f:
-                        st.download_button(f"Download {assessment_type} Questions", 
-                                           f.read(), 
-                                           f"{assessment_type} - {course_title}.docx")
-
+                    q_file_name = f"{assessment_type} - {course_title}.docx"
+                    zipf.write(q_path, arcname=q_file_name)
+                
                 if a_path and os.path.exists(a_path):
-                    with open(a_path, "rb") as f:
-                        st.download_button(f"Download {assessment_type} Answers", 
-                                           f.read(), 
-                                           f"Answer to {assessment_type} - {course_title}.docx")
-        else:
-            st.info("No files have been generated yet. Please generate assessments first.")
+                    a_file_name = f"Answer to {assessment_type} - {course_title}.docx"
+                    zipf.write(a_path, arcname=a_file_name)
+        
+        # Reset the buffer's position to the beginning
+        zip_buffer.seek(0)
+        
+        st.download_button(
+            label="Download All Assessments (ZIP)",
+            data=zip_buffer.getvalue(),
+            file_name="assessments.zip",
+            mime="application/zip"
+        )
+    else:
+        st.info("No files have been generated yet. Please generate assessments first.")
 
     ############################################################################
     # Reset Button at the Bottom
@@ -442,7 +454,6 @@ def app():
     if st.button("Reset Course Data", type="primary"):
         st.session_state['index'] = None
         st.session_state['fg_data'] = None
-        st.session_state['assessment_processing_done'] = False
         st.session_state['assessment_generated_files'] = {}
         st.session_state['saq_output'] = None
         st.session_state['pp_output'] = None

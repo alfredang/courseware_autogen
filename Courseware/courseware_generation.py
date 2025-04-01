@@ -7,6 +7,8 @@ from Courseware.utils.agentic_LP import generate_lesson_plan
 from Courseware.utils.agentic_FG import generate_facilitators_guide
 from Courseware.utils.model_configs import MODEL_CHOICES, get_model_config
 import os
+import io
+import zipfile
 import tempfile
 import json 
 import time
@@ -54,7 +56,7 @@ if 'context' not in st.session_state:
 if 'asr_output' not in st.session_state:
     st.session_state['asr_output'] = None
 if 'selected_model' not in st.session_state:
-    st.session_state['selected_model'] = "Gemini-Flash-2.0-Exp"
+    st.session_state['selected_model'] = "Gemini-Pro-2.5-Exp-03-25"
 
 ############################################################
 # 1. Pydantic Models
@@ -155,7 +157,7 @@ def parse_cp_document(uploaded_file):
 
     try:
         # Set up parser for markdown result
-        parser = LlamaParse(result_type="markdown")
+        parser = LlamaParse(result_type="markdown", api_key=st.secrets["LLAMA_CLOUD_API_KEY"])
     
         # Determine the file extension for mapping
         ext = os.path.splitext(temp_file_path)[1].lower()
@@ -644,7 +646,7 @@ def app():
             model_info = selected_config["config"].get("model_info", None)
 
             # Conditionally set response_format: use structured output only for valid OpenAI models.
-            if st.session_state['selected_model'] in ["DeepSeek-V3", "Gemini-Flash-2.0-Exp"]:
+            if st.session_state['selected_model'] in ["DeepSeek-V3", "Gemini-Pro-2.5-Exp-03-25"]:
                 cp_response_format = None  # DeepSeek and Gemini might not support structured output this way.
                 lp_response_format = None
             else:
@@ -678,8 +680,13 @@ def app():
             )
 
             # Step 1: Parse the CP document
-            raw_data = parse_cp_document(cp_file)
-
+            try:
+                with st.spinner('Parsing the Course Proposal...'):
+                    raw_data = parse_cp_document(cp_file)
+            except Exception as e:
+                st.error(f"Error parsing the Course Proposal: {e}")
+                return
+            
             try:
                 with st.spinner('Extracting Information from Course Proposal...'):
                     context = asyncio.run(interpret_cp(raw_data=raw_data, model_client=openai_struct_model_client))
@@ -785,91 +792,45 @@ def app():
                 st.error("Context is empty. Cannot proceed with document generation.")
         else:
             st.error("Please upload a CP document and select a Name of Organisation.")
- 
+
+    # Check if any courseware document was generated
     if any([
         st.session_state.get('lg_output'),
         st.session_state.get('ap_output'),
+        st.session_state.get('asr_output'),
         st.session_state.get('lp_output'),
         st.session_state.get('fg_output')
     ]):
-        st.subheader("Download Generated Documents")
+        st.subheader("Download All Generated Documents as ZIP")
 
-        # Learning Guide
-        lg_output = st.session_state.get('lg_output')
-        if lg_output and os.path.exists(lg_output):
-            with open(lg_output, "rb") as f:
-                file_bytes = f.read()
-            if 'TGS_Ref_No' in st.session_state['context'] and st.session_state['context']['TGS_Ref_No']:
-                file_name = f"LG_{st.session_state['context']['TGS_Ref_No']}_{st.session_state['context']['Course_Title']}_v1.docx"
-            else:
-                file_name = f"LG_{st.session_state['context']['Course_Title']}_v1.docx"
-            st.download_button(
-                label="Download Learning Guide",
-                data=file_bytes,
-                file_name=file_name,
-                mime='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-            )
-
-        # Assessment Plan
-        ap_output = st.session_state.get('ap_output')
-        if ap_output and os.path.exists(ap_output):
-            with open(ap_output, "rb") as f:
-                file_bytes = f.read()
-            if 'TGS_Ref_No' in st.session_state['context'] and st.session_state['context']['TGS_Ref_No']:
-                file_name = f"Assessment Plan_{st.session_state['context']['TGS_Ref_No']}_{st.session_state['context']['Course_Title']}_v1.docx"
-            else:
-                file_name = f"Assessment Plan_{st.session_state['context']['Course_Title']}_v1.docx"
-            st.download_button(
-                label="Download Assessment Plan",
-                data=file_bytes,
-                file_name=file_name,
-                mime='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-            )
-
-        # Assessment Summary Record
-        asr_output = st.session_state.get('asr_output')
-        if asr_output and os.path.exists(asr_output):
-            with open(asr_output, "rb") as f:
-                file_bytes = f.read()
-            if 'TGS_Ref_No' in st.session_state['context'] and st.session_state['context']['TGS_Ref_No']:
-                file_name = f"Assessment Summary Record_{st.session_state['context']['TGS_Ref_No']}_{st.session_state['context']['Course_Title']}_v1.docx"
-            else:
-                file_name = f"Assessment Summary Record_{st.session_state['context']['Course_Title']}_v1.docx"
-            st.download_button(
-                label="Download Assessment Summary Record",
-                data=file_bytes,
-                file_name=file_name,
-                mime='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-            )
-
-        # Lesson Plan
-        lp_output = st.session_state.get('lp_output')
-        if lp_output and os.path.exists(lp_output):
-            with open(lp_output, "rb") as f:
-                file_bytes = f.read()
-            if 'TGS_Ref_No' in st.session_state['context'] and st.session_state['context']['TGS_Ref_No']:
-                file_name = f"LP_{st.session_state['context']['TGS_Ref_No']}_{st.session_state['context']['Course_Title']}_v1.docx"
-            else:
-                file_name = f"LP_{st.session_state['context']['Course_Title']}_v1.docx"
-            st.download_button(
-                label="Download Lesson Plan",
-                data=file_bytes,
-                file_name=file_name,
-                mime='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-            )
-
-        # Facilitator's Guide
-        fg_output = st.session_state.get('fg_output')
-        if fg_output and os.path.exists(fg_output):
-            with open(fg_output, "rb") as f:
-                file_bytes = f.read()
-            if 'TGS_Ref_No' in st.session_state['context'] and st.session_state['context']['TGS_Ref_No']:
-                file_name = f"FG_{st.session_state['context']['TGS_Ref_No']}_{st.session_state['context']['Course_Title']}_v1.docx"
-            else:
-                file_name = f"FG_{st.session_state['context']['Course_Title']}_v1.docx"
-            st.download_button(
-                label="Download Facilitator's Guide",
-                data=file_bytes,
-                file_name=file_name,
-                mime='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-            )
+        # Create an in-memory ZIP file
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zipf:
+            
+            # Helper function to add a file to the zip archive
+            def add_file(file_path, prefix):
+                if file_path and os.path.exists(file_path):
+                    # Determine file name based on TGS_Ref_No (if available) or fallback to course title
+                    if 'TGS_Ref_No' in st.session_state['context'] and st.session_state['context']['TGS_Ref_No']:
+                        file_name = f"{prefix}_{st.session_state['context']['TGS_Ref_No']}_{st.session_state['context']['Course_Title']}_v1.docx"
+                    else:
+                        file_name = f"{prefix}_{st.session_state['context']['Course_Title']}_v1.docx"
+                    zipf.write(file_path, arcname=file_name)
+            
+            # Add each generated document if it exists
+            add_file(st.session_state.get('lg_output'), "LG")
+            add_file(st.session_state.get('ap_output'), "Assessment_Plan")
+            add_file(st.session_state.get('asr_output'), "Assessment_Summary_Record")
+            add_file(st.session_state.get('lp_output'), "LP")
+            add_file(st.session_state.get('fg_output'), "FG")
+        
+        # Reset the buffer's position to the beginning
+        zip_buffer.seek(0)
+        
+        # Create a download button for the ZIP archive
+        st.download_button(
+            label="Download All Documents (ZIP)",
+            data=zip_buffer.getvalue(),
+            file_name="courseware_documents.zip",
+            mime="application/zip"
+        )

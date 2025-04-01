@@ -10,7 +10,7 @@ GEMINI_API_KEY = st.secrets['GEMINI_API_KEY']
 default_config = {
     "provider": "OpenAIChatCompletionClient",
     "config": {
-        "model": "gemini-2.0-flash-exp",
+        "model": "gemini-2.5-pro-exp-03-25",
         "base_url": "https://generativelanguage.googleapis.com/v1beta/openai/",
         "api_key": GEMINI_API_KEY,
         "model_info": {
@@ -73,7 +73,7 @@ deepseek_config = {
 }
 # Map user-friendly names to configs
 MODEL_CHOICES = {
-    "Gemini-Flash-2.0-Exp": default_config,
+    "Gemini-Pro-2.5-Exp-03-25": default_config,
     "GPT-4o": gpt_4o_config,
     "GPT-4o-mini": gpt_4o_mini_config,
     "DeepSeek-V3": deepseek_config,

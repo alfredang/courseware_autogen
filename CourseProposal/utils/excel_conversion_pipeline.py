@@ -300,7 +300,7 @@ def create_assessment_dataframe(json_data):
         "CS": "Others: Case Study",
         "OQ": "Oral Questioning",
         "Written Assessment - Short-Answer Questions (WA-SAQ) - Individual, Summative, Open book": "Written Assessment - Short-Answer Questions",
-        "RP": Role Play"
+        "RP": "Role Play"
     }
 
     num_assessment_hours = json_data["Course Information"].get("Number of Assessment Hours", 0)
