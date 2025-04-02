@@ -69,6 +69,22 @@ gemini_config = {
     }
 }
 
+ollama_qwen_config = {
+    "provider": "OpenAIChatCompletionClient",
+    "config": {
+        "model": "qwen:7b-chat",  # Ollama model name format
+        "base_url": "http://localhost:11434/v1",  # Ollama API endpoint
+        "api_key": "ollama",  # Ollama doesn't require an actual API key
+        "temperature": 0.2,
+        "model_info": {
+            "family": "unknown",
+            "function_calling": False,
+            "json_output": True,  # May need to adjust based on actual capabilities
+            "vision": False
+        }
+    }
+}
+
 # Map user-friendly names to configs
 MODEL_CHOICES = {
     "GPT-4o-Mini": default_config,
