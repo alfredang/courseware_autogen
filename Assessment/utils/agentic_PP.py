@@ -23,14 +23,14 @@ Main Functionalities:
           Removes markdown formatting (e.g., bold, underline, inline code) from input text.
     • extract_learning_outcome_id(lo_text: str):
           Extracts the learning outcome identifier (e.g., "LO4") from a learning outcome string.
-    • retrieve_content_for_learning_outcomes(extracted_data, engine, premium_mode=False):
+    • retrieve_content_for_learning_outcomes(extracted_data, engine):
           Retrieves relevant course content for each learning outcome based on its topics.
     • generate_pp_scenario(data, model_client):
           Generates a concise and realistic practical performance scenario based on course details.
     • generate_pp_for_lo(qa_generation_agent, course_title, assessment_duration, scenario, 
           learning_outcome, learning_outcome_id, retrieved_content, ability_ids, ability_texts):
           Generates a hands-on, task-based question-answer pair for a specific learning outcome.
-    • generate_pp(extracted_data, index, model_client, premium_mode):
+    • generate_pp(extracted_data, index, model_client):
           Orchestrates the full practical performance assessment generation process by creating a scenario,
           retrieving content, and generating question-answer pairs for each learning outcome.
 
@@ -47,7 +47,7 @@ Dependencies:
 Usage:
     - Prepare an extracted_data object containing course details, learning units, topics, and abilities.
     - Provide a knowledge retrieval index (index) and a language model client (model_client) for text generation.
-    - Call the generate_pp() function with the appropriate parameters (including the premium_mode flag) to generate a
+    - Call the generate_pp() function with the appropriate parameters to generate a
       structured practical performance assessment.
     - The output is a dictionary with the course title, assessment duration, generated scenario, and a list of question-answer
       pairs in JSON format.
@@ -103,7 +103,7 @@ def extract_learning_outcome_id(lo_text: str) -> str:
     match = re.match(pattern, lo_text, re.IGNORECASE)
     return match.group(1) if match else ""
 
-async def retrieve_content_for_learning_outcomes(extracted_data, engine, premium_mode=False):
+async def retrieve_content_for_learning_outcomes(extracted_data, engine):
     """
     Retrieves relevant course content for each learning outcome based on its topics.
 
@@ -113,7 +113,6 @@ async def retrieve_content_for_learning_outcomes(extracted_data, engine, premium
     Args:
         extracted_data (dict): The extracted course data with learning units and topics.
         engine: Query engine instance for retrieving content.
-        premium_mode (bool): If True, includes page metadata in the retrieved content.
 
     Returns:
         list: A list of dictionaries, each containing:
@@ -154,15 +153,9 @@ async def retrieve_content_for_learning_outcomes(extracted_data, engine, premium
         if not response or not getattr(response, "source_nodes", None) or not response.source_nodes:
             content = "⚠️ No relevant information found."
         else:
-            if premium_mode:
-                content = "\n\n".join([
-                    f"### Page {node.metadata.get('page', 'Unknown')}\n{node.text}"
-                    for node in response.source_nodes
-                ])
-            else:
-                content = "\n\n".join([
-                    f"### {node.text}" for node in response.source_nodes
-                ])
+            content = "\n\n".join([
+                f"### {node.text}" for node in response.source_nodes
+            ])
         return learning_outcome, {
             "learning_outcome": learning_outcome,
             "learning_outcome_id": lo_id,
@@ -289,7 +282,7 @@ async def generate_pp_for_lo(qa_generation_agent, course_title, assessment_durat
         "ability_id": qa_result.get("ability_id", ability_ids)
     }
 
-async def generate_pp(extracted_data, index, model_client, premium_mode):
+async def generate_pp(extracted_data, index, model_client):
     """
     Generates a full practical performance assessment, including a scenario and multiple questions.
 
@@ -302,7 +295,6 @@ async def generate_pp(extracted_data, index, model_client, premium_mode):
         extracted_data (dict): Extracted facilitator guide data containing learning outcomes.
         index: The knowledge retrieval index used for retrieving course content.
         model_client: The language model client used for generation.
-        premium_mode (bool): If True, includes additional metadata in content retrieval.
 
     Returns:
         dict: A structured dictionary containing:
@@ -327,7 +319,7 @@ async def generate_pp(extracted_data, index, model_client, premium_mode):
         llm=lo_retriever_llm,
         response_mode="compact",
     )
-    lo_content_dict = await retrieve_content_for_learning_outcomes(extracted_data, qa_generation_query_engine, premium_mode)
+    lo_content_dict = await retrieve_content_for_learning_outcomes(extracted_data, qa_generation_query_engine)
 
     # Autogen setup for generating question-answer pairs per Learning Outcome
     qa_generation_agent = AssistantAgent(

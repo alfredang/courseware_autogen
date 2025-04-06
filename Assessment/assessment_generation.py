@@ -36,9 +36,8 @@ Main Functionalities:
          schema.
 
     4. Slide Deck Parsing:
-       - parse_slides(slides_path, LLAMA_CLOUD_API_KEY, LVM_API_KEY, LVM_NAME, premium_mode=False):
-         Processes the Trainer Slide Deck PDF to extract text nodes, optionally
-         applying premium parsing instructions if enabled. The parsed content is
+       - parse_slides(slides_path, LLAMA_CLOUD_API_KEY):
+         Processes the Trainer Slide Deck PDF to extract text nodes. The parsed content is
          indexed using a vector store for subsequent query operations.
 
     5. Assessment Document Generation:
@@ -52,7 +51,6 @@ Main Functionalities:
     6. Streamlit Web Application (app function):
        - Provides a step-by-step user interface for:
            a. Uploading the Facilitator Guide (.docx) and Trainer Slide Deck (.pdf).
-           b. Selecting additional parsing options (e.g., Premium Parsing).
            c. Parsing the documents to extract structured data.
            d. Generating assessments (SAQ, PP, CS) based on user selections.
            e. Downloading the generated assessment files as a ZIP archive.
@@ -97,8 +95,6 @@ Date:
 Notes:
     - The module integrates asynchronous processing for document parsing and data
       extraction. Ensure that the environment supports asyncio and related libraries.
-    - Premium Parsing mode offers enhanced extraction features; enable it only if the
-      required vendor services (LVM) are properly configured.
     - The generated assessments are stored temporarily and packaged into a ZIP file
       for ease of download. Clean-up of temporary files is handled automatically.
 ===============================================================================
@@ -149,8 +145,6 @@ if 'pp_output' not in st.session_state:
     st.session_state['pp_output'] = None
 if 'cs_output' not in st.session_state:
     st.session_state['cs_output'] = None
-if "premium_parsing" not in st.session_state:
-    st.session_state["premium_parsing"] = False
 if 'assessment_generated_files' not in st.session_state:
     st.session_state['assessment_generated_files'] = {}
 if 'selected_model' not in st.session_state:
@@ -248,7 +242,7 @@ async def interpret_fg(fg_data, model_client):
 ################################################################################
 # Parse Slide Deck Document
 ################################################################################
-def parse_slides(slides_path, LLAMA_CLOUD_API_KEY, LVM_API_KEY, LVM_NAME, premium_mode=False,):
+def parse_slides(slides_path, LLAMA_CLOUD_API_KEY):
     nest_asyncio.apply()
 
     total_pages = get_pdf_page_count(slides_path)
@@ -262,54 +256,22 @@ def parse_slides(slides_path, LLAMA_CLOUD_API_KEY, LVM_API_KEY, LVM_NAME, premiu
     Settings.embed_model = embed_model
     Settings.llm = llm
 
-    if premium_mode:
-        parsing_instruction = """
-        You are given training slide materials for a course. Extract and structure the content while preserving the correct reading order.
-
-        - **Text Extraction:** Maintain formatting (headings, bullet points, emphasis).
-        - **Graph Processing:** Describe graphs and extract data in a 2D table.
-        - **Schematic Diagrams:** List all components and their connections.
-        - **Tables & Lists:** Keep original structure and accuracy.
-        - **Equations & Symbols:** Format equations properly.
-        - **Images & Figures:** Provide descriptive captions.
-        - **Best Practices:** Ensure logical order, markdown formatting, and consistency.
-        """
-
-        parser = LlamaParse(
-            result_type="markdown",
-            use_vendor_multimodal_model=True,
-            vendor_multimodal_model_name=LVM_NAME,
-            vendor_multimodal_api_key=LVM_API_KEY,
-            invalidate_cache=True,
-            verbose=True,
-            num_workers=8,
-            target_pages=target_pages,
-            parsing_instruction=parsing_instruction
-        )
-
-        json_objs = parser.get_json_result(slides_path)
-        json_list = json_objs[0]["pages"]
-        docs = get_text_nodes(json_list)
-        index = VectorStoreIndex(docs)
-        return index
-  
-    else:
-        documents = LlamaParse(
-            result_type="markdown", 
-            verbose=True,
-            num_workers=8,
-            target_pages=target_pages,
-            invalidate_cache=True,
-            api_key=LLAMA_CLOUD_API_KEY
-        ).load_data(slides_path)
-        page_nodes = get_page_nodes(documents)
-        node_parser = MarkdownElementNodeParser(
-           llm=llm, num_workers=8
-        )
-        nodes = node_parser.get_nodes_from_documents(documents)
-        base_nodes, objects = node_parser.get_nodes_and_objects(nodes)
-        index = VectorStoreIndex(nodes=base_nodes + objects + page_nodes)
-        return index
+    documents = LlamaParse(
+        result_type="markdown", 
+        verbose=True,
+        num_workers=8,
+        target_pages=target_pages,
+        invalidate_cache=True,
+        api_key=LLAMA_CLOUD_API_KEY
+    ).load_data(slides_path)
+    page_nodes = get_page_nodes(documents)
+    node_parser = MarkdownElementNodeParser(
+        llm=llm, num_workers=8
+    )
+    nodes = node_parser.get_nodes_from_documents(documents)
+    base_nodes, objects = node_parser.get_nodes_and_objects(nodes)
+    index = VectorStoreIndex(nodes=base_nodes + objects + page_nodes)
+    return index
 
 ################################################################################
 # Utility function to ensure answers are always a list.
@@ -393,7 +355,6 @@ def app():
     model_name = selected_config["config"]["model"]
     temperature = selected_config["config"].get("temperature", 0)
     base_url = selected_config["config"].get("base_url", None)
-    llama_name = selected_config["config"].get("llama_name", None)
 
     # Extract model_info from the selected configuration (if provided)
     model_info = selected_config["config"].get("model_info", None)
@@ -422,14 +383,11 @@ def app():
     )
 
     st.subheader("Step 2: Parse Documents")
-    st.write("Select additional parsing options:")
-    premium_parsing = st.checkbox("Premium Parsing", value=False)
     if st.button("Parse Documents"):
         if not fg_doc_file or not slide_deck_file:
             st.error("❌ Please upload both the Facilitator Guide and Trainer Slide Deck.")
             return
 
-        st.session_state['premium_parsing'] = premium_parsing
         LLAMA_API_KEY = st.secrets["LLAMA_CLOUD_API_KEY"]
         
         # Initialize variables before the try block
@@ -450,9 +408,6 @@ def app():
                 st.session_state['index'] = parse_slides(
                     slides_filepath,
                     LLAMA_API_KEY,
-                    api_key,
-                    llama_name,
-                    premium_parsing,
                 )
                 st.success("✅ Successfully parsed the Slide Deck.")
 
@@ -489,23 +444,24 @@ def app():
             if not selected_types:
                 st.error("❌ Please select at least one assessment type to generate.")
                 return
-            
+
             st.success("✅ Proceeding with assessment generation...")
             try:
-                with st.spinner("Generating Assessments..."):
-                    index = st.session_state['index']
-                    for assessment_type in selected_types:
-                        if assessment_type == "WA (SAQ)":
-                            saq_context = asyncio.run(generate_saq(st.session_state['fg_data'], index, model_client, premium_parsing))
-                            st.success("✅ Successfully retrieved SAQ context")
+                index = st.session_state['index']
+                for assessment_type in selected_types:
+                    if assessment_type == "WA (SAQ)":
+                        with st.spinner("Generating Written Assessment (SAQ)..."):
+                            saq_context = asyncio.run(generate_saq(st.session_state['fg_data'], index, model_client))
                             files = generate_documents(saq_context, assessment_type, "output")
                             st.session_state['assessment_generated_files'][assessment_type] = files
-                        elif assessment_type == "PP":
-                            pp_context = asyncio.run(generate_pp(st.session_state['fg_data'], index, model_client, premium_parsing))
+                    elif assessment_type == "PP":
+                        with st.spinner("Generating Practical Performance..."):
+                            pp_context = asyncio.run(generate_pp(st.session_state['fg_data'], index, model_client))
                             files = generate_documents(pp_context, assessment_type, "output")
                             st.session_state['assessment_generated_files'][assessment_type] = files
-                        elif assessment_type == "CS":
-                            cs_context = asyncio.run(generate_cs(st.session_state['fg_data'], index, model_client, premium_parsing))
+                    elif assessment_type == "CS":
+                        with st.spinner("Generating Case Study..."):
+                            cs_context = asyncio.run(generate_cs(st.session_state['fg_data'], index, model_client))
                             files = generate_documents(cs_context, assessment_type, "output")
                             st.session_state['assessment_generated_files'][assessment_type] = files
 

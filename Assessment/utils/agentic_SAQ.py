@@ -15,13 +15,13 @@ Description:
 Main Functionalities:
     • get_topics_for_all_k_statements(fg_data):
          Maps each Knowledge Statement to the topics under which it appears in the Facilitator Guide.
-    • retrieve_content_for_knowledge_statement_async(k_topics, index, premium_mode):
+    • retrieve_content_for_knowledge_statement_async(k_topics, index):
          Asynchronously retrieves all module content aligned with the topics for each K statement, 
-         formatting the output based on the premium_mode flag.
+         formatting the output.
     • generate_saq_for_k(qa_generation_agent, course_title, assessment_duration, k_statement, content):
          Generates a short-answer question and answer pair for a specific Knowledge Statement by crafting 
          a realistic scenario and providing concise bullet-point answers.
-    • generate_saq(extracted_data, index, model_client, premium_mode):
+    • generate_saq(extracted_data, index, model_client):
          Coordinates the overall SAQ generation process by extracting K statement topics, retrieving content,
          and generating corresponding question-answer pairs for all knowledge statements.
 
@@ -42,7 +42,7 @@ Usage:
       details, learning units, topics, and knowledge statements.
     - Provide a LlamaIndex vector store index (index) and a language model client (model_client) for content retrieval
       and text generation.
-    - Invoke the generate_saq() function with the appropriate parameters (including the premium_mode flag) to obtain
+    - Invoke the generate_saq() function with the appropriate parameters to obtain
       a structured dictionary containing the course title, assessment duration, and a list of generated SAQ question-answer pairs.
       
 Author:
@@ -88,7 +88,7 @@ def get_topics_for_all_k_statements(fg_data):
 
     return k_to_topics
 
-async def retrieve_content_for_knowledge_statement_async(k_topics, index, premium_mode):
+async def retrieve_content_for_knowledge_statement_async(k_topics, index):
     """
     Retrieves course content relevant to each Knowledge Statement (K statement) asynchronously.
 
@@ -98,7 +98,6 @@ async def retrieve_content_for_knowledge_statement_async(k_topics, index, premiu
     Args:
         k_topics (dict): A mapping of "KID: K Text" to topic names.
         index: The LlamaIndex vector store index for content retrieval.
-        premium_mode (bool): If True, formats retrieved content with additional metadata.
 
     Returns:
         dict: A dictionary mapping K statements to their retrieved content.
@@ -124,15 +123,9 @@ async def retrieve_content_for_knowledge_statement_async(k_topics, index, premiu
         if not response or not response.source_nodes:
             return k_statement, "⚠️ No relevant information found."
 
-        if premium_mode:
-            markdown_result = "\n\n".join([
-                f"### Page {node.metadata.get('page', 'Unknown')}\n{node.text}"
-                for node in response.source_nodes
-            ])
-        else:
-            markdown_result = "\n\n".join([
-                f"### {node.text}" for node in response.source_nodes
-            ])
+        markdown_result = "\n\n".join([
+            f"### {node.text}" for node in response.source_nodes
+        ])
 
         return k_statement, markdown_result  
 
@@ -199,7 +192,7 @@ async def generate_saq_for_k(qa_generation_agent, course_title, assessment_durat
         "answer": qa_result.get("answer", ["Answer not available."])
     }
 
-async def generate_saq(extracted_data: FacilitatorGuideExtraction, index, model_client, premium_mode):
+async def generate_saq(extracted_data: FacilitatorGuideExtraction, index, model_client):
     """
     Generates a full set of short-answer questions (SAQs) and answers for a course.
 
@@ -212,7 +205,6 @@ async def generate_saq(extracted_data: FacilitatorGuideExtraction, index, model_
         extracted_data (dict): Parsed Facilitator Guide data.
         index: The LlamaIndex vector store index for content retrieval.
         model_client: The model client for question generation.
-        premium_mode (bool): If True, enhances content retrieval with additional metadata.
 
     Returns:
         dict: A structured dictionary containing:
@@ -222,7 +214,7 @@ async def generate_saq(extracted_data: FacilitatorGuideExtraction, index, model_
     """
     extracted_data = dict(extracted_data)
     k_topics = get_topics_for_all_k_statements(extracted_data)
-    k_content_dict = await retrieve_content_for_knowledge_statement_async(k_topics, index, premium_mode)
+    k_content_dict = await retrieve_content_for_knowledge_statement_async(k_topics, index)
 
     # print(json.dumps(k_content_dict, indent=4))  
 

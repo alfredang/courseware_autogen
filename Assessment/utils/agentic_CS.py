@@ -23,7 +23,7 @@ Description:
 Main Functionalities:
     • extract_learning_outcome_id(lo_text: str):
           Extracts the learning outcome identifier (e.g., "LO4") from a learning outcome string.
-    • retrieve_content_for_learning_outcomes(extracted_data, engine, premium_mode=False):
+    • retrieve_content_for_learning_outcomes(extracted_data, engine):
           Queries a content retrieval engine to obtain relevant course material for each learning
           outcome based on associated topics.
     • generate_cs_scenario(data: FacilitatorGuideExtraction, model_client):
@@ -32,7 +32,7 @@ Main Functionalities:
     • generate_cs_for_lo(qa_generation_agent, course_title, assessment_duration, scenario, 
           learning_outcome, learning_outcome_id, retrieved_content, ability_ids, ability_texts):
           Generates a case study question-answer pair for a specific learning outcome.
-    • generate_cs(extracted_data: FacilitatorGuideExtraction, index, model_client, premium_mode):
+    • generate_cs(extracted_data: FacilitatorGuideExtraction, index, model_client):
           Orchestrates the overall case study generation process by creating a scenario, retrieving
           content for each learning outcome, and generating corresponding question-answer pairs.
 
@@ -52,8 +52,7 @@ Usage:
       topics, and abilities.
     - Provide a query engine (index) for content retrieval and a language model client (model_client)
       for generating text.
-    - Call the generate_cs() function with the appropriate parameters (including premium_mode flag)
-      to generate a structured case study assessment.
+    - Call the generate_cs() function with the appropriate parameters to generate a structured case study assessment.
     - The final output is a dictionary with the course title, assessment duration, generated scenario,
       and a list of question-answer pairs.
 
@@ -92,7 +91,7 @@ def extract_learning_outcome_id(lo_text: str) -> str:
     match = re.match(pattern, lo_text, re.IGNORECASE)
     return match.group(1) if match else ""
 
-async def retrieve_content_for_learning_outcomes(extracted_data, engine, premium_mode=False):
+async def retrieve_content_for_learning_outcomes(extracted_data, engine):
     """
     Retrieves relevant content for each learning outcome based on its associated topics.
 
@@ -102,7 +101,6 @@ async def retrieve_content_for_learning_outcomes(extracted_data, engine, premium
     Args:
         extracted_data (dict): Extracted data containing learning units and topics.
         engine: Query engine instance for retrieving content.
-        premium_mode (bool): If True, includes page metadata in the retrieved content.
 
     Returns:
         list: A list of dictionaries, each containing:
@@ -143,15 +141,9 @@ async def retrieve_content_for_learning_outcomes(extracted_data, engine, premium
         if not response or not getattr(response, "source_nodes", None) or not response.source_nodes:
             content = "⚠️ No relevant information found."
         else:
-            if premium_mode:
-                content = "\n\n".join([
-                    f"### Page {node.metadata.get('page', 'Unknown')}\n{node.text}"
-                    for node in response.source_nodes
-                ])
-            else:
-                content = "\n\n".join([
-                    f"### {node.text}" for node in response.source_nodes
-                ])
+            content = "\n\n".join([
+                f"### {node.text}" for node in response.source_nodes
+            ])
         return learning_outcome, {
             "learning_outcome": learning_outcome,
             "learning_outcome_id": lo_id,
@@ -281,7 +273,7 @@ async def generate_cs_for_lo(qa_generation_agent, course_title, assessment_durat
         "ability_id": qa_result.get("ability_id", ability_ids)
     }
 
-async def generate_cs(extracted_data: FacilitatorGuideExtraction, index, model_client, premium_mode):
+async def generate_cs(extracted_data: FacilitatorGuideExtraction, index, model_client):
     """
     Generates a full case study assessment, including a scenario and multiple questions.
 
@@ -294,7 +286,6 @@ async def generate_cs(extracted_data: FacilitatorGuideExtraction, index, model_c
         extracted_data (FacilitatorGuideExtraction): Extracted course data with learning units.
         index: The knowledge retrieval index used for retrieving course content.
         model_client: The language model client used for generation.
-        premium_mode (bool): If True, includes additional metadata in content retrieval.
 
     Returns:
         dict: A structured dictionary containing:
@@ -319,7 +310,7 @@ async def generate_cs(extracted_data: FacilitatorGuideExtraction, index, model_c
         llm=lo_retriever_llm,
         response_mode="compact"
     )
-    lo_content_dict = await retrieve_content_for_learning_outcomes(extracted_data, qa_generation_query_engine, premium_mode)
+    lo_content_dict = await retrieve_content_for_learning_outcomes(extracted_data, qa_generation_query_engine)
 
     qa_generation_agent = AssistantAgent(
         name="question_answer_generator",
