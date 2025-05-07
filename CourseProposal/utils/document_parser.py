@@ -11,48 +11,62 @@ import re
 def parse_document(input_docx, output_json):
     # Load the document
     doc = Document(input_docx)
-    
+
     # Initialize containers
     data = {
-        "Course_Proposal_Form": {}
+        "Course Information": {},
+        "Learning Outcomes": {
+            "Learning Outcomes": [],
+            "Knowledge": [],
+            "Ability": [],
+            "Knowledge and Ability Mapping": {}
+        },
+        "TSC and Topics": {
+            "TSC Title": "",
+            "TSC Code": "",
+            "Topics": [],
+            "Learning Units": []
+        },
+        "Assessment Methods": {
+            "Assessment Methods": [],
+            "Amount of Practice Hours": "",
+            "Course Outline": {
+                "Learning Units": {}
+            }
+        }
     }
-    
-    # Function to parse tables with advanced duplication check
+
+    # Function to parse tables
     def parse_table(table):
         rows = []
         for row in table.rows:
-            # Process each cell and ensure unique content within the row
-            cells = []
-            for cell in row.cells:
-                cell_text = cell.text.strip()
-                if cell_text not in cells:
-                    cells.append(cell_text)
-            # Ensure unique rows within the table
-            if cells not in rows:
-                rows.append(cells)
+            cells = [cell.text.strip() for cell in row.cells]
+            rows.append(cells)
         return rows
 
     # Function to add text and table content
     def add_content_to_section(section_name, content):
-        if section_name not in data["Course_Proposal_Form"]:
-            data["Course_Proposal_Form"][section_name] = []
-        # Check for duplication before adding content
-        if content not in data["Course_Proposal_Form"][section_name]:
-            data["Course_Proposal_Form"][section_name].append(content)
+        if isinstance(data[section_name], list):
+            # Check for duplication before adding content
+            if content not in data[section_name]:
+                data[section_name].append(content)
+        elif isinstance(data[section_name], dict):
+            # Handle nested dictionaries appropriately
+            if "content" not in data[section_name]:
+                data[section_name]["content"] = []
+            if content not in data[section_name]["content"]:
+                data[section_name]["content"].append(content)
 
     # Function to detect bullet points using regex
     def is_bullet_point(text):
-        # Regex to match common bullet points (e.g., '•', '-', etc.)
-        bullet_pattern = r"^[•\-\–●◦]\s+.*"
+        bullet_pattern = r"^[•−–●◦]\s+.*"
         return bool(re.match(bullet_pattern, text))
 
     # Function to add bullet points under a list
     def add_bullet_point(section_name, bullet_point_text):
-        if section_name not in data["Course_Proposal_Form"]:
-            data["Course_Proposal_Form"][section_name] = []
-        if not data["Course_Proposal_Form"][section_name] or not isinstance(data["Course_Proposal_Form"][section_name][-1], dict) or 'bullet_points' not in data["Course_Proposal_Form"][section_name][-1]:
-            data["Course_Proposal_Form"][section_name].append({"bullet_points": []})
-        data["Course_Proposal_Form"][section_name][-1]["bullet_points"].append(bullet_point_text)
+        if "bullet_points" not in data[section_name]:
+            data[section_name]["bullet_points"] = []
+        data[section_name]["bullet_points"].append(bullet_point_text)
 
     # Variables to track the current section
     current_section = None
@@ -64,8 +78,19 @@ def parse_document(input_docx, output_json):
             text = para.text.strip()
 
             # If the text indicates a new section, set current_section
-            if text.startswith("Part") or text.startswith("LU"):
-                current_section = text
+            if text.startswith("Course Title:"):
+                current_section = "Course Information"
+                # Extract the course title
+                course_title = text.replace("Course Title:", "").strip()
+                data["Course Information"]["Course Title"] = course_title
+            elif text.startswith("Organization:"):
+                data["Course Information"]["Name of Organisation"] = text.replace("Organization:", "").strip()
+            elif text.startswith("Learning Outcomes"):
+                current_section = "Learning Outcomes"
+            elif text.startswith("Course Mapping"):
+                current_section = "TSC and Topics"
+            elif text.startswith("Assessment Methods:"):
+                current_section = "Assessment Methods"
             elif text:
                 # Check if the paragraph is a bullet point using regex
                 if is_bullet_point(text):
