@@ -22,11 +22,20 @@ def create_tsc_agent(tsc_data, model_choice: str) -> RoundRobinGroupChat:
         The requirements are as follows:
         1. If there are no LU's present, summarize a LU from each Topics and name them sequentially. The LUs should NOT have the same name as the topics. Ignore this instruction if there are LUs present.
         1.1. If there are LU's present, ensure that they are correctly mapped to the Topics. Do NOT include additional LUs if they are already present in the data.
+        1.2. IMPORTANT: NEVER paraphrase, modify, or add words to the original LU titles. Copy them EXACTLY as they appear in the data. For example, if the original is "LU1: Storytelling with Generative AI", do not change it to "LU1: Introduction to Storytelling with Generative AI".
         2. Ensure that any mention of "Topic" is followed by a number and a colon.
         2.5. Ensure that any mention of "LU" is followed by a number and a colon.
         2.6. Ensure that the A and K factors are followed by a number and a colon.
         3. Ensure that the K and A factors are correctly mapped to the LUs in brackets.
-        4. Catch and amend any spelling errors to the following words:
+        4. Maintain the original LU titles and content exactly as provided in the input data - do not add, remove, or modify ANY words.
+        5. For assessment methods, use the following exact terminology:
+        - Written Exam (not Written Assessment)
+        - Practical Exam (not Practical Performance)
+        6. Include total course hours in the course proposal form, calculated as:
+        - Total Course Hours = Course Duration hours
+        - Total Instructional Hours = Sum of all instructional method hours
+        - Total Assessment Hours = Sum of all assessment method hours
+        7. Catch and amend any spelling errors to the following words:
         Instructional Methods:
         - Didactic Questioning
         - Demonstration
@@ -35,12 +44,6 @@ def create_tsc_agent(tsc_data, model_choice: str) -> RoundRobinGroupChat:
         - Role Play
         - Group Discussion
         - Case Study
-        Assessment Methods:
-        - Written Assessment
-        - Practical Performance
-        - Case Study
-        - Oral Questioning
-        - Role Play
 
         For example, "case studies" is WRONG, "Case Study" is CORRECT.
 
@@ -53,15 +56,18 @@ def create_tsc_agent(tsc_data, model_choice: str) -> RoundRobinGroupChat:
                     "Learning Outcomes:",
                     "LO1: Identify gaps in existing programming workflows and propose AI-assisted solutions using GitHub Copilot to enhance efficiency.",
                     "LO2: Explore and apply emerging AI programming tools, including GitHub Copilot, to streamline organizational coding processes.",
-                    "Couse Duration: 1 days (8 hrs)",
+                    "Course Duration: 1 day (8 hrs)",
+                    "Total Course Hours: 8 hrs",
+                    "Total Instructional Hours: 7 hrs",
+                    "Total Assessment Hours: 1 hr",
                     "Instructional Methods:",
                     "Classroom: 3 hours",
                     "Practical: 4 hours",
                     "Didactic Questioning",
                     "Demonstration",
                     "Assessment Methods:",
-                    "Written Assessment (0.5 hr)",
-                    "Practical Performance (0.5 hr)",
+                    "Written Exam (0.5 hr)",
+                    "Practical Exam (0.5 hr)",
                     "TSC Mapping:",
                     "TSC Title: Digital Technology Adoption and Innovation",
                     "TSC Code: ACC-ICT-3004-1.1",
@@ -77,14 +83,14 @@ def create_tsc_agent(tsc_data, model_choice: str) -> RoundRobinGroupChat:
                     "A4: Keep up to date with new technologies and systems",
                     "Learning Units"
                 ],
-                "LU1: Introduction to Copilot (K1, K3, A1, A3)": [
-                    "Topic 1: Getting Started  with Github Copilot (K1, K3, A1, A3)",
+                "LU1: Storytelling with Generative AI (K9, K10, A8, A5)": [
+                    "Topic 1: Getting Started with Github Copilot (K1, K3, A1, A3)",
                     "What is Github Copilot?",
                     "How Github Copilot enhances software development efficiency?",
                     "Install Github Copilot on Visual Studio Code",
                     "Explore Github Copilot features"
                 ],
-                "LU2: Coding with Github Copilot (K2, K4, A2, A4)": [
+                "LU2: Storyboarding with Generative AI (K2, K4, A2, A4)": [
                     "Topic 2: Software Development with Github Copilot (K2, K4, A2, A4)",
                     "Github Copilot for HTML",
                     "Github Copilot for Python",
@@ -105,15 +111,18 @@ def create_tsc_agent(tsc_data, model_choice: str) -> RoundRobinGroupChat:
                     "Learning Outcomes:",
                     "LO1: Identify gaps in existing programming workflows and propose AI-assisted solutions using GitHub Copilot to enhance efficiency.",
                     "LO2: Explore and apply emerging AI programming tools, including GitHub Copilot, to streamline organizational coding processes.",
-                    "Couse Duration: 1 days (8 hrs)",
+                    "Course Duration: 1 day (8 hrs)",
+                    "Total Course Hours: 8 hrs",
+                    "Total Instructional Hours: 7 hrs",
+                    "Total Assessment Hours: 1 hr",
                     "Instructional Methods:",
                     "Classroom: 3 hours",
                     "Practical: 4 hours",
                     "Didactic Questioning",
                     "Demonstration",
                     "Assessment Methods:",
-                    "Written Assessment (0.5 hr)",
-                    "Practical Performance (0.5 hr)",
+                    "Written Exam (0.5 hr)",
+                    "Practical Exam (0.5 hr)",
                     "TSC Mapping:",
                     "TSC Title: Digital Technology Adoption and Innovation",
                     "TSC Code: ACC-ICT-3004-1.1",
@@ -129,8 +138,8 @@ def create_tsc_agent(tsc_data, model_choice: str) -> RoundRobinGroupChat:
                     "A4: Keep up to date with new technologies and systems",
                     "Learning Units"
                 ],
-                "LU1: Introduction to Copilot (K1, K3, A1, A3)": [
-                    "Topic 1: Getting Started  with Github Copilot (K1, A1)",
+                "LU1: Storytelling with Generative AI (K1, K3, A1, A3)": [
+                    "Topic 1: Getting Started with Github Copilot (K1, A1)",
                     "What is Github Copilot?",
                     "How Github Copilot enhances software development efficiency?",
                     "Install Github Copilot on Visual Studio Code",

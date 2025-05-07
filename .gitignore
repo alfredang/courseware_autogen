@@ -1,2 +1,16 @@
 .env
 CourseProposal/venv
+/autogen_venv/Lib
+/autogen_venv/Scripts
+*.json
+*.cfg
+*.h
+*.map
+*.js
+*.pyc
+/AnnexAssessment/__pycache__
+AnnexAssessment/__pycache__/annex_assessment.cpython-312.pyc
+Assessment/__pycache__/assessment_generation.cpython-312.pyc
+/AnnexAssessment
+/Assessment/__pycache__
+*.json

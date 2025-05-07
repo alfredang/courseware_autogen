@@ -23,7 +23,7 @@ def create_extraction_team(data, model_choice: str) -> RoundRobinGroupChat:
         1) Course Title
         2) Name of Organisation
         3) Classroom Hours (can be found under Instructional Duration: xxxx)
-        4) Practical Hours (if none found, insert 0)
+        4) Practical Hours (IMPORTANT: should match the Number of Assessment Hours exactly)
         5) Number of Assessment Hours (can be found under Assessment Duration: xxxx)
         6) Course Duration (Number of Hours)
         7) Industry
@@ -119,13 +119,13 @@ def create_extraction_team(data, model_choice: str) -> RoundRobinGroupChat:
         1) TSC Title
         2) TSC Code
         3) Topic (include the FULL string, including any K's and A's, only include items starting with "Topic" and not "LU" for this particular point)
-        4) Learning Units (do NOT include Topics under this point, do NOT include any brackets consisting of A's or K's), only include items starting with "LU".
+        4) Learning Units (IMPORTANT: extract the EXACT original LU names as they appear in the data, do NOT paraphrase or modify them in any way. Include the full LU string with any brackets/K&A mappings)
 
         An example output is as follows:
         "TSC Title": "Financial Analysis",
         "TSC Code": "ACC-MAC-3004-1.1",
-        "Topic": ["Topic 1 Assessing Organization’s Profitability (K1, A1)", "Topic 2 Evaluating an Organization’s Performance Using Ratio Analysis (K2, A2)"],
-        "Learning Units": ["LU1: Data Preparation for Machine Learning (ML)", "LU2: ML Model Development"]
+        "Topic": ["Topic 1 Assessing Organization's Profitability (K1, A1)", "Topic 2 Evaluating an Organization's Performance Using Ratio Analysis (K2, A2)"],
+        "Learning Units": ["LU1: Storytelling with Generative AI", "LU2: Storyboarding with Generative AI"]
 
         Format the extracted data in JSON format, with this structure:
             "TSC and Topics": {{
@@ -148,10 +148,12 @@ def create_extraction_team(data, model_choice: str) -> RoundRobinGroupChat:
     You are to extract the following variables from {data}:
         1) Assessment Methods (remove the brackets and time values at the end of each string)
         2) Instructional Methods
-        3) Amount of Practice Hours
+        3) Amount of Practice Hours - IMPORTANT: this should EXACTLY match the Number of Assessment Hours from the data
         4) Course Outline, which consists of Learning Units (LUs), Topics under that Learning Unit and their descriptions. A Learning Unit may have more than 1 topic, so nest that topic and its relevant descriptions under that as well.
 
         Include the full topic names in Course Outline, including any bracketed K and A factors.
+        
+        IMPORTANT: For each topic, auto-generate 3-5 detailed bullet points as "Details" that would likely be covered in that topic based on the topic name and K/A factors. These details should be specific, practical, and relevant to the course content.
 
         Format the extracted data in JSON format, with this structure:
             "Assessment Methods": {{
@@ -159,22 +161,19 @@ def create_extraction_team(data, model_choice: str) -> RoundRobinGroupChat:
                 "",
                 ""
             ],
-            "Amount of Practice Hours": Insert "N.A." if not found or not specified,
+            "Amount of Practice Hours": Insert the exact same number as the Number of Assessment Hours,
             "Course Outline": {{
                 "Learning Units": {{
                     "LU1": {{
-                        "Description": [
-                            ""
-                        ]
-                    }},
-                    "LU2": {{
                         "Description": [
                             {{
                                 "Topic": "Topic 1: Empathize and Define (K1, A1)",
                                 "Details": [
                                     "Techniques for understanding user needs",
                                     "Methods for defining clear problem statements",
-                                    "Exercises: Empathy mapping and problem definition"
+                                    "Exercises: Empathy mapping and problem definition",
+                                    "Case studies of successful user-centered design",
+                                    "Tools and frameworks for identifying user pain points"
                                 ]
                             }},
                             {{
@@ -182,7 +181,9 @@ def create_extraction_team(data, model_choice: str) -> RoundRobinGroupChat:
                                 "Details": [
                                     "Strategies for brainstorming and generating creative solutions",
                                     "Steps to create and refine prototypes",
-                                    "Activities: Brainstorming sessions and prototyping workshops"
+                                    "Activities: Brainstorming sessions and prototyping workshops",
+                                    "Evaluation methods for prototype testing",
+                                    "Digital and physical prototyping techniques"
                                 ]
                             }},
                             {{
@@ -190,7 +191,9 @@ def create_extraction_team(data, model_choice: str) -> RoundRobinGroupChat:
                                 "Details": [
                                     "Importance of gathering user feedback",
                                     "Methods for testing and iterating solutions",
-                                    "Workshops: Testing prototypes and iterative improvements"
+                                    "Workshops: Testing prototypes and iterative improvements",
+                                    "Metrics for measuring solution effectiveness",
+                                    "Strategies for continuous improvement cycles"
                                 ]
                             }}                    
                             ]

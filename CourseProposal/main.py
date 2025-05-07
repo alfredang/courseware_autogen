@@ -28,10 +28,10 @@ async def main(input_tsc) -> None:
 
     cp_type = st.session_state.get('cp_type', "New CP")
     # Parse document
-    parse_document(input_tsc, "CourseProposal/json_output/output_TSC.json")
+    parse_document(input_tsc, "CourseProposal/json_output/output_TSC_raw.json")
     # load the json variables first then pass it in, if you pass it in within the agent scripts it will load the previous json states
     # Load the JSON file into a Python variable
-    with open("CourseProposal/json_output/output_TSC.json", 'r', encoding='utf-8') as file:
+    with open("CourseProposal/json_output/output_TSC_raw.json", 'r', encoding='utf-8') as file:
         tsc_data = json.load(file)        
     # TSC Agent Process
     tsc_agent = create_tsc_agent(tsc_data=tsc_data, model_choice=model_choice)

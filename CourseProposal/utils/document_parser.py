@@ -19,7 +19,10 @@ def parse_document(input_docx, output_json):
             "Learning Outcomes": [],
             "Knowledge": [],
             "Ability": [],
-            "Knowledge and Ability Mapping": {}
+            "Knowledge and Ability Mapping": {},
+            "Course Duration": "",
+            "Instructional Methods": "",
+            "content": []
         },
         "TSC and Topics": {
             "TSC Title": "",
@@ -32,6 +35,12 @@ def parse_document(input_docx, output_json):
             "Amount of Practice Hours": "",
             "Course Outline": {
                 "Learning Units": {}
+            },
+            "content": [],
+            "Assessment Details": {
+                "Written Exam": "",
+                "Practical Exam": "",
+                "Total Assessment Hours": ""
             }
         }
     }
@@ -68,6 +77,23 @@ def parse_document(input_docx, output_json):
             data[section_name]["bullet_points"] = []
         data[section_name]["bullet_points"].append(bullet_point_text)
 
+    # Function to parse assessment methods and hours
+    def parse_assessment_methods(text):
+        if "Written Exam" in text:
+            hours = re.search(r"Written Exam\s*\((\d+)\s*hr\)", text)
+            if hours:
+                data["Assessment Methods"]["Assessment Details"]["Written Exam"] = f"{hours.group(1)} hr"
+        if "Practical Exam" in text:
+            hours = re.search(r"Practical Exam\s*\((\d+)\s*hr\)", text)
+            if hours:
+                data["Assessment Methods"]["Assessment Details"]["Practical Exam"] = f"{hours.group(1)} hr"
+        
+        # Calculate total assessment hours
+        written_hours = int(data["Assessment Methods"]["Assessment Details"]["Written Exam"].split()[0]) if data["Assessment Methods"]["Assessment Details"]["Written Exam"] else 0
+        practical_hours = int(data["Assessment Methods"]["Assessment Details"]["Practical Exam"].split()[0]) if data["Assessment Methods"]["Assessment Details"]["Practical Exam"] else 0
+        total_hours = written_hours + practical_hours
+        data["Assessment Methods"]["Assessment Details"]["Total Assessment Hours"] = f"{total_hours} hr"
+
     # Variables to track the current section
     current_section = None
 
@@ -91,9 +117,19 @@ def parse_document(input_docx, output_json):
                 current_section = "TSC and Topics"
             elif text.startswith("Assessment Methods:"):
                 current_section = "Assessment Methods"
+                # Parse assessment methods and hours
+                parse_assessment_methods(text)
+                # Add to assessment methods list
+                methods = text.replace("Assessment Methods:", "").strip()
+                data["Assessment Methods"]["Assessment Methods"] = [method.strip() for method in methods.split(",")]
             elif text:
+                # Handle specific content types
+                if text.startswith("Course Duration:"):
+                    data["Learning Outcomes"]["Course Duration"] = text.replace("Course Duration:", "").strip()
+                elif text.startswith("Instructional Methods:"):
+                    data["Learning Outcomes"]["Instructional Methods"] = text.replace("Instructional Methods:", "").strip()
                 # Check if the paragraph is a bullet point using regex
-                if is_bullet_point(text):
+                elif is_bullet_point(text):
                     add_bullet_point(current_section, text)
                 else:
                     add_content_to_section(current_section, text)

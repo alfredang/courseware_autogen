@@ -46,7 +46,7 @@ def app():
         """
         <style>
             .important-note {
-                background-color: #f0f8ff;
+                background-color: #000000;
                 padding: 15px;
                 border-radius: 10px;
                 border-left: 6px solid #2196f3;
