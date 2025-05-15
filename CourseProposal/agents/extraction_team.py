@@ -47,11 +47,12 @@ def create_extraction_team(data, model_choice: str) -> RoundRobinGroupChat:
             1) Course Title
             2) Name of Organisation
             3) Course Level (e.g., Beginner, Intermediate, Advanced)
-            4) Classroom Hours (can be found under Instructional Duration: xxxx)
-            5) Practical Hours (IMPORTANT: should match the Number of Assessment Hours exactly)
-            6) Number of Assessment Hours (can be found under Assessment Duration: xxxx)
-            7) Course Duration (Number of Hours)
-            8) Industry
+            4) Proficiency Level (e.g., Basic, Intermediate, Advanced)
+            5) Classroom Hours (can be found under Instructional Duration: xxxx)
+            6) Practical Hours (IMPORTANT: should match the Number of Assessment Hours exactly)
+            7) Number of Assessment Hours (can be found under Assessment Duration: xxxx)
+            8) Course Duration (Number of Hours)
+            9) Industry
 
             Use the term_library below for "Industry", based on the front 3 letters of the TSC code:
             term_library = {{
@@ -104,6 +105,7 @@ def create_extraction_team(data, model_choice: str) -> RoundRobinGroupChat:
                 "Course Information": {{
                 "Course Title": "",
                 "Course Level": "",
+                "Proficiency Level": "",
                 "Name of Organisation": "",
                 "Classroom Hours": ,
                 "Practical Hours": ,

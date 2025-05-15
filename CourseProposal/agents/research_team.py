@@ -125,7 +125,7 @@ def create_research_team(ensemble_output, model_choice: str) -> RoundRobinGroupC
 
     You are responsible for identifying the performance gaps and post-training benefits to learners that the course will address.
     Based on the extracted data, answer the following question:
-    (ii) Performance gaps that the course will address for the given course title and learning outcomes: {ensemble_output.get('Course Information', {}).get('Course Title', [])}, {ensemble_output.get('Learning Outcomes', {}).get('Learning Outcomes', [])}.
+    (ii) Performance gaps that the course will address for the given course title and learning outcomes: {ensemble_output.get('Course Information', {}).get('Course Title', [])}, {ensemble_output.get('Learning Outcomes', {}).get('Learning Outcomes', [])}, and proficiency level: {ensemble_output.get('Course Information', {}).get('Proficiency Level', [])}
     Do not use any control characters such as newlines.
 
     Your task is to perform the following:
