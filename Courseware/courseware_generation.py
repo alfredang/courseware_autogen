@@ -165,6 +165,7 @@ class ADescription(BaseModel):
 
 class LearningUnit(BaseModel):
     LU_Title: str
+    LU_Duration: str  # <-- Add this field
     Topics: List[Topic]
     LO: str
     K_numbering_description: List[KDescription]
@@ -221,6 +222,74 @@ from llama_index.core import SimpleDirectoryReader
 import os
 import re
 
+# Flatten Instructional Methods Column which has new lines
+def flatten_instructional_methods_in_curriculum_table(docx_path, output_path=None):
+    doc = Document(docx_path)
+    for table in doc.tables:
+        # Get header cells' text for this table
+        header_cells = [cell.text.strip() for cell in table.rows[0].cells]
+        # Check if this is the curriculum key features table by matching key headers
+        if (
+            "S/N" in header_cells and
+            "LUs" in header_cells and
+            "LOs*" in header_cells and
+            "Instructional Methods" in header_cells
+        ):
+            # Only flatten this table's "Instructional Methods" column
+            idx = header_cells.index("Instructional Methods")
+            for row in table.rows[1:]:
+                cell = row.cells[idx]
+                # Flatten by replacing newlines with commas
+                cell.text = ", ".join(line.strip() for line in cell.text.splitlines() if line.strip())
+            break  # Stop after processing the first matching table
+    if output_path:
+        doc.save(output_path)
+    else:
+        doc.save(docx_path)
+        
+    # Flatten post production
+    import re
+
+def flatten_markdown_table_column(md_text, column_name="Instructional Methods"):
+    lines = md_text.splitlines()
+    new_lines = []
+    in_curriculum_table = False
+    header = None
+    col_idx = None
+
+    for i, line in enumerate(lines):
+        # Detect the curriculum table header
+        if (
+            "|S/N|" in line and
+            "|LUs|" in line and
+            "|LOs*" in line and
+            f"|{column_name}|" in line
+        ):
+            in_curriculum_table = True
+            header = [h.strip() for h in line.split("|")]
+            col_idx = header.index(column_name)
+            new_lines.append(line)
+            continue
+
+        # Detect the end of the table (next non-table line or empty line)
+        if in_curriculum_table and (not line.strip().startswith("|") or line.strip() == ""):
+            in_curriculum_table = False
+
+        # If inside the curriculum table, flatten the column
+        if in_curriculum_table and "|" in line and not line.strip().startswith("|---"):
+            cells = [c.strip() for c in line.split("|")]
+            if col_idx is not None and len(cells) > col_idx:
+                # Flatten the cell (replace newlines and extra spaces with commas)
+                cells[col_idx] = re.sub(r"\s*\n\s*", ", ", cells[col_idx]).replace("  ", " ")
+                new_line = "|".join(cells)
+                new_lines.append(new_line)
+            else:
+                new_lines.append(line)
+        else:
+            new_lines.append(line)
+
+    return "\n".join(new_lines)
+
 def parse_cp_document(uploaded_file):
     """
     Parses a Course Proposal (CP) document (UploadedFile) and returns its content as Markdown text,
@@ -247,7 +316,18 @@ def parse_cp_document(uploaded_file):
 
     try:
         # Set up parser for markdown result
-        parser = LlamaParse(result_type="markdown", api_key=st.secrets["LLAMA_CLOUD_API_KEY"])
+        parser = LlamaParse(result_type="markdown", api_key=st.secrets["LLAMA_CLOUD_API_KEY"], 
+        system_prompt_append=(
+        "**IMPORTANT FOLLOW THE RULES OR YOU WILL FAIL**"
+        "1.Extract the entire content of the document without omitting any text, including line breaks, paragraphs, and list items, in the exact order they appear. "
+        "2.Parse tables into Markdown tables with the following specific rules:"
+        "3. Ensure that the instructional methods column under curriculum table is flattened, meaning that if it contains multiple lines, they should be concatenated into a single line. "
+        "4. When a table cell contains multiple lines, especially in the 'Instructional Methods' column, concatenate them as a single string, separated by commas. "
+        "5. Never preserve newlines inside table cells in the output Markdown. "
+        "6. For the curriculum table with columns like 'S/N', 'LUs', 'LOs*', and 'Instructional Methods', pay special attention to flatten all content in each cell. "
+        "7. Ensure the output is a faithful and complete Markdown representation of the document."
+        ))
+        
     
         # Determine the file extension for mapping
         ext = os.path.splitext(temp_file_path)[1].lower()
@@ -255,6 +335,8 @@ def parse_cp_document(uploaded_file):
     
         # Use SimpleDirectoryReader to load and parse the file
         documents = SimpleDirectoryReader(input_files=[temp_file_path], file_extractor=file_extractor).load_data()
+        print("Lllama Parser")
+        print(documents)
     
         # Concatenate the parsed text from each Document object into a single Markdown string
         markdown_text = "\n\n".join(doc.text for doc in documents)
@@ -336,6 +418,7 @@ async def interpret_cp(raw_data: dict, model_client: OpenAIChatCompletionClient)
 
         For each Learning Unit (LU):
         - Learning Unit Title (include the "LUx: " prefix)
+        - **Learning Unit Duration (in hours or minutes, as specified in the CP)**
         - Topics Covered Under Each LU:
         - For each Topic:
             - **Topic_Title** (include the "Topic x: " prefix and the associated K and A statements in parentheses)
@@ -658,6 +741,9 @@ def app():
             try:
                 with st.spinner('Parsing the Course Proposal...'):
                     raw_data = parse_cp_document(cp_file)
+                    #New!Check output
+                    print("Raw data:")
+                    print(raw_data)
             except Exception as e:
                 st.error(f"Error parsing the Course Proposal: {e}")
                 return
@@ -665,6 +751,8 @@ def app():
             try:
                 with st.spinner('Extracting Information from Course Proposal...'):
                     context = asyncio.run(interpret_cp(raw_data=raw_data, model_client=openai_struct_model_client))
+                    print("Extracted Context:")
+                    print(context)
 
             except Exception as e:
                 st.error(f"Error extracting Course Proposal: {e}")
