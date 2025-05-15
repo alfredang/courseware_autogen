@@ -823,6 +823,8 @@ def app():
                 if generate_lp:
                     try:
                         with st.spinner("Generating Lesson Plan..."):
+                            print("Context for LP:")
+                            print(context)
                             lp_output = generate_lesson_plan(context, selected_org)
                         if lp_output:
                             st.success(f"Lesson Plan generated: {lp_output}")

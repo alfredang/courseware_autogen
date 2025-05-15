@@ -157,20 +157,49 @@ async def generate_timetable(context, num_of_days, model_client):
             Your task is to create a **detailed and structured lesson plan timetable** for a WSQ course based on the provided course information and context. **Every generated timetable must strictly follow the rules below to maintain quality and accuracy.**
 
             ---
-
+            **IMPORTANT! Ensure the rules are followed closely or the time table generated will be inaccurate.**
             ### **Instructions:**
             #### 1. **Course Data & Completeness**
+            - **CRITICAL: You MUST fully utilize the entire LU_Duration for each Learning Unit. Split longer LUs into multiple sessions with breaks between them.**
             - **Use all provided course details**, including Learning Units (LUs), topics, Learning Outcomes (LOs), Assessment Methods (AMs), and Instructional Methods (IMs).
-            - **Do not omit any topics or bullet points.**
-            - **Ensure that every topic is included and each bullet point is addressed in at least one session.**
+            - **Tackle the Learning Unit and split the topics and activities first. Ensure Lu_Duration is fully utilised by Topics and Activities. Afterwards, use the leftover time for breaks**
+            - **For each Learning Unit, MANDATORY: Calculate and track the exact minutes allocated to topics and activities**
+            - **For each Learning Unit, MANDATORY: Every Topic must have activities with the leftover time from LU_Duration after topics (e.g. Total LU_Duration= 210mins ,Total topic duration= 180 mins, Activity duration = LU_Duration - total topic duration = 210 mins- 180 mins = 30 mins)**
+            - **You MUST maintain a running total of allocated minutes for each LU and ensure it EXACTLY matches the LU_Duration to the minute**
+            - **After allocating all topics and their associated activities, verify that the sum equals the LU_Duration - if not, adjust the final activity's duration to ensure exact utilization**
+            - **Ensure Lu_Duration is fully utlised by each topic/activity. (e.g. "If LU1 Lu_Duration is 3.5 hours OR 210 minutes, ensure that the time given is fully utlised by both Topics and Activities")**
+            - **If LU_Duration is not fully utilised, Teach the topic again and make sure to fully utilise the left over LU_Duration after the initial topics and activities**
+            - **You may cut short any of the breaks as you deem fit if LU_Duration is not fully utilised. Use your judgement to ensure LU_Duration is always fully utilised with no spare time leftover**
             
-            #### 2. **Number of Days & Even Distribution**
+            **IMPORTANT!! Take note of the learning unit duration allocations or there will be errors when allocating the timetable!!! Make sure the timetable fulfills every point**
+            #### 2. **Learning Unit Duration Allocation**
+            - **Each Learning Unit (LU) has a specified LU_Duration (e.g., "3.5 hrs").**
+            - **The total time for all Topic sessions + Activity sessions within a LU must exactly match the LU_Duration.**
+            - **Every minute of the LU_Duration must be allocated to either Topic or Activity sessions.**
+            - **IMPORTANT: For any LU longer than 1.5 hours, you MUST split it into multiple sessions with breaks in between:**
+              - Example: Split a 3.5-hour (210 minutes) LU into two 90-minute sessions with leftover time from LU_Duration as the minutes of activities (e.g. Total LU_Duration= 210mins ,Total topic duration= 180 mins, Activity duration = LU_Duration - total topic duration = 210 mins- 180 mins = 30 mins)
+              - Each session should have its own topic and corresponding activity
+              - The combined duration of all sessions (excluding breaks) must exactly equal LU_Duration
+            - **For each LU with a single Topic:**
+              - Ensure that the total duration of the Topic and Activity sessions equals LU_Duration
+              - If duration is long, split the topic and distribute bullet points across multiple sessions
+            - **For each LU with multiple Topics:**
+              - Distribute the LU_Duration proportionally across all Topics and their Activities based on bullet point count
+              - Each Topic should get time proportional to its complexity/bullet points
+              - Ensure that the total duration of the Topic and Activity sessions equals LU_Duration
+            
+            #### 3. **Breaks and Fixed Sessions**
+            - **Lunch breaks, attendance sessions, and other breaks DO NOT count against LU_Duration.**
+            - **LU_Duration only applies to the actual instruction and activity time.**
+            - **When scheduling sessions, ensure breaks are inserted between LUs as needed without reducing the allocated LU_Duration.**
+            
+            #### 4. **Number of Days & Even Distribution**
             - Use **exactly {num_of_days}** day(s).
             - Distribute **topics, activities, and assessments** evenly across the day(s).
             - Ensure that each day has **exactly 9 hours** (0930hrs - 1830hrs), including breaks and assessments.
             - **Important:** The schedule for each day must start at the designated start time and end exactly at 1830hrs.
 
-            ### **3. Instructional Methods & Resources**
+            ### **5. Instructional Methods & Resources**
             **Use ONLY these instructional methods** (extracted from the course context):  
             {list_of_im}
             DO NOT generate any IM pairs that are not in this list.
@@ -181,8 +210,10 @@ async def generate_timetable(context, num_of_days, model_client):
                 - "TV"
                 - "Whiteboard"
                 - "Wi-Fi"
+                - "Digital Attendance (PM)"
+                - "Digital Attendance (Assessment)"
 
-            ### **4. Fixed Sessions & Breaks**
+            ### **6. Fixed Sessions & Breaks**
             Each day must contain the following **fixed time slots**:
 
             #### **Day 1 First Timeslot (Mandatory)**
@@ -202,10 +233,10 @@ async def generate_timetable(context, num_of_days, model_client):
             - **Resources:** "QR Attendance, Attendance Sheet"
 
             #### **Mandatory Breaks**
-            - **Morning Break:**  "1050hrs - 1100hrs (10 mins)"  
-            - **Lunch Break:**  "1200hrs - 1245hrs (45 mins)"  
-            - **Digital Attendance (PM):**  "1330hrs - 1340hrs (10 mins)"  
-            - **Afternoon Break:**  "1500hrs - 1510hrs (10 mins)"  
+            **Breaks duration should be subject to amount of free time if any time is leftover**
+            - **Morning Break:** Minimum 10 mins 
+            - **Lunch Break:** 45 mins
+            - **Afternoon Break:** Minimum 10 mins
 
             #### **End-of-Day Recap (All Days Except Assessment Day)**
             - **Time:** "1810hrs - 1830hrs (20 mins)"
@@ -218,30 +249,27 @@ async def generate_timetable(context, num_of_days, model_client):
             ### **5. Final Day Assessments**
             On the Assessment day, the following sessions must be scheduled as the **last timeslots** of the day, in the exact order given below. **No other sessions should follow these sessions.**
 
-            1. **Digital Attendance (Assessment) (10 mins)**
-            - **Time:** "[Start Time] - [End Time] (10 mins)"
-            - **Instructions:** "Digital Attendance (Assessment)"
+            1. **Final Course Feedback and TRAQOM Survey**
+            - **Time:** "1810hrs - 1830hrs (20 mins)"
+            - **Instructions:** "Course Feedback and TRAQOM Survey"
             - **Instructional_Methods:** "N/A"
-            - **Resources:** "QR Attendance, Attendance Sheet"
-
+            - **Resources:** "Feedback Forms, Survey Links"
+            
             2. **Final Assessment Session(s)**
             - For each Assessment Method in the course details, schedule a Final Assessment session:
                 - **Time:** "[Start Time] - [End Time] ([Duration])" (Duration must align with each assessment method's `Total_Delivery_Hours`.)
                 - **Instructions:** "Final Assessment: [Assessment Method Full Name] ([Method Abbreviation])"
                 - **Instructional_Methods:** "Assessment"
-                - **Resources:** "Assessment Questions, Assessment Plan"
+                - **Resources:** "Digital Attendance (Assessment), Assessment Questions, Assessment Plan"
 
-            3. **Final Course Feedback and TRAQOM Survey**
-            - **Time:** "1810hrs - 1830hrs (20 mins)"
-            - **Instructions:** "Course Feedback and TRAQOM Survey"
-            - **Instructional_Methods:** "N/A"
-            - **Resources:** "Feedback Forms, Survey Links"
+            
 
             ---
 
             ### **6. Topic & Activity Session Structure**
             #### **Topic Sessions**
             - **Time:** Varies (e.g., "0945hrs - 1050hrs (65 mins)")
+            - **Duration** If the topic is longer than 2 hours, split the session into half sessions with breaks in between depending on available time."
             - **Instructions Format:**  
             Instead of a single string, break the session instructions into:
             - **instruction_title:** e.g., "Topic X: [Topic Title] (K#, A#)"
@@ -263,9 +291,127 @@ async def generate_timetable(context, num_of_days, model_client):
                 "Understanding the various types of financial ratios that can be derived from the Balance Sheet"
             ]
             ```
+            
+            Example Output for a single day:
+            ```json
+                        {{
+                "lesson_plan": [
+                    {{
+                        "Day": "Day 1",
+                        "Sessions": [
+                            {{
+                                "Time": "0930hrs - 0945hrs (10 mins)",
+                                "instruction_title": "Digital Attendance and Introduction to the Course",
+                                "bullet_points": [
+                                    "Trainer Introduction",
+                                    "Learner Introduction",
+                                    "Overview of Course Structure"
+                                ],
+                                "Instructional_Methods": "N/A",
+                                "Resources": "QR Attendance, Attendance Sheet"
+                            }},
+                            {{
+                                "Time": "0945hrs - 1050hrs (65 mins)",
+                                "instruction_title": "Topic 1: Introduction to Digital Humans (K1, A1)",
+                                "bullet_points": [
+                                    "Definition and overview of digital humans",
+                                    "Key applications in branding and customer service"
+                                ],
+                                "Instructional_Methods": "Lecture, Group Discussion",
+                                "Resources": "Slide page 1-5, TV, Whiteboard"
+                            }},
+                            {{
+                                "Time": "1050hrs - 1100hrs (10 mins)",
+                                "instruction_title": "Morning Break",
+                                "bullet_points": [],
+                                "Instructional_Methods": "N/A",
+                                "Resources": "N/A"
+                            }},
+                            {{
+                                "Time": "1100hrs - 1200hrs (60 mins)",
+                                "instruction_title": "Topic 2: Case Studies of Digital Human Applications (K2, A2)",
+                                "bullet_points": [
+                                    "Case study: Retail sector",
+                                    "Case study: Hospitality sector"
+                                ],
+                                "Instructional_Methods": "Case Study",
+                                "Resources": "Slide page 6-10, TV"
+                            }},
+                            {{
+                                "Time": "1200hrs - 1230hrs (30 mins)",
+                                "instruction_title": "Activity: Group Discussion on Case Studies",
+                                "bullet_points": [],
+                                "Instructional_Methods": "Group Discussion",
+                                "Resources": "Whiteboard, Wi-Fi"
+                            }},
+                            {{
+                                "Time": "1230hrs - 1330hrs (60 mins)",
+                                "instruction_title": "Lunch Break",
+                                "bullet_points": [],
+                                "Instructional_Methods": "N/A",
+                                "Resources": "N/A"
+                            }},
+                            {{
+                                "Time": "1330hrs - 1430hrs (60 mins)",
+                                "instruction_title": "Topic 3: Designing Digital Human Interactions (K3, A3)",
+                                "bullet_points": [
+                                    "Principles of effective digital human design",
+                                    "Tools and platforms overview"
+                                ],
+                                "Instructional_Methods": "Lecture, Demonstration",
+                                "Resources": "Slide page 11-15, TV, Digital Attendance (PM)"
+                            }},
+                            {{
+                                "Time": "1430hrs - 1440hrs (10 mins)",
+                                "instruction_title": "Digital Attendance (PM)",
+                                "bullet_points": [],
+                                "Instructional_Methods": "N/A",
+                                "Resources": "QR Attendance, Attendance Sheet"
+                            }},
+                            {{
+                                "Time": "1440hrs - 1500hrs (20 mins)",
+                                "instruction_title": "Afternoon Break",
+                                "bullet_points": [],
+                                "Instructional_Methods": "N/A",
+                                "Resources": "N/A"
+                            }},
+                            {{
+                                "Time": "1500hrs - 1630hrs (90 mins)",
+                                "instruction_title": "Topic 4: Hands-on Practice: Creating a Digital Human Scenario (A4)",
+                                "bullet_points": [
+                                    "Step-by-step guide to building a digital human scenario",
+                                    "Peer feedback and sharing"
+                                ],
+                                "Instructional_Methods": "Demonstration, Practice",
+                                "Resources": "Slide page 16-20, TV, Wi-Fi"
+                            }},
+                            {{
+                                "Time": "1630hrs - 1810hrs (100 mins)",
+                                "instruction_title": "Activity: Group Project Work",
+                                "bullet_points": [],
+                                "Instructional_Methods": "Practice, Group Discussion",
+                                "Resources": "Whiteboard, Wi-Fi"
+                            }},
+                            {{
+                                "Time": "1810hrs - 1830hrs (20 mins)",
+                                "instruction_title": "Recap All Contents and Close",
+                                "bullet_points": [
+                                    "Summary of key learning points",
+                                    "Q&A"
+                                ],
+                                "Instructional_Methods": "Lecture, Group Discussion",
+                                "Resources": "Slide page 21, TV, Whiteboard"
+                            }}
+                            // Additional sessions for the day
+                        ]
+                    }}
+                    // Additional days
+                ]
+            }}
+            ```
 
             #### **Activity Sessions**
-            - **Duration:** Fixed at 10 minutes.
+            - **Duration:** Determined by the associated leftover time after the topic session.
             - **Must immediately follow the corresponding topic session.**
             - **Instructions Format:**  
             - **instruction_title:** e.g., "Activity: Demonstration on [Description]" or "Activity: Case Study on [Description]"
