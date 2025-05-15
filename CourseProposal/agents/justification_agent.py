@@ -13,6 +13,28 @@ load_dotenv()
 
 def justification_task(ensemble_output):
     justification_task = f"""
+    IMPORTANT:
+    - Your output MUST be a valid JSON object, matching the schema below EXACTLY.
+    - Do NOT add any extra text, explanations, or markdown code blocks.
+    - Do NOT change, add, or remove any keys or structure.
+    - Do NOT include any comments or headings.
+    - Before outputting, simulate running a JSON linter (e.g., json.loads()) to ensure validity.
+    - If you do not follow these instructions, the process will fail.
+
+    CORRECT EXAMPLE:
+    {{
+      "justification": {{
+        ...
+      }}
+    }}
+
+    INCORRECT EXAMPLES (do NOT do this):
+    ```json
+    {{ ... }}
+    ```
+    Here is your JSON: {{ ... }}
+    Any output with extra text, markdown, or missing/extra keys is invalid.
+
     1. Based on the extracted data from {ensemble_output}, generate your justifications.
     2. Ensure your responses are structured in JSON format.
     3. Return a full JSON object with all your answers according to the schema.
@@ -70,6 +92,30 @@ def run_assessment_justification_agent(ensemble_output, model_choice: str) -> Ro
     model_client = ChatCompletionClient.load_component(chosen_config)
         
     assessment_justification_agent_message = f"""
+    IMPORTANT:
+    - Your output MUST be a valid JSON object, matching the schema below EXACTLY.
+    - Do NOT add any extra text, explanations, or markdown code blocks.
+    - Do NOT change, add, or remove any keys or structure.
+    - Do NOT include any comments or headings.
+    - Before outputting, simulate running a JSON linter (e.g., json.loads()) to ensure validity.
+    - If you do not follow these instructions, the process will fail.
+    - If the assessment method is Case Study, output as 'Others: Case Study' (not 'Others: [Please elaborate]').
+    - Add 'Others: Case Study' to the dropdown options and use this format for Case Study.
+
+    CORRECT EXAMPLE:
+    {{
+      "justification": {{
+        ...
+      }}
+    }}
+
+    INCORRECT EXAMPLES (do NOT do this):
+    ```json
+    {{ ... }}
+    ```
+    Here is your JSON: {{ ... }}
+    Any output with extra text, markdown, or missing/extra keys is invalid.
+
     Based on the following course details, you are to provide justification for the appropriate Assessment Method followng a defined structure.
     The course details are as follows:
     Course Title: {ensemble_output.get('Course Information', {}).get('Course Title', [])} 

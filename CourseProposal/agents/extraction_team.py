@@ -19,107 +19,198 @@ def create_extraction_team(data, model_choice: str) -> RoundRobinGroupChat:
     chosen_config = get_model_config(model_choice)
     model_client = ChatCompletionClient.load_component(chosen_config)
     course_info_extractor_message = f"""
+    IMPORTANT:
+    - Your output MUST be a valid JSON object, matching the schema below EXACTLY.
+    - Do NOT add any extra text, explanations, or markdown code blocks.
+    - Do NOT change, add, or remove any keys or structure.
+    - Do NOT include any comments or headings.
+    - Before outputting, simulate running a JSON linter (e.g., json.loads()) to ensure validity.
+    - If you do not follow these instructions, the process will fail.
+
+    CORRECT EXAMPLE:
+    {{
+    "Course Information": {{
+        "Course Title": "",
+        ...
+    }},
+    ...
+    }}
+
+    INCORRECT EXAMPLES (do NOT do this):
+    ```json
+    {{ ... }}
+    ```
+    Here is your JSON: {{ ... }}
+    Any output with extra text, markdown, or missing/extra keys is invalid.
+
     You are to extract the following variables from {data}:
-        1) Course Title
-        2) Name of Organisation
-        3) Classroom Hours (can be found under Instructional Duration: xxxx)
-        4) Practical Hours (IMPORTANT: should match the Number of Assessment Hours exactly)
-        5) Number of Assessment Hours (can be found under Assessment Duration: xxxx)
-        6) Course Duration (Number of Hours)
-        7) Industry
+            1) Course Title
+            2) Name of Organisation
+            3) Course Level (e.g., Beginner, Intermediate, Advanced)
+            4) Classroom Hours (can be found under Instructional Duration: xxxx)
+            5) Practical Hours (IMPORTANT: should match the Number of Assessment Hours exactly)
+            6) Number of Assessment Hours (can be found under Assessment Duration: xxxx)
+            7) Course Duration (Number of Hours)
+            8) Industry
 
-        Use the term_library below for "Industry", based on the front 3 letters of the TSC code:
-        term_library = {{
-            'ACC': 'Accountancy',
-            'RET': 'Retail',
-            'MED': 'Media',
-            'ICT': 'Infocomm Technology',
-            'BEV': 'Built Environment',
-            'DSN': 'Design',
-            'DNS': 'Design',
-            'AGR': 'Agriculture',
-            'ELE': 'Electronics',
-            'LOG': 'Logistics',
-            'STP': 'Sea Transport',
-            'TOU': 'Tourism",
-            'AER': 'Aerospace',
-            'ATP': 'Air Transport',
-            'BEV': 'Built Environment',
-            'BPM': 'BioPharmaceuticals Manufacturing',
-            'ECM': 'Energy and Chemicals',
-            'EGS': 'Engineering Services',
-            'EPW': 'Energy and Power',
-            'EVS': 'Environmental Services',
-            'FMF': 'Food Manufacturing',
-            'FSE': 'Financial Services',
-            'FSS': 'Food Services',
-            'HAS': 'Hotel and Accommodation Services',
-            'HCE': 'Healthcare',
-            'HRS': 'Human Resource',
-            'INP': 'Intellectual Property',
-            'LNS': 'Landscape',
-            'MAR': 'Marine and Offshore',
-            'PRE': 'Precision Engineering',
-            'PTP': 'Public Transport',
-            'SEC': 'Security',
-            'SSC': 'Social Service',
-            'TAE': 'Training and Adult Education'
-            'WPH': 'Workplace Safety and Health'
-            'WST': 'Wholesale Trade'
-            'STP': 'Sea Transport',
-            'TOU': 'Tourism",
-            'ECC': 'Early Childhood Care and Education',
-            'ART': 'Arts'
+            Use the term_library below for "Industry", based on the front 3 letters of the TSC code:
+            term_library = {{
+                'ACC': 'Accountancy',
+                'RET': 'Retail',
+                'MED': 'Media',
+                'ICT': 'Infocomm Technology',
+                'BEV': 'Built Environment',
+                'DSN': 'Design',
+                'DNS': 'Design',
+                'AGR': 'Agriculture',
+                'ELE': 'Electronics',
+                'LOG': 'Logistics',
+                'STP': 'Sea Transport',
+                'TOU': 'Tourism",
+                'AER': 'Aerospace',
+                'ATP': 'Air Transport',
+                'BEV': 'Built Environment',
+                'BPM': 'BioPharmaceuticals Manufacturing',
+                'ECM': 'Energy and Chemicals',
+                'EGS': 'Engineering Services',
+                'EPW': 'Energy and Power',
+                'EVS': 'Environmental Services',
+                'FMF': 'Food Manufacturing',
+                'FSE': 'Financial Services',
+                'FSS': 'Food Services',
+                'HAS': 'Hotel and Accommodation Services',
+                'HCE': 'Healthcare',
+                'HRS': 'Human Resource',
+                'INP': 'Intellectual Property',
+                'LNS': 'Landscape',
+                'MAR': 'Marine and Offshore',
+                'PRE': 'Precision Engineering',
+                'PTP': 'Public Transport',
+                'SEC': 'Security',
+                'SSC': 'Social Service',
+                'TAE': 'Training and Adult Education'
+                'WPH': 'Workplace Safety and Health'
+                'WST': 'Wholesale Trade'
+                'STP': 'Sea Transport',
+                'TOU': 'Tourism",
+                'ECC': 'Early Childhood Care and Education',
+                'ART': 'Arts'
+                'CST': 'Carbon Services and Trading'
 
 
 
-        }}
-        Format the extracted data in JSON format, with this structure, do NOT change the key names or add unnecessary spaces:
-            "Course Information": {{
-            "Course Title": "",
-            "Name of Organisation": "",
-            "Classroom Hours": ,
-            "Practical Hours": ,
-            "Number of Assessment Hours": ,
-            "Course Duration (Number of Hours)": ,
-            "Industry": ""
-        }}
-        Extra emphasis on following the JSON format provided, do NOT change the names of the keys, never use "course_info" as the key name.
-    """
+            }}
+            Format the extracted data in JSON format, with this structure, do NOT change the key names or add unnecessary spaces:
+                "Course Information": {{
+                "Course Title": "",
+                "Course Level": "",
+                "Name of Organisation": "",
+                "Classroom Hours": ,
+                "Practical Hours": ,
+                "Number of Assessment Hours": ,
+                "Course Duration (Number of Hours)": ,
+                "Industry": ""
+            }}
+            Extra emphasis on following the JSON format provided, do NOT change the names of the keys, never use "course_info" as the key name.
+        """
 
     learning_outcomes_extractor_message = f"""
+    IMPORTANT:
+    - Your output MUST be a valid JSON object, matching the schema below EXACTLY.
+    - Do NOT add any extra text, explanations, or markdown code blocks.
+    - Do NOT change, add, or remove any keys or structure.
+    - Do NOT include any comments or headings.
+    - Before outputting, simulate running a JSON linter (e.g., json.loads()) to ensure validity.
+    - If you do not follow these instructions, the process will fail.
+
+    CORRECT EXAMPLE:
+    {{
+    "Learning Outcomes": {{
+        "Learning Outcomes": [
+
+        ],
+        "Knowledge": [
+
+        ],
+        "Ability": [
+        ]
+    }},
+    ...
+    }}
+
+    INCORRECT EXAMPLES (do NOT do this):
+    ```json
+    {{ ... }}
+    ```
+    Here is your JSON: {{ ... }}
+    Any output with extra text, markdown, or missing/extra keys is invalid.
+
     You are to extract the following variables from {data}:
-        1) Learning Outcomes, include the terms LO(x): in front of each learning outcome
-        2) Knowledge
-        3) Ability
+            1) Learning Outcomes, include the terms LO(x): in front of each learning outcome
+            2) Knowledge
+            3) Ability
 
-        Text Blocks which start with K or A and include a semicolon should be mapped under Knowledge (for K) and Ability (for A).
+            Text Blocks which start with K or A and include a semicolon should be mapped under Knowledge (for K) and Ability (for A).
 
-        An example output is as follows:
-        "Learning Outcomes":  ["LO1: Calculate profitability ratios to assess an organization's financial health.", "LO2: Calculate performance ratios to evaluate an organization's overall financial performance."], 
-        "Knowledge": ["K1: Ratios for profitability\nK2: Ratios for performance"], 
-        "Ability": ["A1: Calculate ratios for assessing organisation's profitability\nA2: Calculate ratios for assessing organisation's financial performance"], 
+            An example output is as follows:
+            "Learning Outcomes":  ["LO1: Calculate profitability ratios to assess an organization's financial health.", "LO2: Calculate performance ratios to evaluate an organization's overall financial performance."], 
+            "Knowledge": ["K1: Ratios for profitability\nK2: Ratios for performance"], 
+            "Ability": ["A1: Calculate ratios for assessing organisation's profitability\nA2: Calculate ratios for assessing organisation's financial performance"], 
 
 
-        Format the extracted data in JSON format, with this structure:
-            "Learning Outcomes": {{
-            "Learning Outcomes": [
+            Format the extracted data in JSON format, with this structure:
+                "Learning Outcomes": {{
+                "Learning Outcomes": [
 
-            ],
-            "Knowledge": [
+                ],
+                "Knowledge": [
 
-            ],
-            "Ability": [
-            ]
-            }}
-    """
+                ],
+                "Ability": [
+                ]
+                }}
+        """
 
     tsc_and_topics_extractor_message = f"""
+    IMPORTANT:
+    - Your output MUST be a valid JSON object, matching the schema below EXACTLY.
+    - Do NOT add any extra text, explanations, or markdown code blocks.
+    - Do NOT change, add, or remove any keys or structure.
+    - Do NOT include any comments or headings.
+    - Before outputting, simulate running a JSON linter (e.g., json.loads()) to ensure validity.
+    - If you do not follow these instructions, the process will fail.
+
+    CORRECT EXAMPLE:
+    {{
+    "TSC and Topics": {{
+        "TSC Title": [
+
+        ],
+        "TSC Code": [
+
+        ],
+        "Topics": [
+
+        ],
+        "Learning Units": [
+
+        ]
+    }},
+    ...
+    }}
+
+    INCORRECT EXAMPLES (do NOT do this):
+    ```json
+    {{ ... }}
+    ```
+    Here is your JSON: {{ ... }}
+    Any output with extra text, markdown, or missing/extra keys is invalid.
+
     You are to extract the following variables from {data}:
-        1) TSC Title
-        2) TSC Code
-        3) Topic (include the FULL string, including any K's and A's, only include items starting with "Topic" and not "LU" for this particular point)
-        4) Learning Units (IMPORTANT: extract the EXACT original LU names as they appear in the data, do NOT paraphrase or modify them in any way. Include the full LU string with any brackets/K&A mappings)
+            1) TSC Title
+            2) TSC Code
+            3) Topic (include the FULL string, including any K's and A's, only include items starting with "Topic" and not "LU" for this particular point)
+            4) Learning Units (IMPORTANT: extract the EXACT original LU names as they appear in the data, do NOT paraphrase or modify them in any way. Include the full LU string with any brackets/K&A mappings)
 
         An example output is as follows:
         "TSC Title": "Financial Analysis",
@@ -145,65 +236,125 @@ def create_extraction_team(data, model_choice: str) -> RoundRobinGroupChat:
     """
 
     assessment_methods_extractor_message = f"""
-    You are to extract the following variables from {data}:
-        1) Assessment Methods (remove the brackets and time values at the end of each string)
-        2) Instructional Methods
-        3) Amount of Practice Hours - IMPORTANT: this should EXACTLY match the Number of Assessment Hours from the data
-        4) Course Outline, which consists of Learning Units (LUs), Topics under that Learning Unit and their descriptions. A Learning Unit may have more than 1 topic, so nest that topic and its relevant descriptions under that as well.
+    IMPORTANT:
+    - Your output MUST be a valid JSON object, matching the schema below EXACTLY.
+    - Do NOT add any extra text, explanations, or markdown code blocks.
+    - Do NOT change, add, or remove any keys or structure.
+    - Do NOT include any comments or headings.
+    - Before outputting, simulate running a JSON linter (e.g., json.loads()) to ensure validity.
+    - If you do not follow these instructions, the process will fail.
+    - For instructional methods, output the method names EXACTLY as they appear in the input. Do NOT paraphrase, modify, or wrap them in 'Others: ...'. The mapping to dropdown or 'Others: [value]' will be handled downstream in the pipeline.
+    - For assessment methods, if the method is not in the dropdown list, output as 'Others: [method]'. If the method is in the dropdown, use the dropdown value exactly. This ensures unknown methods are handled robustly and the JSON output will not break the Excel pipeline.
 
-        Include the full topic names in Course Outline, including any bracketed K and A factors.
-        
-        IMPORTANT: For each topic, auto-generate 3-5 detailed bullet points as "Details" that would likely be covered in that topic based on the topic name and K/A factors. These details should be specific, practical, and relevant to the course content.
-
-        Format the extracted data in JSON format, with this structure:
-            "Assessment Methods": {{
-            "Assessment Methods": [
-                "",
-                ""
-            ],
-            "Amount of Practice Hours": Insert the exact same number as the Number of Assessment Hours,
-            "Course Outline": {{
-                "Learning Units": {{
-                    "LU1": {{
-                        "Description": [
-                            {{
-                                "Topic": "Topic 1: Empathize and Define (K1, A1)",
-                                "Details": [
-                                    "Techniques for understanding user needs",
-                                    "Methods for defining clear problem statements",
-                                    "Exercises: Empathy mapping and problem definition",
-                                    "Case studies of successful user-centered design",
-                                    "Tools and frameworks for identifying user pain points"
-                                ]
-                            }},
-                            {{
-                                "Topic": "Topic 2: Ideate and Prototype (K2, A2)",
-                                "Details": [
-                                    "Strategies for brainstorming and generating creative solutions",
-                                    "Steps to create and refine prototypes",
-                                    "Activities: Brainstorming sessions and prototyping workshops",
-                                    "Evaluation methods for prototype testing",
-                                    "Digital and physical prototyping techniques"
-                                ]
-                            }},
-                            {{
-                                "Topic": "Topic 3: Test and Iterate (K3, A3)",
-                                "Details": [
-                                    "Importance of gathering user feedback",
-                                    "Methods for testing and iterating solutions",
-                                    "Workshops: Testing prototypes and iterative improvements",
-                                    "Metrics for measuring solution effectiveness",
-                                    "Strategies for continuous improvement cycles"
-                                ]
-                            }}                    
+    CORRECT EXAMPLE:
+    {{
+    "Assessment Methods": {{
+        "Assessment Methods": [
+            "",
+            ""
+        ],
+        "Amount of Practice Hours": Insert the exact same number as the Number of Assessment Hours,
+        "Course Outline": {{
+            "Learning Units": {{
+                "LU1": {{
+                    "Description": [
+                        {{
+                            "Topic": "Topic 1: Empathize and Define (K1, A1)",
+                            "Details": [
+                                "Techniques for understanding user needs",
+                                "Methods for defining clear problem statements",
+                                "Exercises: Empathy mapping and problem definition",
+                                "Case studies of successful user-centered design",
+                                "Tools and frameworks for identifying user pain points"
                             ]
-                    }}
+                        }},
+                        {{
+                            "Topic": "Topic 2: Ideate and Prototype (K2, A2)",
+                            "Details": [
+                                "Strategies for brainstorming and generating creative solutions",
+                                "Steps to create and refine prototypes",
+                                "Activities: Brainstorming sessions and prototyping workshops",
+                                "Evaluation methods for prototype testing",
+                                "Digital and physical prototyping techniques"
+                            ]
+                        }},
+                        {{
+                            "Topic": "Topic 3: Test and Iterate (K3, A3)",
+                            "Details": [
+                                "Importance of gathering user feedback",
+                                "Methods for testing and iterating solutions",
+                                "Workshops: Testing prototypes and iterative improvements",
+                                "Metrics for measuring solution effectiveness",
+                                "Strategies for continuous improvement cycles"
+                            ]
+                        }}                    
+                        ]
                     }}
                 }}
-            Instructional Methods: ""
-                }}
-        
-    """
+            }}
+        Instructional Methods: ""
+        }}
+    }}
+
+    You are to extract the following variables from {data}:
+            1) Assessment Methods (remove the brackets and time values at the end of each string)
+            2) Instructional Methods
+            3) Amount of Practice Hours - IMPORTANT: this should EXACTLY match the Number of Assessment Hours from the data
+            4) Course Outline, which consists of Learning Units (LUs), Topics under that Learning Unit and their descriptions. A Learning Unit may have more than 1 topic, so nest that topic and its relevant descriptions under that as well.
+
+            Include the full topic names in Course Outline, including any bracketed K and A factors.
+            
+            IMPORTANT: For each topic, auto-generate 3-5 detailed bullet points as "Details" that would likely be covered in that topic based on the topic name and K/A factors. These details should be specific, practical, and relevant to the course content.
+
+            Format the extracted data in JSON format, with this structure:
+                "Assessment Methods": {{
+                "Assessment Methods": [
+                    "",
+                    ""
+                ],
+                "Amount of Practice Hours": Insert the exact same number as the Number of Assessment Hours,
+                "Course Outline": {{
+                    "Learning Units": {{
+                        "LU1": {{
+                            "Description": [
+                                {{
+                                    "Topic": "Topic 1: Empathize and Define (K1, A1)",
+                                    "Details": [
+                                        "Techniques for understanding user needs",
+                                        "Methods for defining clear problem statements",
+                                        "Exercises: Empathy mapping and problem definition",
+                                        "Case studies of successful user-centered design",
+                                        "Tools and frameworks for identifying user pain points"
+                                    ]
+                                }},
+                                {{
+                                    "Topic": "Topic 2: Ideate and Prototype (K2, A2)",
+                                    "Details": [
+                                        "Strategies for brainstorming and generating creative solutions",
+                                        "Steps to create and refine prototypes",
+                                        "Activities: Brainstorming sessions and prototyping workshops",
+                                        "Evaluation methods for prototype testing",
+                                        "Digital and physical prototyping techniques"
+                                    ]
+                                }},
+                                {{
+                                    "Topic": "Topic 3: Test and Iterate (K3, A3)",
+                                    "Details": [
+                                        "Importance of gathering user feedback",
+                                        "Methods for testing and iterating solutions",
+                                        "Workshops: Testing prototypes and iterative improvements",
+                                        "Metrics for measuring solution effectiveness",
+                                        "Strategies for continuous improvement cycles"
+                                    ]
+                                }}                    
+                                ]
+                        }}
+                        }}
+                    }}
+                Instructional Methods: ""
+                    }}
+            
+        """
 
     aggregator_message = f"""
     You are to combine the outputs from the following agents into a single JSON object, do NOT aggregate output from the validator agent:

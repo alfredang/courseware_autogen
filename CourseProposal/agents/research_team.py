@@ -14,6 +14,28 @@ from CourseProposal.model_configs import get_model_config
 
 def research_task(ensemble_output):
     research_task = f"""
+    IMPORTANT:
+    - Your output MUST be a valid JSON object, matching the schema below EXACTLY.
+    - Do NOT add any extra text, explanations, or markdown code blocks.
+    - Do NOT change, add, or remove any keys or structure.
+    - Do NOT include any comments or headings.
+    - Before outputting, simulate running a JSON linter (e.g., json.loads()) to ensure validity.
+    - If you do not follow these instructions, the process will fail.
+
+    CORRECT EXAMPLE:
+    {{
+      "Background Analysis": {{ ... }},
+      "Performance Analysis": {{ ... }},
+      "Sequencing Analysis": {{ ... }}
+    }}
+
+    INCORRECT EXAMPLES (do NOT do this):
+    ```json
+    {{ ... }}
+    ```
+    Here is your JSON: {{ ... }}
+    Any output with extra text, markdown, or missing/extra keys is invalid.
+
     1. Based on the extracted data from {ensemble_output}, generate your justifications.
     2. Ensure your responses are structured in JSON format.
     3. Return a full JSON object with all your answers according to the schema.
@@ -27,6 +49,28 @@ def create_research_team(ensemble_output, model_choice: str) -> RoundRobinGroupC
 
     # insert research analysts
     background_message = f"""
+    IMPORTANT:
+    - Your output MUST be a valid JSON object, matching the schema below EXACTLY.
+    - Do NOT add any extra text, explanations, or markdown code blocks.
+    - Do NOT change, add, or remove any keys or structure.
+    - Do NOT include any comments or headings.
+    - Before outputting, simulate running a JSON linter (e.g., json.loads()) to ensure validity.
+    - If you do not follow these instructions, the process will fail.
+
+    CORRECT EXAMPLE:
+    {{
+      "Background Analysis": {{ ... }},
+      "Performance Analysis": {{ ... }},
+      "Sequencing Analysis": {{ ... }}
+    }}
+
+    INCORRECT EXAMPLES (do NOT do this):
+    ```json
+    {{ ... }}
+    ```
+    Here is your JSON: {{ ... }}
+    Any output with extra text, markdown, or missing/extra keys is invalid.
+
     As a training consultant focusing on analyzing performance gaps and training needs based on course learning outcomes,
     your task is to assess the targeted sector(s) background and needs for the training. Your analysis should be structured
     clearly and based on the provided course title and industry.
@@ -51,6 +95,34 @@ def create_research_team(ensemble_output, model_choice: str) -> RoundRobinGroupC
     """
 
     performance_gap_message = f"""
+    IMPORTANT:
+    - Your output MUST be a valid JSON object, matching the schema below EXACTLY.
+    - Do NOT add any extra text, explanations, or markdown code blocks.
+    - Do NOT change, add, or remove any keys or structure.
+    - Do NOT include any comments or headings.
+    - Before outputting, simulate running a JSON linter (e.g., json.loads()) to ensure validity.
+    - If you do not follow these instructions, the process will fail.
+
+    CORRECT EXAMPLE:
+    {{
+      "Performance Gaps": [
+
+      ],
+      "Attributes Gained": [
+
+      ],
+      "Post-Training Benefits to Learners": [
+
+      ]
+    }}
+
+    INCORRECT EXAMPLES (do NOT do this):
+    ```json
+    {{ ... }}
+    ```
+    Here is your JSON: {{ ... }}
+    Any output with extra text, markdown, or missing/extra keys is invalid.
+
     You are responsible for identifying the performance gaps and post-training benefits to learners that the course will address.
     Based on the extracted data, answer the following question:
     (ii) Performance gaps that the course will address for the given course title and learning outcomes: {ensemble_output.get('Course Information', {}).get('Course Title', [])}, {ensemble_output.get('Learning Outcomes', {}).get('Learning Outcomes', [])}.
@@ -105,42 +177,96 @@ def create_research_team(ensemble_output, model_choice: str) -> RoundRobinGroupC
 
     """
 
+    #sequences_intro = "For this course, the step-by-step sequencing helps learners build from foundational concepts to advanced applications relevant to the course topic."
+
     sequencing_rationale_message = f"""
-    You are an experienced course developer. Your task is to justify the rationale of sequencing 
-    using a step-by-step curriculum framework for the course titled: {ensemble_output.get('Course Information', {}).get('Course Title', [])}.
-    Have one pointer within Performance Gaps and Attributes Gained for each Learning Outcome
-    Do not use any control characters such as newlines.
-    Do not mention any course names in your analysis.
-    Ensure that all Learning Units are accounted for in your analysis.
+    IMPORTANT:
+    - Your output MUST be a valid JSON object, matching the schema below EXACTLY.
+    - The sequencing explanation MUST start with a generic introduction sentence (e.g., 'For this course, the step-by-step sequencing helps learners acquire the necessary knowledge and skills in [course subject or skill area].').
+    - Immediately after, you MUST insert a detailed, logically structured sequencing explanation (3-5 sentences) that describes:
+        1. The overall framework and logic of the sequencing.
+        2. How foundational knowledge is established.
+        3. How each subsequent unit builds on prior knowledge.
+        4. How the sequence supports mastery and real-world application.
+        5. How the structure ensures alignment with the course's learning outcomes.
+    - This explanation must reference the course's actual learning outcomes, units, or topics, and should demonstrate depth and breadth. Avoid shallow or formulaic summaries.
+    - Then, continue with the generic follow-up sentence: 'Each learning unit (LU) is carefully positioned to lay the groundwork for the next, ensuring that learners gain the necessary knowledge and applied skills at each stage before advancing further.'
+    - For each LU:
+        - The LU title MUST exactly match the corresponding Learning Unit title as provided in the course JSON (e.g., from the 'Learning Units' list in 'TSC and Topics'). Do not paraphrase, abbreviate, or invent new titles. Use the exact text as the key.
+        - The LU description MUST NOT repeat the LU title or include the K/A factors in the description body. Only use the title as the key.
+        - Provide a detailed, multi-sentence description that:
+            * References the relevant learning outcome(s), topic(s), or skill(s) addressed.
+            * Explains how the unit builds on previous knowledge or prepares for subsequent units.
+            * Details the real-world or pedagogical significance of the unit.
+        - The description should be logically structured, rich, and similar in style to the user's provided example, but should NOT include the LU title or K/A factors in the description itself.
+    - The conclusion must be multi-sentence, summarizing how the sequence supports mastery, real-world application, and alignment with learning outcomes.
+    - Do NOT remove or omit the LU1, LU2, LU3, (LU4 if present), and Conclusion sections.
+    - You may rephrase the LU and Conclusion sections, but always keep the required introductory and follow-up sentences at the start.
+    - Do NOT add any extra text, explanations, or markdown code blocks.
+    - Before outputting, simulate running a JSON linter (e.g., json.loads()) to ensure validity.
+    - If you do not follow these instructions, the process will fail.
 
-    Reference the following JSON variables in your response:
-    1. Learning outcomes: {ensemble_output.get('Learning Outcomes', {}).get('Learning Outcomes', [])}
-    2. Learning units: {ensemble_output.get('TSC and Topics', {}).get('Learning Units', [])}
-    3. Course outline: {ensemble_output.get('Assessment Methods', {}).get('Course Outline', [])}
-
-    Output your response for (iii.) in the following format, for example:
+    TEMPLATE:
     {{
-        Sequencing Explanation: For this course, the step-by-step sequencing is employed to scaffold the learners' comprehension and application of video marketing strategies using AI tools. The methodology is crucial as it system-atically breaks down the intricate facets of video marketing, inbound marketing strategies, and AI tools into digestible units. This aids in gradually building the learners' knowledge and skills from fundamental to more complex concepts, ensuring a solid foundation before advancing to the next topic. The progression is designed to foster a deeper understanding and the ability to effectively apply the learned concepts in real-world marketing scenarios.
+        Sequencing Explanation: For this course, the step-by-step sequencing helps learners acquire the necessary knowledge and skills in [course subject or skill area].
+        [Insert here: 3-5 sentence, logically structured explanation describing the overall framework, how foundational knowledge is established, how each unit builds on the previous, how the sequence supports mastery and real-world application, and how the structure ensures alignment with learning outcomes. Reference the course's actual learning outcomes, units, or topics.]
+        Each learning unit (LU) is carefully positioned to lay the groundwork for the next, ensuring that learners gain the necessary knowledge and applied skills at each stage before advancing further.
 
-        LU1: 
-            Title: Translating Strategy into Action and Fostering a Customer-Centric Culture
-            Description: LU1 lays the foundational knowledge by introducing learners to the organization's inbound marketing strategies and how they align with the overall marketing strategy. The facilitator will guide learners through translating these strategies into actionable plans and understanding the customer decision journey. This unit sets the stage for fostering a customer-centric culture with a particular focus on adhering to organizational policies and guidelines. The integration of AI tools in these processes is introduced, giving learners a glimpse into the technological aspects they will delve deeper into in subsequent units.
+        LU1: [Exact title of LU1 from the course JSON]
+        LU1 directly supports [LO1 or relevant outcome] by [establishing/introducing] [key concepts, skills, or frameworks]. The topics in this unit cover [briefly list or describe topics/skills], which are essential before [next stage or application]. Applied components such as [practical activities, frameworks, or tools] equip learners with [capabilities or understanding]. This unit ensures that learners develop a complete baseline, which is critical for progressing to subsequent units.
 
-        LU2: 
-            Title: Improving Inbound Marketing Strategies and Content Management
-            Description: Building on the foundational knowledge, LU2 dives into the practical aspects of content creation and curation and how AI tools can be utilized for strategy improvement. Learners will be led through exercises to recommend improvements and manage content across various platforms. The hands-on activities in this unit are designed to enhance learners' ability to manage and optimize video content, crucial skills in video marketing with AI tools.
+        LU2: [Exact title of LU2 from the course JSON]
+        LU2 builds on the foundation of LU1 and addresses [LO2 or relevant outcome] by guiding learners through [frameworks, requirements, or skills]. With foundational knowledge already established, learners are now equipped to [explore/apply] [new topics, skills, or challenges]. This step is essential before [next stage or application]. The progression into [advanced topics or skills] allows learners to develop practical skills in [area]. This stage ensures learners can [apply/interpet] [knowledge/skills] while considering broader goals.
 
-        LU3: 
-            Title: Leading Customer Decision Processes and Monitoring Inbound Marketing Effectiveness
-            Description: LU3 escalates to a higher level of complexity where learners delve into lead conversion processes, leading customers through decision processes, and evaluating marketing strategy effectiveness. Under the guidance of the facilitator, learners will engage in monitoring and reviewing inbound marketing strategies, thereby aligning theoretical knowledge with practical skills in a real-world context. The synthesis of previous knowledge with advanced concepts in this unit culminates in a comprehensive understanding of video marketing with AI tools, equipping learners with the requisite skills to excel in the modern marketing landscape.
+        LU3: [Exact title of LU3 from the course JSON]
+        LU3 builds on the grounding in LU2 and supports [LO3 or relevant outcome]. At this stage, learners are prepared to [apply/operationalise] [key skills or concepts] by first understanding [critical concepts or systems]. This logical next step ensures the learner can [contextualise/apply] [knowledge/skills] in [real-world or advanced context]. The unit progresses to [advanced methodologies or applications], which are critical before [final stage or application]. These steps are sequenced deliberately to ensure that [outcomes/strategies] are based on [accurate, system-wide understanding], reinforcing sound planning and mastery.
 
-        Conclusion: "Overall, the structured sequencing of these learning units is designed to address the performance gaps identified in the retail industry while equipping learners with the necessary attributes to excel in their roles as machine learning professionals."
-            
+        [Repeat for LU4, LU5, etc. as needed.]
+
+        Conclusion: The structured sequencing of these learning units ensures that learners develop a coherent and comprehensive understanding of [course subject or skill area]. By progressing from foundational principles to advanced applications, each unit builds on the previous, supporting mastery, real-world application, and alignment with the course's learning outcomes and industry or professional standards.
+    }}
+
+    CORRECT EXAMPLE:
+    {{
+        Sequencing Explanation: For this course, the step-by-step sequencing helps learners acquire the necessary knowledge and skills in data analytics and decision-making. The framework begins with essential knowledge of data structures and methodically builds toward advanced application in predictive modeling, business intelligence, and finally, the formulation of actionable strategies. Each learning unit (LU) is carefully positioned to lay the groundwork for the next, ensuring that learners gain the necessary knowledge and applied skills at each stage before advancing further. This systematic sequencing ensures alignment with the course's learning outcomes and supports mastery at each critical phase of data-driven problem solving.
+
+        LU1: Foundations of Data Structures and Management
+        LU1 directly supports LO1 by establishing a technical and conceptual foundation for data analytics. The topics in this unit introduce core principles of data types, storage, and retrieval, as well as best practices for data integrity and security. These foundational concepts are necessary before any analysis or modeling can be introduced. Applied components such as database design and data cleaning equip learners with the capability to manage and prepare data for analysis. This unit ensures that learners develop a complete baseline understanding, which is critical for progressing to analytical and modeling aspects.
+
+        LU2: Analytical Methods and Business Intelligence
+        LU2 builds on the foundation of LU1 and addresses LO2 by guiding learners through analytical frameworks and business intelligence tools. With foundational knowledge already established, learners are now equipped to explore data visualization, reporting, and dashboard creation. This step is essential before predictive modeling or strategic decision-making can be conducted. The progression into interpreting business metrics and identifying trends allows learners to develop practical skills in business intelligence. This stage ensures learners can interpret and apply analytics while considering broader organizational goals.
+
+        LU3: Predictive Modeling and Strategic Application
+        LU3 builds on the analytical grounding in LU2 and supports LO3. At this stage, learners are prepared to operationalize predictive modeling by first understanding statistical methods and machine learning algorithms. This logical next step ensures the learner can contextualize predictions within business scenarios. The unit progresses to model evaluation and deployment, which are critical before actionable strategies can be formulated. These steps are sequenced deliberately to ensure that strategies are based on accurate, data-driven insights, thus reinforcing sound decision-making and planning.
+
+        Conclusion: The structured sequencing of these learning units ensures that learners develop a coherent and comprehensive understanding of data analytics and decision-making. By progressing from foundational principles to advanced applications, each unit builds on the previous, supporting mastery, real-world application, and alignment with the course's learning outcomes and industry standards.
     }}
 
     """
 
     editor_message = f"""
+    IMPORTANT:
+    - Your output MUST be a valid JSON object, matching the schema below EXACTLY.
+    - Do NOT add any extra text, explanations, or markdown code blocks.
+    - Do NOT change, add, or remove any keys or structure.
+    - Do NOT include any comments or headings.
+    - Before outputting, simulate running a JSON linter (e.g., json.loads()) to ensure validity.
+    - If you do not follow these instructions, the process will fail.
+
+    CORRECT EXAMPLE:
+    {{
+        "Background Analysis": {{ ... }},
+        "Performance Analysis": {{ ... }},
+        "Sequencing Analysis": {{ ... }}
+    }}
+
+    INCORRECT EXAMPLES (do NOT do this):
+    ```json
+    {{ ... }}
+    ```
+    Here is your JSON: {{ ... }}
+    Any output with extra text, markdown, or missing/extra keys is invalid.
+
     You are to consolidate the findings without amending any of the output, mapping each agent's output to these terms accordingly.
 
     Only 3 keys are present, Background Analysis, Performance Analysis, Sequencing Analysis. Do not aggregate any of the Validator's output, only the researching agents. Do not aggregate validator comments, those are not essential.

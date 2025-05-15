@@ -275,7 +275,33 @@ def create_course_dataframe(json_data):
         "Mode of Assessment"
     ])
 
-    return df
+    # Post-process Mode of Assessment for unknown/other methods
+    DROPDOWN_OPTIONS = [
+        "Written Exam",
+        "Online Test",
+        "Project",
+        "Assignments",
+        "Oral Interview",
+        "Demonstration",
+        "Practical Exam",
+        "Role Play",
+        "Oral Questioning",
+        "Others: [Please elaborate]"
+    ]
+    def robust_mode_of_assessment(x):
+        if x == "Others: [Please elaborate]":
+            # If Case Study present, prefer that
+            if "Case Study" in assessment_methods:
+                return "Others: Case Study"
+            # Otherwise, find the first method not in the dropdown
+            for method in assessment_methods:
+                if method not in DROPDOWN_OPTIONS and method != "Case Study":
+                    return f"Others: {method}"
+        return x
+    if "Mode of Assessment" in df.columns:
+        df["Mode of Assessment"] = df["Mode of Assessment"].apply(robust_mode_of_assessment)
+
+    return clean_tsc_code_and_assessment_methods(df)
 
 def combine_los_and_topics(ensemble_output):
     """
@@ -528,19 +554,33 @@ def create_assessment_dataframe(json_data):
         "KA"
     ])
     
-    # Verify total assessment duration
-    actual_assessment_minutes = df["Assessment Duration"].sum()
-    print(f"Final assessment duration: {actual_assessment_minutes} minutes")
-    print(f"Target assessment duration: {total_assessment_minutes} minutes")
+    # Robust post-processing for Mode of Assessment (MOA)
+    DROPDOWN_OPTIONS = [
+        "Written Exam",
+        "Online Test",
+        "Project",
+        "Assignments",
+        "Oral Interview",
+        "Demonstration",
+        "Practical Exam",
+        "Role Play",
+        "Oral Questioning",
+        "Others: [Please elaborate]"
+    ]
+    def robust_mode_of_assessment(x):
+        if x == "Others: [Please elaborate]":
+            # If Case Study present, prefer that
+            if "Case Study" in assessment_methods:
+                return "Others: Case Study"
+            # Otherwise, find the first method not in the dropdown
+            for method in assessment_methods:
+                if method not in DROPDOWN_OPTIONS and method != "Case Study":
+                    return f"Others: {method}"
+        return x
+    if "MOA" in df.columns:
+        df["MOA"] = df["MOA"].apply(robust_mode_of_assessment)
     
-    # If there's still a small difference, adjust the first row
-    if actual_assessment_minutes != total_assessment_minutes and df.shape[0] > 0:
-        diff = total_assessment_minutes - actual_assessment_minutes
-        df.loc[0, "Assessment Duration"] += diff
-        print(f"Made final adjustment of {diff} minutes to reach exact total")
-        print(f"Final assessment duration after adjustment: {df['Assessment Duration'].sum()} minutes")
-    
-    return df
+    return clean_tsc_code_and_assessment_methods(df)
 
 def enrich_assessment_dataframe_ka_descriptions(df, excel_data_json_path):
     """
@@ -579,6 +619,31 @@ def enrich_assessment_dataframe_ka_descriptions(df, excel_data_json_path):
     df['KA'] = enriched_ka_values # Update the KA column with enriched values
     return df
 
+def format_sequencing_rationale(rationale: str) -> str:
+    """
+    Ensures the sequencing rationale starts with the required phrase or a reasonable variant.
+    If not, prepends a generic multi-sentence rationale and the required intro.
+    Handles edge cases: if rationale is empty, or starts with LU1, or is missing the intro, etc.
+    """
+    rationale = (rationale or '').strip()
+    # Flexible regex: matches 'For this course, the step[- ]?by[- ]?step sequencing helps' or 'For this course, the step-by-step sequencing helps', case-insensitive
+    intro_pattern = re.compile(r"^for this course, the step[- ]?by[- ]?step sequencing helps", re.IGNORECASE)
+    lu_pattern = re.compile(r"^lu\s*1[:\.]", re.IGNORECASE)
+    required_intro = "For this course, the step-by-step sequencing helps learners build from foundational concepts to advanced applications in the subject area."
+    generic_rationale = (
+        "This framework begins with foundational principles, ensuring learners acquire essential knowledge and skills before progressing to more advanced topics and applications. "
+        "Each learning unit is carefully sequenced to build on the previous one, supporting mastery at every stage and enabling real-world application. "
+        "This structure ensures alignment with the course's learning outcomes and supports a comprehensive, logical progression from basic to advanced competencies."
+    )
+    if not rationale:
+        return f"{required_intro}\n\n{generic_rationale}"
+    if intro_pattern.match(rationale):
+        return rationale
+    if lu_pattern.match(rationale):
+        return f"{required_intro}\n\n{generic_rationale}\n\n{rationale}"
+    # If rationale is a short phrase or doesn't start with intro or LU1, prepend intro and rationale
+    return f"{required_intro}\n\n{generic_rationale}\n\n{rationale}"
+
 # main function for this script
 def map_new_key_names_excel(generated_mapping_path, generated_mapping, output_json_file, excel_data_path, ensemble_output):
     # generated_mapping_path = os.path.join('..', 'json_output', 'generated_mapping.json')
@@ -604,6 +669,9 @@ def map_new_key_names_excel(generated_mapping_path, generated_mapping, output_js
     # sequencing rationale
     sequencing_keys = ["#Rationale[0]", "#Sequencing", "#Conclusion[0]"]
     sequencing_rationale_data = extract_and_concatenate_json_values(generated_mapping, sequencing_keys, "#Sequencing_rationale")
+    # Format the sequencing rationale for Excel (backwards compatible)
+    if sequencing_rationale_data and sequencing_rationale_data.get("#Sequencing_rationale"):
+        sequencing_rationale_data["#Sequencing_rationale"] = format_sequencing_rationale(sequencing_rationale_data["#Sequencing_rationale"])
 
     # tcs code combined with skill name
     tcs_keys = ["#TCS[1]", "#TCS[0]"]
@@ -631,6 +699,17 @@ def map_new_key_names_excel(generated_mapping_path, generated_mapping, output_js
     course_outline = combine_los_and_topics(ensemble_output)
     # Wrap the course_outline string in a dictionary
     course_outline_data = {"#Course_Outline": course_outline}
+
+    # --- ADD COURSE LEVEL TO OUTPUT ---
+    # Try to get course level from ensemble_output, fallback to excel_data if needed
+    course_level = None
+    if "Course Information" in ensemble_output and "Course Level" in ensemble_output["Course Information"]:
+        course_level = ensemble_output["Course Information"]["Course Level"]
+    elif "Course Information" in excel_data[0] and "Course Level" in excel_data[0]["Course Information"]:
+        course_level = excel_data[0]["Course Information"]["Course Level"]
+    # Add to output if found
+    if course_level:
+        existing_data["Course Level"] = course_level
 
     if sequencing_rationale_data and tcs_code_skill_data: # Check if both data extractions were successful
         # **Update the existing data dictionary**
@@ -767,7 +846,9 @@ def create_instructional_dataframe(json_data):
     all_multiples_of_5 = all(duration % 5 == 0 for duration in df["Instructional Duration"])
     print(f"All durations are multiples of 5: {all_multiples_of_5}")
 
-    return df
+    if "Instructional Methods" in df.columns:
+        df["Instructional Methods"] = df["Instructional Methods"].apply(map_instructional_method)
+    return clean_tsc_code_and_assessment_methods(df)
 
 def create_instruction_description_dataframe(ensemble_json_path, im_agent_json_path):
     """
@@ -834,6 +915,8 @@ def create_instruction_description_dataframe(ensemble_json_path, im_agent_json_p
         data.append([method, description])
 
     df = pd.DataFrame(data, columns=["Instructional Method", "Description"])
+    if "Instructional Method" in df.columns:
+        df["Instructional Method"] = df["Instructional Method"].apply(map_instructional_method)
     return df
 
 
@@ -883,7 +966,7 @@ def create_summary_dataframe(course_df, instructional_df, assessment_df):
 
     # Create the formatted Learning Outcome(s) column.
     course_agg["Learning Outcome(s)"] = course_agg.apply(
-        lambda row: f"{row['LO#']}: {row['Learning Outcome']} ({', '.join(row['Applicable K&A Statement'])})",
+        lambda row: f"{row['LO#']}: {row['Learning Outcome']} ({', '.join(list(row['Applicable K&A Statement']) if isinstance(row['Applicable K&A Statement'], (list, tuple)) else [str(row['Applicable K&A Statement'])])})",
         axis=1
     )
     # Rename topics column to "Topic(s)" for clarity.
@@ -979,4 +1062,81 @@ def create_summary_dataframe(course_df, instructional_df, assessment_df):
     print(f"Total assessment duration: {summary_df['Assessment Duration (in minutes)'].sum()} minutes")
 
     return summary_df
+
+INSTRUCTIONAL_METHODS_DROPDOWN = [
+    "Brainstorming",
+    "Case studies",
+    "Concept formation",
+    "Debates",
+    "Demonstrations / Modelling",
+    "Didactic questions",
+    "Discussions",
+    "Drill and Practice",
+    "Experiments",
+    "Explicit teaching (Lecture) & Homework",
+    "Field trips",
+    "Games",
+    "Independent reading",
+    "Interactive presentation",
+    "Peer teaching / Peer practice",
+    "Problem solving",
+    "Reflection",
+    "Role-play",
+    "Simulations",
+    "Others: [Please elaborate]"
+]
+
+# Mapping from raw instructional method names to dropdown values
+INSTRUCTIONAL_METHODS_MAPPING = {
+    "Peer Sharing": "Peer teaching / Peer practice",
+    "Peer sharing": "Peer teaching / Peer practice",
+    "Group Discussion": "Discussions",
+    "Group discussion": "Discussions",
+    "Interactive Presentation": "Interactive presentation",
+    "Case Study": "Case studies",
+    "Case study": "Case studies",
+    # Add more mappings as needed
+}
+
+def map_instructional_method(value):
+    if not isinstance(value, str):
+        return value
+    # Use mapping if available
+    if value in INSTRUCTIONAL_METHODS_MAPPING:
+        return INSTRUCTIONAL_METHODS_MAPPING[value]
+    value_clean = value.strip().lower()
+    for option in INSTRUCTIONAL_METHODS_DROPDOWN:
+        if value_clean == option.strip().lower():
+            return option  # Use dropdown value as-is
+    # If already in the form 'Others: ...' (but not [Please elaborate]), keep as-is
+    if value_clean.startswith("others:") and value_clean != "others: [please elaborate]":
+        return f"Others: {value[7:].strip().capitalize()}"
+    # Special case: map 'Others: Case Study' or 'Case Study' to 'Case studies' if present
+    if value_clean in ["others: case study", "case study", "case studies"]:
+        for option in INSTRUCTIONAL_METHODS_DROPDOWN:
+            if option.lower() == "case studies":
+                return option
+    return f"Others: {value.strip()}"
+
+def clean_tsc_code_and_assessment_methods(df):
+    """
+    Post-processes a DataFrame to:
+    1. Remove duplicate TSC codes in the TSC code/skill field (e.g., 'CODE CODE Skill' -> 'CODE Skill').
+    2. Map assessment methods to dropdown, or to 'Others: [value]' if not present.
+    """
+    import re
+    # Clean TSC code/skill field
+    if 'TSC Code Skill' in df.columns:
+        def clean_tsc(val):
+            if isinstance(val, str):
+                # Remove duplicate code at the start
+                match = re.match(r'^(\w+-\w+-\d+\.\d+) \1 (.+)$', val)
+                if match:
+                    return f"{match.group(1)} {match.group(2)}"
+            return val
+        df['TSC Code Skill'] = df['TSC Code Skill'].apply(clean_tsc)
+    # Clean assessment method field
+    if 'Assessment Methods' in df.columns:
+        df['Assessment Methods'] = df['Assessment Methods'].apply(map_assessment_method)
+    return df
 

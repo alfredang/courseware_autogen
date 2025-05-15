@@ -6,6 +6,27 @@ from autogen_core.models import ChatCompletionClient
 
 def tsc_agent_task(tsc_data):
     tsc_task = f"""
+    IMPORTANT:
+    - Your output MUST be a valid JSON object, matching the schema below EXACTLY.
+    - Do NOT add any extra text, explanations, or markdown code blocks.
+    - Do NOT change, add, or remove any keys or structure.
+    - Do NOT include any comments or headings.
+    - Before outputting, simulate running a JSON linter (e.g., json.loads()) to ensure validity.
+    - If you do not follow these instructions, the process will fail.
+    - Do not repeat or duplicate the TSC code in the output. The TSC code should appear only once, followed by the skill name/title.
+
+    CORRECT EXAMPLE:
+    {{
+      "Course_Proposal_Form": {{ ... }}
+    }}
+
+    INCORRECT EXAMPLES (do NOT do this):
+    ```json
+    {{ ... }}
+    ```
+    Here is your JSON: {{ ... }}
+    Any output with extra text, markdown, or missing/extra keys is invalid.
+
     1. Parse data from the following JSON file: {tsc_data}
     2. Fix spelling errors, and missing LUs if any.
     3. Ensure that the LUs do not have the same name as the Topics.
@@ -18,6 +39,27 @@ def create_tsc_agent(tsc_data, model_choice: str) -> RoundRobinGroupChat:
     model_client = ChatCompletionClient.load_component(chosen_config)
 
     tsc_parser_agent_message = f"""
+        IMPORTANT:
+        - Your output MUST be a valid JSON object, matching the schema below EXACTLY.
+        - Do NOT add any extra text, explanations, or markdown code blocks.
+        - Do NOT change, add, or remove any keys or structure.
+        - Do NOT include any comments or headings.
+        - Before outputting, simulate running a JSON linter (e.g., json.loads()) to ensure validity.
+        - If you do not follow these instructions, the process will fail.
+        - Do not repeat or duplicate the TSC code in the output. The TSC code should appear only once, followed by the skill name/title.
+
+        CORRECT EXAMPLE:
+        {{
+          "Course_Proposal_Form": {{ ... }}
+        }}
+
+        INCORRECT EXAMPLES (do NOT do this):
+        ```json
+        {{ ... }}
+        ```
+        Here is your JSON: {{ ... }}
+        Any output with extra text, markdown, or missing/extra keys is invalid.
+
         You are to parse and correct spelling mistakes from {tsc_data}:
         The requirements are as follows:
         1. If there are no LU's present, summarize a LU from each Topics and name them sequentially. The LUs should NOT have the same name as the topics. Ignore this instruction if there are LUs present.
@@ -45,6 +87,8 @@ def create_tsc_agent(tsc_data, model_choice: str) -> RoundRobinGroupChat:
         - Group Discussion
         - Case Study
 
+        For instructional methods, output the method names EXACTLY as they appear in the input. Do NOT paraphrase, modify, or wrap them in 'Others: ...'. The mapping to dropdown or 'Others: [value]' will be handled downstream in the pipeline.
+
         For example, "case studies" is WRONG, "Case Study" is CORRECT.
 
         An example JSON schema looks like this, with the LUs as a key-value pair:
@@ -53,6 +97,7 @@ def create_tsc_agent(tsc_data, model_choice: str) -> RoundRobinGroupChat:
                 "null": [
                     "Title: Hands-on AI-Assisted Programming Made Simple with GitHub Copilot",
                     "Organization: Tertiary Infotech Pte Ltd",
+                    "Course Level: Intermediate",
                     "Learning Outcomes:",
                     "LO1: Identify gaps in existing programming workflows and propose AI-assisted solutions using GitHub Copilot to enhance efficiency.",
                     "LO2: Explore and apply emerging AI programming tools, including GitHub Copilot, to streamline organizational coding processes.",
@@ -108,6 +153,7 @@ def create_tsc_agent(tsc_data, model_choice: str) -> RoundRobinGroupChat:
                 "null": [
                     "Title: Hands-on AI-Assisted Programming Made Simple with GitHub Copilot",
                     "Organization: Tertiary Infotech Pte Ltd",
+                    "Course Level: Intermediate",
                     "Learning Outcomes:",
                     "LO1: Identify gaps in existing programming workflows and propose AI-assisted solutions using GitHub Copilot to enhance efficiency.",
                     "LO2: Explore and apply emerging AI programming tools, including GitHub Copilot, to streamline organizational coding processes.",

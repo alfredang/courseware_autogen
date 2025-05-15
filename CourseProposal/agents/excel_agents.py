@@ -10,6 +10,28 @@ from autogen_agentchat.ui import Console
 
 def course_task():
     overview_task = f"""
+    IMPORTANT:
+    - Your output MUST be a valid JSON object, matching the schema below EXACTLY.
+    - Do NOT add any extra text, explanations, or markdown code blocks.
+    - Do NOT change, add, or remove any keys or structure.
+    - Do NOT include any comments or headings.
+    - Before outputting, simulate running a JSON linter (e.g., json.loads()) to ensure validity.
+    - If you do not follow these instructions, the process will fail.
+
+    CORRECT EXAMPLE:
+    {{
+      "course_overview": {{
+        "course_description": "..."
+      }}
+    }}
+
+    INCORRECT EXAMPLES (do NOT do this):
+    ```json
+    {{ ... }}
+    ```
+    Here is your JSON: {{ ... }}
+    Any output with extra text, markdown, or missing/extra keys is invalid.
+
     1. Based on the provided data, generate your justifications.
     2. Ensure your responses are structured in JSON format.
     3. Return a full JSON object with all your answers according to the schema.
@@ -18,6 +40,29 @@ def course_task():
 
 def ka_task():
     overview_task = f"""
+    IMPORTANT:
+    - Your output MUST be a valid JSON object, matching the schema below EXACTLY.
+    - Do NOT add any extra text, explanations, or markdown code blocks.
+    - Do NOT change, add, or remove any keys or structure.
+    - Do NOT include any comments or headings.
+    - Before outputting, simulate running a JSON linter (e.g., json.loads()) to ensure validity.
+    - If you do not follow these instructions, the process will fail.
+
+    CORRECT EXAMPLE:
+    {{
+      "KA_Analysis": {{
+        "K1": "...",
+        "A1": "..."
+      }}
+    }}
+
+    INCORRECT EXAMPLES (do NOT do this):
+    ```json
+    {{ ... }}
+    ```
+    Here is your JSON: {{ ... }}
+    Any output with extra text, markdown, or missing/extra keys is invalid.
+
     1. Based on the provided data, generate your justifications, ensure that ALL the A and K factors are addressed.
     2. Ensure your responses are structured in JSON format.
     3. Return a full JSON object with all your answers according to the schema.
@@ -26,6 +71,32 @@ def ka_task():
 
 def im_task():
     im_task = f"""
+    IMPORTANT:
+    - Your output MUST be a valid JSON object, matching the schema below EXACTLY.
+    - Do NOT add any extra text, explanations, or markdown code blocks.
+    - Do NOT change, add, or remove any keys or structure.
+    - Do NOT include any comments or headings.
+    - Before outputting, simulate running a JSON linter (e.g., json.loads()) to ensure validity.
+    - If you do not follow these instructions, the process will fail.
+    - For instructional methods, output the method names EXACTLY as they appear in the input. Do NOT paraphrase, modify, or wrap them in 'Others: ...'. The mapping to dropdown or 'Others: [value]' will be handled downstream in the pipeline.
+    - If the instructional or assessment method is Case Study, output as 'Others: Case Study' (not 'Others: [Please elaborate]').
+    - Add 'Others: Case Study' to the dropdown options and use this format for Case Study.
+
+    CORRECT EXAMPLE:
+    {{
+      "Instructional_Methods": {{
+        "Lecture": "...",
+        "Didactic Questioning": "..."
+      }}
+    }}
+
+    INCORRECT EXAMPLES (do NOT do this):
+    ```json
+    {{ ... }}
+    ```
+    Here is your JSON: {{ ... }}
+    Any output with extra text, markdown, or missing/extra keys is invalid.
+
     1. Based on the provided data, generate your justifications, ensure that the instructional methods are addressed.
     2. Ensure your responses are structured in JSON format.
     3. Return a full JSON object with all your answers according to the schema.
@@ -45,9 +116,29 @@ def create_course_agent(ensemble_output, model_choice: str) -> RoundRobinGroupCh
 
     Your task is to create a Course Description in 2 paragraphs for the above factors.
 
-    An example answer is as follows: "This course equips learners with essential GitHub skills, covering version control, repository management, and collaborative workflows. Participants will learn how to create repositories, manage branches, integrate Git scripts, and leverage pull requests to streamline development. Through hands-on exercises, learners will explore GitHub features like issue tracking, code reviews, and discussions to enhance team collaboration.
+    IMPORTANT:
+    - The course level (beginner, intermediate, or advanced) MUST be clearly stated in the course description, using the value from the input JSON (ensemble_output['Course Information']['Course Level']).
+    - Do NOT guess or default the course level; always use the provided value.
+    - Your output MUST be a valid JSON object, matching the schema below EXACTLY.
+    - Do NOT add any extra text, explanations, or markdown code blocks.
+    - Do NOT change, add, or remove any keys or structure.
+    - Do NOT include any comments or headings.
+    - Before outputting, simulate running a JSON linter (e.g., json.loads()) to ensure validity.
+    - If you do not follow these instructions, the process will fail.
+      More concise and structured: Tighter language and clearer focus on core topics.
+    CORRECT EXAMPLE:
+    {{
+      "course_overview": {{
+        "course_description": "This course equips learners with essential GitHub skills, covering version control, repository management, and collaborative workflows. Participants will learn how to create repositories, manage branches, integrate Git scripts, and leverage pull requests to streamline development. Through hands-on exercises, learners will explore GitHub features like issue tracking, code reviews, and discussions to enhance team collaboration. The course also covers modern GitHub tools such as GitHub Actions, Copilot, and Codespaces for automation and AI-driven development. Learners will gain expertise in security best practices, including dependency management, code scanning, and authentication protocols. By the end of the course, participants will be able to diagnose configuration issues, optimize deployment processes, and implement software improvements effectively. This course is at an intermediate level, designed for professionals who..."
+      }}
+    }}
 
-    The course also covers modern GitHub tools such as GitHub Actions, Copilot, and Codespaces for automation and AI-driven development. Learners will gain expertise in security best practices, including dependency management, code scanning, and authentication protocols. By the end of the course, participants will be able to diagnose configuration issues, optimize deployment processes, and implement software improvements effectively."
+    INCORRECT EXAMPLES (do NOT do this):
+    ```json
+    {{ ... }}
+    ```
+    Here is your JSON: {{ ... }}
+    Any output with extra text, markdown, or missing/extra keys is invalid.
 
     You must start your answer with "This course"
     You must take into consideration the learning outcomes and topics for the Course Description.
@@ -56,16 +147,39 @@ def create_course_agent(ensemble_output, model_choice: str) -> RoundRobinGroupCh
     Do not mention the LOs in your answer.
     Do not add quotation marks in your answer.
 
-    Provide learners with a clear overview of the course:
-    Highlight the benefits your course offers including skils, competencies and needs that the course will address
-    Explain how the course is relevant to the industry and how it may impact the learner's career in terms of employment/ job upgrading opportunities
-    Indicate that the course is for beginner learners.
-    Do not have more than 1 key value pair under "course_overview", and that key value pair must be "course_description".
+    Your course description MUST strictly fulfill all of the following:
+    • Highlight the benefits, skills, competencies, and needs the course will address
+    • Explain how the course is relevant to the industry and how it may impact the learner's career in terms of employment/job upgrading opportunities
+    • Indicate if the course is for beginner, intermediate, or advanced learners (using the value from the input JSON)
+
+    Do NOT copy the template or example verbatim. Vary your sentence structure, paragraph flow, and adapt your style to the course context. Your output should be natural, engaging, and tailored, not formulaic.
+
+    ---
+    Your course description must be at least 4 sentences long, multi-paragraph, and as detailed as the example provided. It must adapt terminology, standards, frameworks, and real-world applications to the actual course subject area (e.g., technology, healthcare, finance, engineering, etc.).
+
+    TEMPLATE (ADAPT TO THE COURSE DOMAIN):
+    This course equips learners with the advanced competencies required to design and implement robust [domain/subject] systems in alignment with [relevant standard or framework, e.g., ISO 14064-1:2018, HIPAA, IFRS, etc.]. Participants will explore foundational principles of [subject] and its alignment with [science-based targets, industry standards, or global reporting requirements]. By engaging with real-world scenarios and case studies, learners will gain a practical understanding of how these principles are applied in leading organizations. Through practical engagement with [risk-informed planning, data analysis, compliance strategies, or other key activities], learners will develop the ability to ensure [regulatory compliance, operational excellence, or other domain-relevant goals] and integrate efforts into broader [organizational, industry, or societal] frameworks. The curriculum is designed to foster both technical expertise and strategic thinking, preparing participants to address complex challenges in their field.
+    A key focus of the course is operationalizing [core skill or process, e.g., emissions reduction, patient care, financial reporting] across [systems, supply chains, teams, etc.] using [lifecycle methodologies, data analysis, baseline assessments, etc.]. Learners will also gain critical skills in [specialized area, e.g., offset planning, clinical decision-making, risk management], including how to [define scopes, apply key metrics, formulate strategies] that are [economically viable, evidence-based, or optimized for the domain]. Interactive workshops and collaborative projects will enable participants to apply new knowledge in simulated professional contexts. The course delivers real-world applications that prepare participants to drive measurable impact within their organizations.
+
+    With [global regulatory and investor scrutiny, or industry trends] intensifying around [key challenge, e.g., climate accountability, data privacy, patient safety], this course provides essential upskilling for professionals engaged in [relevant roles or sectors]. The program addresses both current and emerging issues, ensuring that graduates remain adaptable in a rapidly evolving landscape. Proficiency in [relevant standard or practice] significantly enhances employability across diverse industries by equipping learners with the tools to [quantify, report, improve, or comply]. Graduates of this course will be well-positioned to pursue career advancement, transition into specialized roles, or support companies in meeting [industry or regulatory] goals. Alumni often find themselves at the forefront of innovation, leading initiatives that shape the future of their professions.
+
+    This course is at a(n) [course level] level, designed for [target audience, e.g., professionals, managers, practitioners] who have a foundational understanding of [relevant background] and are seeking to deepen their expertise in [subject area or skill]. Participants are encouraged to bring their own professional experiences into the learning environment, enriching discussions and fostering a vibrant community of practice.
+
+    EXAMPLE (HEALTHCARE DOMAIN):
+    This course equips learners with the advanced competencies required to design and implement robust patient data management systems in alignment with HIPAA and global healthcare data standards. Participants will explore foundational principles of healthcare informatics and its alignment with patient safety, privacy regulations, and international reporting requirements. Through a blend of lectures and hands-on labs, students will see how informatics principles are applied in hospitals and clinics worldwide. Through practical engagement with risk-informed planning, clinical data analysis, and compliance strategies, learners will develop the ability to ensure regulatory compliance and integrate data management efforts into broader hospital and healthcare system frameworks. The curriculum emphasizes both the technical and ethical dimensions of healthcare data, preparing participants to navigate complex regulatory environments.
+    A key focus of the course is operationalizing secure patient data handling across clinical departments and care teams using lifecycle methodologies, data analysis, and baseline assessments. Learners will also gain critical skills in clinical decision support, including how to define data scopes, apply key healthcare metrics, and formulate strategies that are evidence-based and optimized for patient outcomes. Group projects and scenario-based exercises will help participants translate theory into practice, simulating the challenges faced by healthcare professionals. The course delivers real-world applications that prepare participants to drive measurable improvements in patient care and data security within their organizations.
+
+    With global regulatory and public scrutiny intensifying around patient privacy and healthcare data security, this course provides essential upskilling for professionals engaged in healthcare management, clinical informatics, and digital health transformation. The program is regularly updated to reflect the latest trends and compliance requirements, ensuring its ongoing relevance. Proficiency in HIPAA and related standards significantly enhances employability across diverse healthcare settings by equipping learners with the tools to quantify, report, and improve patient data practices. Graduates of this course will be well-positioned to pursue career advancement, transition into informatics-focused roles, or support organizations in meeting compliance and patient safety goals. Many alumni have gone on to lead digital transformation projects or serve as data governance champions in their institutions.
+
+    This course is at an intermediate level, designed for healthcare professionals who have a foundational understanding of clinical systems or patient care and are seeking to deepen their expertise in healthcare informatics and data strategy. Learners from a variety of backgrounds are welcomed, and peer-to-peer learning is encouraged to maximize the value of diverse perspectives.
+
+    ---
+    Your output must match this level of detail, specificity, and structure, using the actual course data provided. If the course is in a different domain, adapt the terminology and details to that domain, referencing relevant standards, frameworks, and real-world applications.
 
 
     Format your response in the given JSON structure under "course_overview".
     Your output MUST be as follows, with course_description being the only key-value pair under "course_overview":
-    "course_overview": {{
+    "course_overview": 
         course_description: "Your course description here",
         }}
     """

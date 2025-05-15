@@ -14,7 +14,9 @@ def parse_document(input_docx, output_json):
 
     # Initialize containers
     data = {
-        "Course Information": {},
+        "Course Information": {
+            "Course Level": ""
+        },
         "Learning Outcomes": {
             "Learning Outcomes": [],
             "Knowledge": [],
@@ -104,13 +106,16 @@ def parse_document(input_docx, output_json):
             text = para.text.strip()
 
             # If the text indicates a new section, set current_section
-            if text.startswith("Course Title:"):
+            if text.lower().startswith("course title:"):
                 current_section = "Course Information"
                 # Extract the course title
-                course_title = text.replace("Course Title:", "").strip()
+                course_title = text[len("Course Title:"):].strip()
                 data["Course Information"]["Course Title"] = course_title
-            elif text.startswith("Organization:"):
-                data["Course Information"]["Name of Organisation"] = text.replace("Organization:", "").strip()
+            elif text.lower().startswith("course level:"):
+                # Extract the course level
+                data["Course Information"]["Course Level"] = text[len("Course Level:"):].strip()
+            elif text.lower().startswith("organization:"):
+                data["Course Information"]["Name of Organisation"] = text[len("Organization:"):].strip()
             elif text.startswith("Learning Outcomes"):
                 current_section = "Learning Outcomes"
             elif text.startswith("Course Mapping"):
