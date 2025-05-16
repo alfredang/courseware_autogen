@@ -57,7 +57,8 @@ default_config = {
             "family": "unknown",
             "function_calling": False,
             "json_output": True,
-            "vision": False
+            "vision": False,
+            "structured_output": False
         },
         "llama_name": "gemini-2.0-flash-001",
         "text_embedding_model": "model/text-embedding-005"
@@ -105,7 +106,8 @@ deepseek_config = {
             "family": "unknown",
             "function_calling": False,
             "json_output": False,
-            "vision": False
+            "vision": False,
+            "structured_output": False
         }
     }
     # Deepseek does not supported in multimodal mode
