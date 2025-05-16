@@ -85,7 +85,8 @@ deepseek_config = {
             "family": "unknown",
             "function_calling": False,
             "json_output": False,
-            "vision": False
+            "vision": False,
+            "structured_output": False
         }
     }
 }
@@ -101,7 +102,8 @@ gemini_config = {
             "family": "unknown",
             "function_calling": False,
             "json_output": True,
-            "vision": False
+            "vision": False,
+            "structured_output": False
         }
     }
 }
@@ -117,7 +119,8 @@ gemini_flash_config = {
             "family": "unknown",
             "function_calling": False,
             "json_output": True,
-            "vision": False
+            "vision": False,
+            "structured_output": False
         }
     }
 }

@@ -78,43 +78,63 @@ def extract_final_aggregator_json(file_path: str = "group_chat_state.json"):
     with open(file_path, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    # 1. Identify the aggregator key (usually starts with "aggregator/")
-    aggregator_key = None
+    aggregator_key_name = "aggregator"  # Exact agent name
+    found_key = None
+    if "agent_states" not in data or not isinstance(data["agent_states"], dict):
+        print(f"Warning: 'agent_states' not found or not a dictionary in {file_path}.")
+        return {}
+
     for key in data["agent_states"]:
-        if key.startswith("aggregator/"):
-            aggregator_key = key
+        if key == aggregator_key_name:
+            found_key = key
             break
 
-    if not aggregator_key:
-        print("No aggregator key found in agent_states.")
-        return None
+    if not found_key:
+        print(f"No key for agent '{aggregator_key_name}' found in agent_states of {file_path}.")
+        return {}
 
-    # 2. Get the aggregator agent state and retrieve the final message
-    aggregator_state = data["agent_states"][aggregator_key]
+    aggregator_state = data["agent_states"][found_key]
+    if not isinstance(aggregator_state, dict) or "agent_state" not in aggregator_state or \
+       not isinstance(aggregator_state["agent_state"], dict) or "llm_context" not in aggregator_state["agent_state"] or \
+       not isinstance(aggregator_state["agent_state"]["llm_context"], dict) or "messages" not in aggregator_state["agent_state"]["llm_context"]:
+        print(f"Unexpected structure for agent '{found_key}' state in {file_path}.")
+        return {}
+
     messages = aggregator_state["agent_state"]["llm_context"]["messages"]
-    if not messages:
-        print("No messages found under aggregator agent state.")
-        return None
+    if not messages or not isinstance(messages, list):
+        print(f"No messages found or messages is not a list for agent '{found_key}' in {file_path}.")
+        return {}
 
-    final_message = messages[-1].get("content", "")
-    if not final_message:
-        print("Final aggregator message is empty.")
-        return None
+    final_message_obj = messages[-1]
+    if not isinstance(final_message_obj, dict) or "content" not in final_message_obj:
+        print(f"Final message for agent '{found_key}' has unexpected structure or no content in {file_path}.")
+        return {}
 
-    # 3. Extract the substring from the first '{' to the last '}'
+    final_message = final_message_obj.get("content", "")
+
+    # Remove code block markers if present
+    if final_message.startswith("```json"):
+        final_message = final_message[len("```json"):].strip()
+    if final_message.startswith("```"):
+        final_message = final_message[len("```"):].strip()
+    if final_message.endswith("```"):
+        final_message = final_message[:-3].strip()
+
+    # Now extract JSON
     start_index = final_message.find("{")
     end_index = final_message.rfind("}")
     if start_index == -1 or end_index == -1:
         print("No JSON braces found in the final aggregator message.")
+        print("Message content was:", repr(final_message))
         return None
 
     json_str = final_message[start_index:end_index + 1].strip()
-
-    # 4. Parse the extracted substring as JSON
     try:
         return json.loads(json_str)
-    except json.JSONDecodeError:
+    except json.JSONDecodeError as e:
         print("Failed to parse aggregator content as valid JSON.")
+        print("Error:", e)
+        print("String was:", repr(json_str))
         return None
 
 def extract_final_editor_json(file_path: str = "research_group_chat_state.json"):
@@ -130,28 +150,44 @@ def extract_final_editor_json(file_path: str = "research_group_chat_state.json")
     with open(file_path, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    # 1. Identify the aggregator key (usually starts with "aggregator/")
-    editor_key = None
+    # 1. Identify the editor key
+    editor_agent_name = "editor"  # Exact agent name
+    found_key = None
+    if "agent_states" not in data or not isinstance(data["agent_states"], dict):
+        print(f"Warning: 'agent_states' not found or not a dictionary in {file_path}.")
+        return {}
+
     for key in data["agent_states"]:
-        if key.startswith("editor/"):
-            editor_key = key
+        if key == editor_agent_name:
+            found_key = key
             break
 
-    if not editor_key:
-        print("No editor key found in agent_states.")
-        return None
+    if not found_key:
+        print(f"No key for agent '{editor_agent_name}' found in agent_states of {file_path}.")
+        return {}
 
-    # 2. Get the aggregator agent state and retrieve the final message
-    aggregator_state = data["agent_states"][editor_key]
-    messages = aggregator_state["agent_state"]["llm_context"]["messages"]
-    if not messages:
-        print("No messages found under editor agent state.")
-        return None
+    # 2. Get the editor agent state and retrieve the final message
+    editor_state = data["agent_states"][found_key]
+    if not isinstance(editor_state, dict) or "agent_state" not in editor_state or \
+       not isinstance(editor_state["agent_state"], dict) or "llm_context" not in editor_state["agent_state"] or \
+       not isinstance(editor_state["agent_state"]["llm_context"], dict) or "messages" not in editor_state["agent_state"]["llm_context"]:
+        print(f"Unexpected structure for agent '{found_key}' state in {file_path}.")
+        return {}
 
-    final_message = messages[-1].get("content", "")
-    if not final_message:
-        print("Final editor message is empty.")
-        return None
+    messages = editor_state["agent_state"]["llm_context"]["messages"]
+    if not messages or not isinstance(messages, list):
+        print(f"No messages found or messages is not a list for agent '{found_key}' in {file_path}.")
+        return {}
+        
+    final_message_obj = messages[-1]
+    if not isinstance(final_message_obj, dict) or "content" not in final_message_obj:
+        print(f"Final message for agent '{found_key}' has unexpected structure or no content in {file_path}.")
+        return {}
+
+    final_message = final_message_obj.get("content", "")
+    if not final_message or not isinstance(final_message, str):
+        print(f"Final message for agent '{found_key}' is empty or not a string in {file_path}.")
+        return {}
 
     # 3. Extract the substring from the first '{' to the last '}'
     start_index = final_message.find("{")
@@ -179,16 +215,16 @@ def rename_keys_in_json_file(filename):
     # Load the JSON data from the file
     with open(filename, 'r', encoding='utf-8') as file:
         data = json.load(file)
-    
+    if not data or not isinstance(data, dict):
+        print(f"Warning: {filename} is empty or not a dict. Skipping key renaming.")
+        return
     # Rename keys according to the key_mapping
     for old_key, new_key in key_mapping.items():
         if old_key in data:
             data[new_key] = data.pop(old_key)
-    
     # Save the updated JSON data back to the same file
     with open(filename, 'w', encoding='utf-8') as file:
         json.dump(data, file, indent=4)
-    
     print(f"Updated JSON saved to {filename}")
 
 def update_knowledge_ability_mapping(tsc_json_path, ensemble_output_json_path):
@@ -244,28 +280,44 @@ def extract_final_agent_json(file_path: str = "assessment_justification_agent_st
     with open(file_path, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    # 1. Identify the aggregator key (usually starts with "aggregator/")
-    editor_key = None
+    # 1. Identify the assessment_justification_agent key
+    agent_name_to_find = "assessment_justification_agent"  # Exact agent name
+    found_key = None
+    if "agent_states" not in data or not isinstance(data["agent_states"], dict):
+        print(f"Warning: 'agent_states' not found or not a dictionary in {file_path}.")
+        return {}
+        
     for key in data["agent_states"]:
-        if key.startswith("assessment_justification_agent/"):
-            editor_key = key
+        if key == agent_name_to_find:
+            found_key = key
             break
 
-    if not editor_key:
-        print("No editor key found in agent_states.")
-        return None
+    if not found_key:
+        print(f"No key for agent '{agent_name_to_find}' found in agent_states of {file_path}.")
+        return {}
 
-    # 2. Get the aggregator agent state and retrieve the final message
-    aggregator_state = data["agent_states"][editor_key]
-    messages = aggregator_state["agent_state"]["llm_context"]["messages"]
-    if not messages:
-        print("No messages found under assessment_justification_agent agent state.")
-        return None
+    # 2. Get the agent state and retrieve the final message
+    agent_state_data = data["agent_states"][found_key]
+    if not isinstance(agent_state_data, dict) or "agent_state" not in agent_state_data or \
+       not isinstance(agent_state_data["agent_state"], dict) or "llm_context" not in agent_state_data["agent_state"] or \
+       not isinstance(agent_state_data["agent_state"]["llm_context"], dict) or "messages" not in agent_state_data["agent_state"]["llm_context"]:
+        print(f"Unexpected structure for agent '{found_key}' state in {file_path}.")
+        return {}
+        
+    messages = agent_state_data["agent_state"]["llm_context"]["messages"]
+    if not messages or not isinstance(messages, list):
+        print(f"No messages found or messages is not a list for agent '{found_key}' in {file_path}.")
+        return {}
 
-    final_message = messages[-1].get("content", "")
-    if not final_message:
-        print("Final editor message is empty.")
-        return None
+    final_message_obj = messages[-1]
+    if not isinstance(final_message_obj, dict) or "content" not in final_message_obj:
+        print(f"Final message for agent '{found_key}' has unexpected structure or no content in {file_path}.")
+        return {}
+
+    final_message = final_message_obj.get("content", "")
+    if not final_message or not isinstance(final_message, str):
+        print(f"Final message for agent '{found_key}' is empty or not a string in {file_path}.")
+        return {}
 
     # 3. Extract the substring from the first '{' to the last '}'
     start_index = final_message.find("{")
@@ -296,28 +348,52 @@ def extract_tsc_agent_json(file_path: str = "tsc_agent_state.json"):
     with open(file_path, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    # 1. Identify the aggregator key (usually starts with "aggregator/")
-    editor_key = None
+    # 1. Identify the tsc_agent key
+    tsc_agent_name = "tsc_agent"  # Exact agent name
+    found_key = None # Renamed from editor_key for clarity
+    if "agent_states" not in data or not isinstance(data["agent_states"], dict):
+        print(f"Warning: 'agent_states' not found or not a dictionary in {file_path}.")
+        return {}
+
     for key in data["agent_states"]:
-        if key.startswith("tsc_agent/"):
-            editor_key = key
+        if key == tsc_agent_name:
+            found_key = key
             break
 
-    if not editor_key:
-        print("No editor key found in agent_states.")
-        return None
+    if not found_key:
+        print(f"No key for agent '{tsc_agent_name}' found in agent_states of {file_path}.") # Updated log message
+        return {}
 
-    # 2. Get the aggregator agent state and retrieve the final message
-    aggregator_state = data["agent_states"][editor_key]
-    messages = aggregator_state["agent_state"]["llm_context"]["messages"]
-    if not messages:
-        print("No messages found under tsc_agent_state.")
-        return None
+    # 2. Get the tsc_agent state and retrieve the final message
+    agent_state_data = data["agent_states"][found_key] # Renamed from aggregator_state and editor_state
+    if not isinstance(agent_state_data, dict) or "agent_state" not in agent_state_data or \
+       not isinstance(agent_state_data["agent_state"], dict) or "llm_context" not in agent_state_data["agent_state"] or \
+       not isinstance(agent_state_data["agent_state"]["llm_context"], dict) or "messages" not in agent_state_data["agent_state"]["llm_context"]:
+        print(f"Unexpected structure for agent '{found_key}' state in {file_path}.")
+        return {}
 
-    final_message = messages[-1].get("content", "")
-    if not final_message:
-        print("Final tsc_agent message is empty.")
-        return None
+    messages = agent_state_data["agent_state"]["llm_context"]["messages"]
+    if not messages or not isinstance(messages, list):
+        print(f"No messages found or messages is not a list for agent '{found_key}' in {file_path}.") # Updated log message
+        return {}
+
+    final_message_obj = messages[-1]
+    if not isinstance(final_message_obj, dict) or "content" not in final_message_obj:
+        print(f"Final message for agent '{found_key}' has unexpected structure or no content in {file_path}.")
+        return {}
+        
+    final_message = final_message_obj.get("content", "")
+    if not final_message or not isinstance(final_message, str):
+        print(f"Final message for agent '{found_key}' is empty or not a string in {file_path}.") # Updated log message
+        return {}
+
+    # Remove code block markers if present
+    if final_message.startswith("```json"):
+        final_message = final_message[len("```json"):].strip()
+    if final_message.startswith("```"):
+        final_message = final_message[len("```"):].strip()
+    if final_message.endswith("```"):
+        final_message = final_message[:-3].strip()
 
     # 3. Extract the substring from the first '{' to the last '}'
     start_index = final_message.find("{")
@@ -331,8 +407,10 @@ def extract_tsc_agent_json(file_path: str = "tsc_agent_state.json"):
     # 4. Parse the extracted substring as JSON
     try:
         return json.loads(json_str)
-    except json.JSONDecodeError:
+    except json.JSONDecodeError as e:
         print("Failed to parse editor content as valid JSON.")
+        print("Error:", e)
+        print("String was:", repr(json_str))
         return None
 
 
@@ -440,10 +518,14 @@ def safe_json_loads(json_str):
         return None
 
 def load_json_file(file_path):
-    """Loads JSON data from a file."""
+    """Loads JSON data from a file and ensures it is a list or dict."""
     try:
         with open(file_path, 'r') as f:
-            return json.load(f)
+            data = json.load(f)
+            if not isinstance(data, (list, dict)):
+                print(f"Error: JSON loaded from '{file_path}' is not a list or dict, got {type(data)}")
+                return None
+            return data
     except FileNotFoundError:
         print(f"Error: JSON file not found at '{file_path}'")
         return None
@@ -493,7 +575,6 @@ def extract_agent_json(file_path: str, agent_name: str):
     """
     Reads the specified JSON file, finds the specified agent's final response,
     and extracts the substring from the first '{' to the last '}'.
-    
     Attempts to parse the extracted substring as JSON, returning
     a Python dictionary. If parsing fails or if no final message
     is found, returns None.
@@ -501,10 +582,10 @@ def extract_agent_json(file_path: str, agent_name: str):
     with open(file_path, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    # Identify the agent key (usually starts with the agent name followed by '/')
+    # Identify the agent key (support both new and old formats)
     agent_key = None
-    for key in data["agent_states"]:
-        if key.startswith(f"{agent_name}/"):
+    for key in data.get("agent_states", {}):
+        if key.startswith(f"{agent_name}/") or key == agent_name:
             agent_key = key
             break
 
@@ -524,11 +605,20 @@ def extract_agent_json(file_path: str, agent_name: str):
         print(f"Final {agent_name} message is empty.")
         return None
 
+    # Remove code block markers if present
+    if final_message.startswith("```json"):
+        final_message = final_message[len("```json"):].strip()
+    if final_message.startswith("```"):
+        final_message = final_message[len("```"):].strip()
+    if final_message.endswith("```"):
+        final_message = final_message[:-3].strip()
+
     # Extract the substring from the first '{' to the last '}'
     start_index = final_message.find("{")
     end_index = final_message.rfind("}")
     if start_index == -1 or end_index == -1:
         print(f"No JSON braces found in the final {agent_name} message.")
+        print("Message content was:", repr(final_message))
         return None
 
     json_str = final_message[start_index:end_index + 1].strip()
@@ -536,6 +626,8 @@ def extract_agent_json(file_path: str, agent_name: str):
     # Parse the extracted substring as JSON
     try:
         return json.loads(json_str)
-    except json.JSONDecodeError:
+    except json.JSONDecodeError as e:
         print(f"Failed to parse {agent_name} content as valid JSON.")
+        print("Error:", e)
+        print("String was:", repr(json_str))
         return None
