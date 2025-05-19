@@ -170,6 +170,7 @@ async def generate_timetable(context, num_of_days, model_client):
             - **Ensure Lu_Duration is fully utlised by each topic/activity. (e.g. "If LU1 Lu_Duration is 3.5 hours OR 210 minutes, ensure that the time given is fully utlised by both Topics and Activities")**
             - **If LU_Duration is not fully utilised, Teach the topic again and make sure to fully utilise the left over LU_Duration after the initial topics and activities**
             - **You may cut short any of the breaks as you deem fit if LU_Duration is not fully utilised. Use your judgement to ensure LU_Duration is always fully utilised with no spare time leftover**
+            - **For the end of the course, MANDATORY: At the end of the course, Perform Course Feedback and TRAQOM Survey must happen before Final Assessment is conducted**
             
             **IMPORTANT!! Take note of the learning unit duration allocations or there will be errors when allocating the timetable!!! Make sure the timetable fulfills every point**
             #### 2. **Learning Unit Duration Allocation**
@@ -247,10 +248,13 @@ async def generate_timetable(context, num_of_days, model_client):
             ---
 
             ### **5. Final Day Assessments**
-            On the Assessment day, the following sessions must be scheduled as the **last timeslots** of the day, in the exact order given below. **No other sessions should follow these sessions.**
+            - **Important! Make sure the final assessments are as follows below OR the timetable generated will be WRONG**
+            - **On the last day of the course, the following sessions must be scheduled as the last timeslots of the day, in the exact order given below. No other sessions should follow these sessions.**
+            - **The sessions are held after the all topics and activities are conducted.**
+            - On the Assessment day, the following sessions must be scheduled as the **last timeslots** of the day, in the exact order given below. **No other sessions should follow these sessions.**
 
             1. **Final Course Feedback and TRAQOM Survey**
-            - **Time:** "1810hrs - 1830hrs (20 mins)"
+            - **Time:** "Varies (20 mins)"
             - **Instructions:** "Course Feedback and TRAQOM Survey"
             - **Instructional_Methods:** "N/A"
             - **Resources:** "Feedback Forms, Survey Links"
