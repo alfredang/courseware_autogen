@@ -48,6 +48,7 @@ def create_course_validation_team(ensemble_output, model_choice: str) -> RoundRo
 
     You are to output your response in this JSON format, do not change the keys:
     Output Format (for each of the 3 sets):
+    {{
     What are the performance gaps in the industry?
     [Answer here based on the industry and course details you provide]
 
@@ -55,12 +56,35 @@ def create_course_validation_team(ensemble_output, model_choice: str) -> RoundRo
     [Answer here showing how the course helps address the gaps based on relevant learning outcomes]
 
     By following these steps, you aim to provide actionable insights that match the course content to the training needs within the specified industry.
+    
+    IMPORTANT:
+    - Your ENTIRE output MUST be a single, raw JSON object.
+    - Do NOT enclose it in markdown ```json ... ``` blocks.
+    - Do NOT add any introductory text, explanations, or concluding remarks before or after the JSON.
+    - The JSON object MUST strictly match the schema and examples provided.
+    - Do NOT change, add, or remove any keys or alter the structure from the schema.
+    - Do NOT include any comments or headings within the JSON.
+    - Ensure all strings within the JSON are properly escaped (e.g., newlines as \'\'\'\\\\n\'\'\', quotes as \'\'\'\\\\"\'\'\').
+    - CRITICAL: Before outputting, rigorously check your response to ensure it is a perfectly valid JSON object. Imagine it will be directly parsed by a `json.loads()` function.
+    - Failure to adhere to these strict JSON formatting rules will cause the entire process to fail. Accuracy is paramount.
+    }}
     """
 
     editor_message = f"""
     You are to combine the outputs from the following agents into a single JSON object, do NOT aggregate output from the validator agent:
         1) analyst
     Return the combined output into a single JSON file.
+
+    IMPORTANT:
+    - Your ENTIRE output MUST be a single, raw JSON object.
+    - Do NOT enclose it in markdown ```json ... ``` blocks.
+    - Do NOT add any introductory text, explanations, or concluding remarks before or after the JSON.
+    - The JSON object MUST strictly match the schema and examples provided.
+    - Do NOT change, add, or remove any keys or alter the structure from the schema.
+    - Do NOT include any comments or headings within the JSON.
+    - Ensure all strings within the JSON are properly escaped (e.g., newlines as \'\'\'\\\\n\'\'\', quotes as \'\'\'\\\\"\'\'\').
+    - CRITICAL: Before outputting, rigorously check your response to ensure it is a perfectly valid JSON object. Imagine it will be directly parsed by a `json.loads()` function.
+    - Failure to adhere to these strict JSON formatting rules will cause the entire process to fail. Accuracy is paramount.
 
     Follow this structure and naming convention below:
     {{

@@ -177,6 +177,11 @@ def parse_document(input_docx, output_json):
                 if method not in data["Assessment Methods"]["Assessment Methods"]:
                     data["Assessment Methods"]["Assessment Methods"].append(method)
         
+        # Store all_methods_with_hours in the data structure
+        if "MethodsWithHours" not in data["Assessment Methods"]:
+            data["Assessment Methods"]["MethodsWithHours"] = {}
+        data["Assessment Methods"]["MethodsWithHours"].update(all_methods_with_hours)
+
         # Format total hours appropriately
         if total_hours == int(total_hours):
             data["Assessment Methods"]["Assessment Details"]["Total Assessment Hours"] = f"{int(total_hours)} hr"
@@ -212,18 +217,6 @@ def parse_document(input_docx, output_json):
                 # Specific handling for "Assessment Methods" header line
                 if current_section == "Assessment Methods":
                     parse_assessment_methods(text) # Parse hours from the header line itself
-                    # Try to extract the list of methods from the header line
-                    methods_text = re.sub(r"assessment methods[:\s-]*", "", text, flags=re.IGNORECASE).strip()
-                    # Remove already parsed exam details to avoid them becoming "methods"
-                    methods_text = re.sub(r"Written Exam[^\)]*\([^\)]*\)", "", methods_text, flags=re.IGNORECASE).strip()
-                    methods_text = re.sub(r"Practical Exam[^\)]*\([^\)]*\)", "", methods_text, flags=re.IGNORECASE).strip()
-                    if methods_text:
-                        raw_methods = re.split(r',|\s+and\s+', methods_text, flags=re.IGNORECASE)
-                        parsed_methods = [m.strip() for m in raw_methods if m.strip() and m.lower() not in ["written exam", "practical exam"]]
-                        if "Assessment Methods" not in data[current_section]: data[current_section]["Assessment Methods"] = []
-                        for pm in parsed_methods:
-                            if pm not in data[current_section]["Assessment Methods"]:
-                                data[current_section]["Assessment Methods"].append(pm)
                 
                 if key_in_data: # If the header corresponds to a specific key like "Course Title"
                     value = ""

@@ -42,6 +42,9 @@ async def main(input_tsc) -> None:
     with open("CourseProposal/json_output/tsc_agent_state.json", "w") as f:
         json.dump(state, f)
     tsc_data = extract_tsc_agent_json("CourseProposal/json_output/tsc_agent_state.json")
+    if tsc_data is None:
+        st.error("Critical error: Failed to extract or parse TSC agent JSON output. Pipeline cannot continue.")
+        return  # Exit the main function
     with open("CourseProposal/json_output/output_TSC.json", "w", encoding="utf-8") as out:
         json.dump(tsc_data, out, indent=2)
 
@@ -57,6 +60,9 @@ async def main(input_tsc) -> None:
     with open("CourseProposal/json_output/group_chat_state.json", "w") as f:
         json.dump(state, f)
     aggregator_data = extract_final_aggregator_json("CourseProposal/json_output/group_chat_state.json")
+    if aggregator_data is None:
+        st.error("Critical error: Failed to extract or parse aggregator JSON output. Pipeline cannot continue.")
+        return  # Exit the main function
     with open("CourseProposal/json_output/ensemble_output.json", "w", encoding="utf-8") as out:
         json.dump(aggregator_data, out, indent=2)
     
@@ -79,6 +85,9 @@ async def main(input_tsc) -> None:
     with open("CourseProposal/json_output/research_group_chat_state.json", "w") as f:
         json.dump(state, f)
     editor_data = extract_final_editor_json("CourseProposal/json_output/research_group_chat_state.json")
+    if editor_data is None:
+        st.error("Critical error: Failed to extract or parse research editor JSON output. Pipeline cannot continue.")
+        return  # Exit the main function
     with open("CourseProposal/json_output/research_output.json", "w", encoding="utf-8") as out:
         json.dump(editor_data, out, indent=2)
 
@@ -95,22 +104,27 @@ async def main(input_tsc) -> None:
         with open("CourseProposal/json_output/assessment_justification_agent_state.json", "w") as f:
             json.dump(justification_state, f)
         justification_data = extract_final_agent_json("CourseProposal/json_output/assessment_justification_agent_state.json")  
-        with open("CourseProposal/json_output/justification_debug.json", "w") as f:
-            json.dump(justification_data, f)  
-        output_phrasing = recreate_assessment_phrasing_dynamic(justification_data)
-        # Load the existing research_output.json
-        with open('CourseProposal/json_output/research_output.json', 'r', encoding='utf-8') as f:
-            research_output = json.load(f)
-        
-        # Append the new output phrasing to the research_output
-        if "Assessment Phrasing" not in research_output:
-            research_output["Assessment Phrasing"] = []
-        # Append the new result
-        research_output["Assessment Phrasing"].append(output_phrasing)
+        if justification_data is None:
+            st.error("Critical error: Failed to extract or parse justification agent JSON output. Pipeline cannot continue with assessment justification generation.")
+            # Instead of returning, we'll continue since this is an optional part
+            # But we'll skip the rest of this if block
+        else:
+            with open("CourseProposal/json_output/justification_debug.json", "w") as f:
+                json.dump(justification_data, f)  
+            output_phrasing = recreate_assessment_phrasing_dynamic(justification_data)
+            # Load the existing research_output.json
+            with open('CourseProposal/json_output/research_output.json', 'r', encoding='utf-8') as f:
+                research_output = json.load(f)
+            
+            # Append the new output phrasing to the research_output
+            if "Assessment Phrasing" not in research_output:
+                research_output["Assessment Phrasing"] = []
+            # Append the new result
+            research_output["Assessment Phrasing"].append(output_phrasing)
 
-        # Save the updated research_output.json
-        with open('CourseProposal/json_output/research_output.json', 'w', encoding='utf-8') as f:
-            json.dump(research_output, f, indent=4)
+            # Save the updated research_output.json
+            with open('CourseProposal/json_output/research_output.json', 'w', encoding='utf-8') as f:
+                json.dump(research_output, f, indent=4)
     
     if cp_type == "New CP":
         with open('CourseProposal/json_output/research_output.json', 'r', encoding='utf-8') as f:
@@ -160,8 +174,12 @@ async def main(input_tsc) -> None:
     with open("CourseProposal/json_output/research_group_chat_state.json", "w") as f:
         json.dump(state, f)
     editor_data = extract_final_editor_json("CourseProposal/json_output/research_group_chat_state.json")
-    with open("CourseProposal/json_output/research_output.json", "w", encoding="utf-8") as out:
-        json.dump(editor_data, out, indent=2)
+    if editor_data is None:
+        st.error("Critical error: Failed to extract or parse research editor JSON output a second time. Continuing with previous data.")
+        # Continue with previously saved data
+    else:
+        with open("CourseProposal/json_output/research_output.json", "w", encoding="utf-8") as out:
+            json.dump(editor_data, out, indent=2)
     
     # Course Validation Form Process
     await create_course_validation(model_choice=model_choice)

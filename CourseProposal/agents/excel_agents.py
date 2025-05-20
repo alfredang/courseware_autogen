@@ -11,12 +11,15 @@ from autogen_agentchat.ui import Console
 def course_task():
     overview_task = f"""
     IMPORTANT:
-    - Your output MUST be a valid JSON object, matching the schema below EXACTLY.
-    - Do NOT add any extra text, explanations, or markdown code blocks.
-    - Do NOT change, add, or remove any keys or structure.
-    - Do NOT include any comments or headings.
-    - Before outputting, simulate running a JSON linter (e.g., json.loads()) to ensure validity.
-    - If you do not follow these instructions, the process will fail.
+    - Your ENTIRE output MUST be a single, raw JSON object.
+    - Do NOT enclose it in markdown ```json ... ``` blocks.
+    - Do NOT add any introductory text, explanations, or concluding remarks before or after the JSON.
+    - The JSON object MUST strictly match the schema and examples provided.
+    - Do NOT change, add, or remove any keys or alter the structure from the schema.
+    - Do NOT include any comments or headings within the JSON.
+    - Ensure all strings within the JSON are properly escaped (e.g., newlines as \'\'\'\\\\n\'\'\', quotes as \'\'\'\\\\"\'\'\').
+    - CRITICAL: Before outputting, rigorously check your response to ensure it is a perfectly valid JSON object. Imagine it will be directly parsed by a `json.loads()` function.
+    - Failure to adhere to these strict JSON formatting rules will cause the entire process to fail. Accuracy is paramount.
 
     CORRECT EXAMPLE:
     {{
@@ -41,12 +44,15 @@ def course_task():
 def ka_task():
     overview_task = f"""
     IMPORTANT:
-    - Your output MUST be a valid JSON object, matching the schema below EXACTLY.
-    - Do NOT add any extra text, explanations, or markdown code blocks.
-    - Do NOT change, add, or remove any keys or structure.
-    - Do NOT include any comments or headings.
-    - Before outputting, simulate running a JSON linter (e.g., json.loads()) to ensure validity.
-    - If you do not follow these instructions, the process will fail.
+    - Your ENTIRE output MUST be a single, raw JSON object.
+    - Do NOT enclose it in markdown ```json ... ``` blocks.
+    - Do NOT add any introductory text, explanations, or concluding remarks before or after the JSON.
+    - The JSON object MUST strictly match the schema and examples provided.
+    - Do NOT change, add, or remove any keys or alter the structure from the schema.
+    - Do NOT include any comments or headings within the JSON.
+    - Ensure all strings within the JSON are properly escaped (e.g., newlines as \'\'\'\\\\n\'\'\', quotes as \'\'\'\\\\"\'\'\').
+    - CRITICAL: Before outputting, rigorously check your response to ensure it is a perfectly valid JSON object. Imagine it will be directly parsed by a `json.loads()` function.
+    - Failure to adhere to these strict JSON formatting rules will cause the entire process to fail. Accuracy is paramount.
 
     CORRECT EXAMPLE:
     {{
@@ -72,12 +78,15 @@ def ka_task():
 def im_task():
     im_task = f"""
     IMPORTANT:
-    - Your output MUST be a valid JSON object, matching the schema below EXACTLY.
-    - Do NOT add any extra text, explanations, or markdown code blocks.
-    - Do NOT change, add, or remove any keys or structure.
-    - Do NOT include any comments or headings.
-    - Before outputting, simulate running a JSON linter (e.g., json.loads()) to ensure validity.
-    - If you do not follow these instructions, the process will fail.
+    - Your ENTIRE output MUST be a single, raw JSON object.
+    - Do NOT enclose it in markdown ```json ... ``` blocks.
+    - Do NOT add any introductory text, explanations, or concluding remarks before or after the JSON.
+    - The JSON object MUST strictly match the schema and examples provided.
+    - Do NOT change, add, or remove any keys or alter the structure from the schema.
+    - Do NOT include any comments or headings within the JSON.
+    - Ensure all strings within the JSON are properly escaped (e.g., newlines as \'\'\'\\\\n\'\'\', quotes as \'\'\'\\\\"\'\'\').
+    - CRITICAL: Before outputting, rigorously check your response to ensure it is a perfectly valid JSON object. Imagine it will be directly parsed by a `json.loads()` function.
+    - Failure to adhere to these strict JSON formatting rules will cause the entire process to fail. Accuracy is paramount.
     - For instructional methods, output the method names EXACTLY as they appear in the input. Do NOT paraphrase, modify, or wrap them in 'Others: ...'. The mapping to dropdown or 'Others: [value]' will be handled downstream in the pipeline.
     - If the instructional or assessment method is Case Study, output as 'Others: Case Study' (not 'Others: [Please elaborate]').
     - Add 'Others: Case Study' to the dropdown options and use this format for Case Study.
@@ -117,7 +126,16 @@ def create_course_agent(ensemble_output, model_choice: str) -> RoundRobinGroupCh
     Your task is to create a Course Description in 2 paragraphs for the above factors.
 
     IMPORTANT:
-    - The course level (beginner, intermediate, or advanced) MUST be clearly stated in the course description, using the value from the input JSON (ensemble_output['Course Information']['Course Level']).
+    - Your ENTIRE output MUST be a single, raw JSON object.
+    - Do NOT enclose it in markdown ```json ... ``` blocks.
+    - Do NOT add any introductory text, explanations, or concluding remarks before or after the JSON.
+    - The JSON object MUST strictly match the schema and examples provided.
+    - Do NOT change, add, or remove any keys or alter the structure from the schema.
+    - Do NOT include any comments or headings within the JSON.
+    - Ensure all strings within the JSON are properly escaped (e.g., newlines as \'\'\'\\\\n\'\'\', quotes as \'\'\'\\\\"\'\'\').
+    - CRITICAL: Before outputting, rigorously check your response to ensure it is a perfectly valid JSON object. Imagine it will be directly parsed by a `json.loads()` function.
+    - Failure to adhere to these strict JSON formatting rules will cause the entire process to fail. Accuracy is paramount.
+    - The course level (e.g., Beginner, Intermediate, Advanced, Beginner to Intermediate, Intermediate to Advanced) MUST be clearly stated in the course description, using the value from the input JSON (ensemble_output['Course Information']['Course Level']).
     - The proficiency level (e.g., Basic, Intermediate, Advanced) MUST be clearly stated in the course description, using the value from the input JSON (ensemble_output['Course Information']['Proficiency Level']).
     - Do NOT guess or default the course level or proficiency level; always use the provided values.
     - Your output MUST be a valid JSON object, matching the schema below EXACTLY.
@@ -153,7 +171,7 @@ def create_course_agent(ensemble_output, model_choice: str) -> RoundRobinGroupCh
     Emphasize and clearly address these key aspects in the body of your description:
     1.  **Value & Skills:** Clearly detail the tangible benefits, new skills, and core competencies learners will acquire. Explain what specific needs this course fulfills for them.
     2.  **Industry & Career:** Explain the course's relevance to the current industry landscape. Specifically, discuss how it can impact a learner's career, including employment prospects and opportunities for job upgrading or specialization.
-    3.  **Audience & Level:** Clearly state the course level (e.g., beginner, intermediate, advanced) using the provided input. The proficiency level (e.g., Basic, Intermediate, Advanced) from the input JSON MUST be stated at the beginning of the course description.
+    3.  **Audience & Level:** Clearly state the course level (e.g. Beginner to Intermediate, Intermediate to Advanced) using the provided input. The proficiency level (e.g., Basic, Intermediate, Advanced) from the input JSON MUST be stated at the beginning of the course description.
 
     Do NOT copy the template or example verbatim. Vary your sentence structure, paragraph flow, and adapt your style to the course context. Your output should be natural, engaging, and tailored, not formulaic.
     Your course description must be at least 4 sentences long, multi-paragraph, and as detailed as the example provided. It must adapt terminology, standards, frameworks, and real-world applications to the actual course subject area (e.g., technology, healthcare, finance, engineering, etc.).
@@ -193,6 +211,17 @@ def create_course_agent(ensemble_output, model_choice: str) -> RoundRobinGroupCh
     Your only purpose is to ensure that the output from the previous agent STRICTLY matches the json schema provided below.
     It must not have any other keys other than the ones specified in the below example.
     Your output must take the content of the previous agent and ensure that it is structured in the given JSON format.
+
+    IMPORTANT:
+    - Your ENTIRE output MUST be a single, raw JSON object.
+    - Do NOT enclose it in markdown ```json ... ``` blocks.
+    - Do NOT add any introductory text, explanations, or concluding remarks before or after the JSON.
+    - The JSON object MUST strictly match the schema and examples provided.
+    - Do NOT change, add, or remove any keys or alter the structure from the schema.
+    - Do NOT include any comments or headings within the JSON.
+    - Ensure all strings within the JSON are properly escaped (e.g., newlines as \'\'\'\\\\n\'\'\', quotes as \'\'\'\\\\"\'\'\').
+    - CRITICAL: Before outputting, rigorously check your response to ensure it is a perfectly valid JSON object. Imagine it will be directly parsed by a `json.loads()` function.
+    - Failure to adhere to these strict JSON formatting rules will cause the entire process to fail. Accuracy is paramount.
 
     Do not have more than 1 key value pair under "course_overview", and that key value pair must be "course_description".
 
@@ -282,6 +311,17 @@ def create_instructional_methods_agent(ensemble_output, instructional_methods_js
     Do not mention any A and K factors directly.
     Do not mention any topics directly.
     Do not mention the course name directly.
+
+    IMPORTANT:
+    - Your ENTIRE output MUST be a single, raw JSON object.
+    - Do NOT enclose it in markdown ```json ... ``` blocks.
+    - Do NOT add any introductory text, explanations, or concluding remarks before or after the JSON.
+    - The JSON object MUST strictly match the schema and examples provided.
+    - Do NOT change, add, or remove any keys or alter the structure from the schema.
+    - Do NOT include any comments or headings within the JSON.
+    - Ensure all strings within the JSON are properly escaped (e.g., newlines as \'\'\'\\\\n\'\'\', quotes as \'\'\'\\\\"\'\'\').
+    - CRITICAL: Before outputting, rigorously check your response to ensure it is a perfectly valid JSON object. Imagine it will be directly parsed by a `json.loads()` function.
+    - Failure to adhere to these strict JSON formatting rules will cause the entire process to fail. Accuracy is paramount.
 
     Your response should be structured in the given JSON format under "Instructional_Methods".
     The following JSON output details the course, and the full list of chosen instructional methods can be found under the Instructional Methods key: {ensemble_output}

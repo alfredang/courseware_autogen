@@ -14,7 +14,16 @@ def validate_knowledge_and_ability():
         ability_factors = set([a.split(":")[0].strip() for a in data['Learning Outcomes']['Ability']])
 
         # Extract topics and their factors
-        topics = data['TSC and Topics']['Topics']
+        tsc_and_topics_section = data.get('TSC and Topics', {})
+        topics = tsc_and_topics_section.get('Topic') # Try 'Topic' (singular) first
+
+        if topics is None:
+            topics = tsc_and_topics_section.get('Topics') # Fallback to 'Topics' (plural)
+
+        if topics is None:
+            print("Warning: Neither 'Topic' nor 'Topics' key found under 'TSC and Topics' in ensemble_output.json. K/A validation might be inaccurate.")
+            topics = [] # Default to an empty list
+
         topic_factors = []
 
         # Collect all K and A factors present in topics
@@ -61,7 +70,8 @@ def validate_knowledge_and_ability():
 
     except Exception as e:
         # Catch any unforeseen errors and print a custom error message before exiting
-        print(f"ERROR: {str(e)}")
+        error_message = f"ERROR in validate_knowledge_and_ability: {str(e)}"
+        print(error_message)
         sys.exit(error_message)
 
 
@@ -112,30 +122,12 @@ def extract_final_aggregator_json(file_path: str = "group_chat_state.json"):
 
     final_message = final_message_obj.get("content", "")
 
-    # Remove code block markers if present
-    if final_message.startswith("```json"):
-        final_message = final_message[len("```json"):].strip()
-    if final_message.startswith("```"):
-        final_message = final_message[len("```"):].strip()
-    if final_message.endswith("```"):
-        final_message = final_message[:-3].strip()
-
-    # Now extract JSON
-    start_index = final_message.find("{")
-    end_index = final_message.rfind("}")
-    if start_index == -1 or end_index == -1:
-        print("No JSON braces found in the final aggregator message.")
-        print("Message content was:", repr(final_message))
-        return None
-
-    json_str = final_message[start_index:end_index + 1].strip()
-    try:
-        return json.loads(json_str)
-    except json.JSONDecodeError as e:
-        print("Failed to parse aggregator content as valid JSON.")
-        print("Error:", e)
-        print("String was:", repr(json_str))
-        return None
+    parsed_json = clean_and_parse_json(final_message)
+    if parsed_json is None:
+        print(f"CRITICAL: Failed to clean and parse JSON output from aggregator agent in state file: {{file_path}}")
+        # Optionally, log the original final_message for deeper debugging if needed
+        # print(f"Original problematic string from aggregator was: {{final_message[:1000]}}...")
+    return parsed_json
 
 def extract_final_editor_json(file_path: str = "research_group_chat_state.json"):
     """
@@ -186,24 +178,13 @@ def extract_final_editor_json(file_path: str = "research_group_chat_state.json")
 
     final_message = final_message_obj.get("content", "")
     if not final_message or not isinstance(final_message, str):
-        print(f"Final message for agent '{found_key}' is empty or not a string in {file_path}.")
-        return {}
+        print(f"Final message for agent '{{found_key}}' is empty or not a string in {{file_path}}.")
+        return {{}}
 
-    # 3. Extract the substring from the first '{' to the last '}'
-    start_index = final_message.find("{")
-    end_index = final_message.rfind("}")
-    if start_index == -1 or end_index == -1:
-        print("No JSON braces found in the final aggregator message.")
-        return None
-
-    json_str = final_message[start_index:end_index + 1].strip()
-
-    # 4. Parse the extracted substring as JSON
-    try:
-        return json.loads(json_str)
-    except json.JSONDecodeError:
-        print("Failed to parse editor content as valid JSON.")
-        return None
+    parsed_json = clean_and_parse_json(final_message)
+    if parsed_json is None:
+        print(f"CRITICAL: Failed to clean and parse JSON output from editor agent in state file: {{file_path}}")
+    return parsed_json
 
 def rename_keys_in_json_file(filename):
     key_mapping = {
@@ -235,13 +216,28 @@ def update_knowledge_ability_mapping(tsc_json_path, ensemble_output_json_path):
     with open(ensemble_output_json_path, 'r', encoding='utf-8') as ensemble_file:
         ensemble_data = json.load(ensemble_file)
     
+    # Ensure "Learning Outcomes" key exists and is a dictionary
+    learning_outcomes_section = ensemble_data.get("Learning Outcomes")
+    if not isinstance(learning_outcomes_section, dict):
+        print(f"Warning: 'Learning Outcomes' key in {ensemble_output_json_path} is missing or not a dictionary. Initializing as empty dict.")
+        ensemble_data["Learning Outcomes"] = {}
+        learning_outcomes_section = ensemble_data["Learning Outcomes"]
+
     # Extract the learning units from output_TSC
     course_proposal_form = tsc_data.get("Course_Proposal_Form", {})
     learning_units = {key: value for key, value in course_proposal_form.items() if key.startswith("LU")}
     
     # Prepare the Knowledge and Ability Mapping structure in ensemble_output if it does not exist
-    if "Knowledge and Ability Mapping" not in ensemble_data["Learning Outcomes"]:
-        ensemble_data["Learning Outcomes"]["Knowledge and Ability Mapping"] = {}
+    if "Knowledge and Ability Mapping" not in learning_outcomes_section:
+        learning_outcomes_section["Knowledge and Ability Mapping"] = {}
+
+    # Ensure "Knowledge" and "Ability" lists exist under "Learning Outcomes"
+    if "Knowledge" not in learning_outcomes_section:
+        print(f"Warning: 'Knowledge' key missing under 'Learning Outcomes' in {ensemble_output_json_path}. Initializing as empty list.")
+        learning_outcomes_section["Knowledge"] = []
+    if "Ability" not in learning_outcomes_section:
+        print(f"Warning: 'Ability' key missing under 'Learning Outcomes' in {ensemble_output_json_path}. Initializing as empty list.")
+        learning_outcomes_section["Ability"] = []
 
     # Loop through each Learning Unit to extract and map K and A factors
     for index, (lu_key, topics) in enumerate(learning_units.items(), start=1):
@@ -259,7 +255,7 @@ def update_knowledge_ability_mapping(tsc_json_path, ensemble_output_json_path):
         ka_mapping = list(dict.fromkeys(ka_mapping))  # Remove duplicates while preserving order
 
         # Add the KA mapping to the ensemble_data
-        ensemble_data["Learning Outcomes"]["Knowledge and Ability Mapping"][ka_key] = ka_mapping
+        learning_outcomes_section["Knowledge and Ability Mapping"][ka_key] = ka_mapping
 
     # Save the updated JSON to the same file path
     with open(ensemble_output_json_path, 'w', encoding='utf-8') as outfile:
@@ -316,24 +312,13 @@ def extract_final_agent_json(file_path: str = "assessment_justification_agent_st
 
     final_message = final_message_obj.get("content", "")
     if not final_message or not isinstance(final_message, str):
-        print(f"Final message for agent '{found_key}' is empty or not a string in {file_path}.")
-        return {}
+        print(f"Final message for agent '{{found_key}}' is empty or not a string in {{file_path}}.")
+        return {{}}
 
-    # 3. Extract the substring from the first '{' to the last '}'
-    start_index = final_message.find("{")
-    end_index = final_message.rfind("}")
-    if start_index == -1 or end_index == -1:
-        print("No JSON braces found in the final aggregator message.")
-        return None
-
-    json_str = final_message[start_index:end_index + 1].strip()
-
-    # 4. Parse the extracted substring as JSON
-    try:
-        return json.loads(json_str)
-    except json.JSONDecodeError:
-        print("Failed to parse editor content as valid JSON.")
-        return None
+    parsed_json = clean_and_parse_json(final_message)
+    if parsed_json is None:
+        print(f"CRITICAL: Failed to clean and parse JSON output from '{{agent_name_to_find}}' agent in state file: {{file_path}}")
+    return parsed_json
 
 def extract_tsc_agent_json(file_path: str = "tsc_agent_state.json"):
     """
@@ -385,33 +370,12 @@ def extract_tsc_agent_json(file_path: str = "tsc_agent_state.json"):
     final_message = final_message_obj.get("content", "")
     if not final_message or not isinstance(final_message, str):
         print(f"Final message for agent '{found_key}' is empty or not a string in {file_path}.") # Updated log message
-        return {}
+        return {{}}
 
-    # Remove code block markers if present
-    if final_message.startswith("```json"):
-        final_message = final_message[len("```json"):].strip()
-    if final_message.startswith("```"):
-        final_message = final_message[len("```"):].strip()
-    if final_message.endswith("```"):
-        final_message = final_message[:-3].strip()
-
-    # 3. Extract the substring from the first '{' to the last '}'
-    start_index = final_message.find("{")
-    end_index = final_message.rfind("}")
-    if start_index == -1 or end_index == -1:
-        print("No JSON braces found in the final aggregator message.")
-        return None
-
-    json_str = final_message[start_index:end_index + 1].strip()
-
-    # 4. Parse the extracted substring as JSON
-    try:
-        return json.loads(json_str)
-    except json.JSONDecodeError as e:
-        print("Failed to parse editor content as valid JSON.")
-        print("Error:", e)
-        print("String was:", repr(json_str))
-        return None
+    parsed_json = clean_and_parse_json(final_message)
+    if parsed_json is None:
+        print(f"CRITICAL: Failed to clean and parse JSON output from tsc_agent in state file: {{file_path}}")
+    return parsed_json
 
 
 # Function to recursively flatten lists within the JSON structure
@@ -605,29 +569,57 @@ def extract_agent_json(file_path: str, agent_name: str):
         print(f"Final {agent_name} message is empty.")
         return None
 
-    # Remove code block markers if present
-    if final_message.startswith("```json"):
-        final_message = final_message[len("```json"):].strip()
-    if final_message.startswith("```"):
-        final_message = final_message[len("```"):].strip()
-    if final_message.endswith("```"):
-        final_message = final_message[:-3].strip()
+    parsed_json = clean_and_parse_json(final_message)
+    if parsed_json is None:
+        print(f"CRITICAL: Failed to clean and parse JSON output from '{{agent_name}}' agent in state file: {{file_path}}")
+    return parsed_json
 
-    # Extract the substring from the first '{' to the last '}'
-    start_index = final_message.find("{")
-    end_index = final_message.rfind("}")
-    if start_index == -1 or end_index == -1:
-        print(f"No JSON braces found in the final {agent_name} message.")
-        print("Message content was:", repr(final_message))
+def clean_and_parse_json(llm_output_string: str) -> dict | None:
+    """
+    Attempts to clean and parse a JSON string that might have common LLM errors.
+    Returns a dictionary if successful, None otherwise.
+    """
+    if not isinstance(llm_output_string, str):
+        print(f"[JSON Cleaner] Input is not a string: {{type(llm_output_string)}}")
         return None
 
-    json_str = final_message[start_index:end_index + 1].strip()
+    # 1. Strip leading/trailing whitespace
+    cleaned_string = llm_output_string.strip()
 
-    # Parse the extracted substring as JSON
+    # 2. Remove markdown code block fences (```json ... ``` or ``` ... ```)
+    # This regex handles optional 'json' language specifier and multiline content
+    cleaned_string = re.sub(r"^```(?:json)?\s*\n?|\n?\s*```$", "", cleaned_string, flags=re.DOTALL).strip()
+    
+    # 3. Handle potential byte order mark (BOM) if present (though less common for LLM outputs)
+    if cleaned_string.startswith('\ufeff'):
+        cleaned_string = cleaned_string[1:]
+
+    # 4. Attempt to parse directly
     try:
-        return json.loads(json_str)
+        return json.loads(cleaned_string)
     except json.JSONDecodeError as e:
-        print(f"Failed to parse {agent_name} content as valid JSON.")
-        print("Error:", e)
-        print("String was:", repr(json_str))
-        return None
+        # Log the error and the problematic string for debugging
+        error_snippet = cleaned_string[:500] # Show a snippet
+        print(f"[JSON Cleaner] Initial JSON parsing failed: {{e}}")
+        print(f"[JSON Cleaner] Problematic JSON string snippet (first 500 chars after cleaning markdown): {{error_snippet}}...")
+        
+        # Add more sophisticated cleaning steps here if needed in the future,
+        # e.g., trying to fix trailing commas, unescaped characters, etc.
+        # For now, we keep it simple to avoid introducing new errors.
+        
+        # Example: Try to remove any text before the first '{' or after the last '}'
+        # This is a bit aggressive and might remove valid parts if JSON is deeply nested with strings containing braces.
+        # Use with caution or make it more robust.
+        first_brace = cleaned_string.find('{')
+        last_brace = cleaned_string.rfind('}')
+        if first_brace != -1 and last_brace != -1 and last_brace > first_brace:
+            potential_json_substring = cleaned_string[first_brace : last_brace + 1]
+            try:
+                parsed_json = json.loads(potential_json_substring)
+                print("[JSON Cleaner] Successfully parsed after stripping to first/last brace.")
+                return parsed_json
+            except json.JSONDecodeError as e_sub:
+                print(f"[JSON Cleaner] Parsing failed even after stripping to first/last brace: {{e_sub}}")
+                pass # Fall through if this also fails
+
+    return None
