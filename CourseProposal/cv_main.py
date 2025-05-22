@@ -23,18 +23,71 @@ async def create_course_validation(model_choice: str) -> None:
     state = await validation_group_chat.save_state()
     with open("CourseProposal/json_output/validation_group_chat_state.json", "w") as f:
         json.dump(state, f)
-    editor_data = extract_final_editor_json("CourseProposal/json_output/validation_group_chat_state.json")
+    
+    # Extract editor data with better error handling
+    try:
+        editor_data = extract_final_editor_json("CourseProposal/json_output/validation_group_chat_state.json")
+        if editor_data is None:
+            print("Warning: Editor data extraction returned None. Checking analyst data directly...")
+            # Try to find analyst data directly in the group chat state
+            with open("CourseProposal/json_output/validation_group_chat_state.json", "r") as f:
+                chat_state = json.load(f)
+                
+            analyst_messages = []
+            for agent_key, agent_state in chat_state.get("agent_states", {}).items():
+                if agent_key == "analyst" or agent_key.startswith("analyst/"):
+                    messages = agent_state.get("agent_state", {}).get("llm_context", {}).get("messages", [])
+                    if messages and len(messages) > 0:
+                        analyst_messages = [msg.get("content", "") for msg in messages if msg.get("role") == "assistant"]
+            
+            # If we found analyst messages, try to parse the last one
+            if analyst_messages:
+                last_analyst_message = analyst_messages[-1]
+                editor_data = clean_and_parse_json(last_analyst_message)
+                print("Fallback: Used analyst message directly as editor_data")
+        
+        # If we still don't have valid editor_data, create a minimal structure
+        if editor_data is None:
+            print("Warning: Couldn't extract valid JSON from either editor or analyst. Creating minimal structure.")
+            editor_data = {
+                "course_info": {},
+                "analyst_responses": []
+            }
+    except Exception as e:
+        print(f"Error extracting editor data: {e}")
+        editor_data = {
+            "course_info": {},
+            "analyst_responses": []
+        }
+    
+    # Save the editor data
     with open("CourseProposal/json_output/validation_output.json", "w", encoding="utf-8") as out:
         json.dump(editor_data, out, indent=2)
-    append_validation_output(
-        "CourseProposal/json_output/ensemble_output.json",
-        "CourseProposal/json_output/validation_output.json",
-    )
-    with open('CourseProposal/json_output/validation_output.json', 'r') as file:
-        validation_output = json.load(file)
+    
+    # Try to update validation output with data from ensemble_output
+    try:
+        append_validation_output(
+            "CourseProposal/json_output/ensemble_output.json",
+            "CourseProposal/json_output/validation_output.json",
+        )
+    except Exception as e:
+        print(f"Warning: Failed to append validation output: {e}")
+    
+    # Load the validation output for further processing
+    try:
+        with open('CourseProposal/json_output/validation_output.json', 'r') as file:
+            validation_output = json.load(file)
+    except Exception as e:
+        print(f"Error loading validation_output.json: {e}")
+        validation_output = {"course_info": {}, "analyst_responses": []}
+        
     # If validation_output is a JSON string, parse it first
     if isinstance(validation_output, str):
-        validation_output = json.loads(validation_output)   
+        try:
+            validation_output = json.loads(validation_output)
+        except Exception as e:
+            print(f"Error parsing validation_output JSON string: {e}")
+            validation_output = {"course_info": {}, "analyst_responses": []}
 
     # Verify course_info and fix any issues with TSC Title and Code
     if "course_info" in validation_output:

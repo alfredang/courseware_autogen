@@ -126,9 +126,24 @@ def validate_knowledge_and_ability():
         # Determine validation result
         validation_success = len(missing_factors) == 0 and len(undefined_factors) == 0
         
+        # Prepare result data structure
+        validation_results = {
+            "success": validation_success,
+            "knowledge_factors": sorted(list(knowledge_factors)),
+            "ability_factors": sorted(list(ability_factors)),
+            "topic_factors": sorted(list(all_topic_factors)),
+            "mapping_factors": sorted(list(mapping_factors)),
+            "combined_factors": sorted(list(combined_factors)),
+            "missing_factors": missing_factors,
+            "undefined_factors": undefined_factors,
+            "coverage_percentage": coverage_pct,
+            "total_factors": total_factors,
+            "covered_factors": sorted(list(covered_factors))
+        }
+        
         if validation_success:
             print("SUCCESS: All Knowledge and Ability factors are accounted for.")
-            return True
+            return validation_results
         else:
             # Organize errors by type
             error_sections = []
@@ -151,20 +166,33 @@ def validate_knowledge_and_ability():
                 print("- Remove references to non-existent K&A factors from topics")
                 print("- Or add these factors to the Knowledge/Ability lists")
             
-            sys.exit(full_error)
+            # Instead of exiting, return the results
+            return validation_results
     
     except FileNotFoundError:
         error_message = "ERROR: ensemble_output.json file not found. Please ensure the file exists."
         print(error_message)
-        sys.exit(error_message)
+        return {
+            "success": False,
+            "error": error_message,
+            "error_type": "file_not_found"
+        }
     except json.JSONDecodeError:
         error_message = "ERROR: ensemble_output.json contains invalid JSON."
         print(error_message)
-        sys.exit(error_message)
+        return {
+            "success": False,
+            "error": error_message,
+            "error_type": "json_decode_error"
+        }
     except Exception as e:
         error_message = f"ERROR in validate_knowledge_and_ability: {str(e)}"
         print(error_message)
-        sys.exit(error_message)
+        return {
+            "success": False,
+            "error": error_message,
+            "error_type": "general_error"
+        }
 
 def fix_missing_ka_references():
     """
@@ -180,7 +208,12 @@ def fix_missing_ka_references():
         ka_mapping = data.get('Learning Outcomes', {}).get('Knowledge and Ability Mapping', {})
         if not ka_mapping:
             print("No Knowledge and Ability Mapping found, cannot fix missing references.")
-            return False
+            return {
+                "success": False,
+                "message": "No Knowledge and Ability Mapping found, cannot fix missing references.",
+                "fixed_topics": [],
+                "fixed_count": 0
+            }
             
         # Check if we have Topics directly
         tsc_and_topics = data.get('TSC and Topics', {})
@@ -197,6 +230,7 @@ def fix_missing_ka_references():
         
         # Track if we made any changes
         made_changes = False
+        fixed_topics = []
         
         # Check each Learning Unit
         for lu_idx, (lu_key, lu_data) in enumerate(course_outline.items(), 1):
@@ -220,8 +254,15 @@ def fix_missing_ka_references():
                         # If no references, add them from the mapping
                         if '(' not in topic:
                             # Add at the end of the topic name
+                            original_topic = topic
                             desc['Topic'] = f"{topic} ({', '.join(ka_factors)})"
                             made_changes = True
+                            fixed_topics.append({
+                                "learning_unit": lu_key,
+                                "original": original_topic,
+                                "fixed": desc['Topic'],
+                                "added_factors": ka_factors
+                            })
                         else:
                             # Has parentheses but no K/A references - try to add to existing parentheses
                             parts = topic.split('(')
@@ -230,22 +271,44 @@ def fix_missing_ka_references():
                             
                             if closing_paren_pos != -1:
                                 # Replace the content in parentheses
+                                original_topic = topic
                                 desc['Topic'] = f"{base} ({', '.join(ka_factors)})"
                                 made_changes = True
+                                fixed_topics.append({
+                                    "learning_unit": lu_key,
+                                    "original": original_topic,
+                                    "fixed": desc['Topic'],
+                                    "added_factors": ka_factors
+                                })
         
         # If we made changes, save the file
+        results = {
+            "success": made_changes,
+            "fixed_topics": fixed_topics,
+            "fixed_count": len(fixed_topics)
+        }
+        
         if made_changes:
             with open('CourseProposal/json_output/ensemble_output.json', 'w', encoding='utf-8') as file:
                 json.dump(data, file, indent=4)
-            print("Fixed missing K&A references in topics.")
-            return True
+            print(f"Fixed {len(fixed_topics)} missing K&A references in topics.")
+            results["message"] = f"Fixed {len(fixed_topics)} missing K&A references in topics."
         else:
             print("No missing K&A references found that could be fixed.")
-            return False
+            results["message"] = "No missing K&A references found that could be fixed."
+        
+        return results
             
     except Exception as e:
-        print(f"Error in fix_missing_ka_references: {str(e)}")
-        return False
+        error_message = f"Error in fix_missing_ka_references: {str(e)}"
+        print(error_message)
+        return {
+            "success": False,
+            "error": error_message,
+            "error_type": "general_error",
+            "fixed_topics": [],
+            "fixed_count": 0
+        }
 
 def extract_final_aggregator_json(file_path: str = "group_chat_state.json"):
     """
@@ -1010,7 +1073,7 @@ def append_validation_output(
     existing_tsc_code = course_info.get("TSC Code", "")
     
     # Define known placeholder values to detect and replace
-    placeholder_values = ["G", "A", "Title", "Code", "TSC Title", "TSC Code", 
+    placeholder_values = ["Title", "Code", "TSC Title", "TSC Code", 
                           "placeholder", "sample", "example", "unknown"]
     
     # Validate TSC Title - check if it's a placeholder or very short string
@@ -1172,46 +1235,92 @@ def clean_and_parse_json(llm_output_string: str) -> dict | None:
     Returns a dictionary if successful, None otherwise.
     """
     if not isinstance(llm_output_string, str):
-        print(f"[JSON Cleaner] Input is not a string: {{type(llm_output_string)}}")
+        print(f"[JSON Cleaner] Input is not a string: {type(llm_output_string)}")
         return None
 
     # 1. Strip leading/trailing whitespace
     cleaned_string = llm_output_string.strip()
 
     # 2. Remove markdown code block fences (```json ... ``` or ``` ... ```)
-    # This regex handles optional 'json' language specifier and multiline content
     cleaned_string = re.sub(r"^```(?:json)?\s*\n?|\n?\s*```$", "", cleaned_string, flags=re.DOTALL).strip()
     
-    # 3. Handle potential byte order mark (BOM) if present (though less common for LLM outputs)
+    # 3. Handle potential byte order mark (BOM) if present
     if cleaned_string.startswith('\ufeff'):
         cleaned_string = cleaned_string[1:]
 
-    # 4. Attempt to parse directly
+    # 4. Remove any non-JSON text before the first '{' and after the last '}'
+    first_brace = cleaned_string.find('{')
+    last_brace = cleaned_string.rfind('}')
+    if first_brace != -1 and last_brace != -1 and last_brace > first_brace:
+        cleaned_string = cleaned_string[first_brace:last_brace+1]
+
+    # 5. Try to parse the cleaned JSON directly first
     try:
         return json.loads(cleaned_string)
     except json.JSONDecodeError as e:
-        # Log the error and the problematic string for debugging
-        error_snippet = cleaned_string[:500] # Show a snippet
-        print(f"[JSON Cleaner] Initial JSON parsing failed: {{e}}")
-        print(f"[JSON Cleaner] Problematic JSON string snippet (first 500 chars after cleaning markdown): {{error_snippet}}...")
+        # Log the initial error
+        error_snippet = cleaned_string[:500]
+        print(f"[JSON Cleaner] Initial JSON parsing failed: {e}")
+        print(f"[JSON Cleaner] Problematic JSON string snippet (first 500 chars): {error_snippet}...")
         
-        # Add more sophisticated cleaning steps here if needed in the future,
-        # e.g., trying to fix trailing commas, unescaped characters, etc.
-        # For now, we keep it simple to avoid introducing new errors.
-        
-        # Example: Try to remove any text before the first '{' or after the last '}'
-        # This is a bit aggressive and might remove valid parts if JSON is deeply nested with strings containing braces.
-        # Use with caution or make it more robust.
-        first_brace = cleaned_string.find('{')
-        last_brace = cleaned_string.rfind('}')
-        if first_brace != -1 and last_brace != -1 and last_brace > first_brace:
-            potential_json_substring = cleaned_string[first_brace : last_brace + 1]
+        # 6. Apply more aggressive cleaning steps for common LLM JSON errors
+        try:
+            # Fix trailing commas in objects: { "a": 1, "b": 2, }
+            cleaned_string = re.sub(r',\s*}', '}', cleaned_string)
+            # Fix trailing commas in arrays: [ 1, 2, 3, ]
+            cleaned_string = re.sub(r',\s*]', ']', cleaned_string)
+            
+            # Fix missing quotes around keys: {key: "value"} -> {"key": "value"}
+            cleaned_string = re.sub(r'([{,])\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*:', r'\1"\2":', cleaned_string)
+            
+            # Try parsing again after these fixes
             try:
-                parsed_json = json.loads(potential_json_substring)
-                print("[JSON Cleaner] Successfully parsed after stripping to first/last brace.")
-                return parsed_json
-            except json.JSONDecodeError as e_sub:
-                print(f"[JSON Cleaner] Parsing failed even after stripping to first/last brace: {{e_sub}}")
-                pass # Fall through if this also fails
-
+                return json.loads(cleaned_string)
+            except json.JSONDecodeError as e2:
+                print(f"[JSON Cleaner] Still failed after basic fixes: {e2}")
+                
+                # 7. Try json5 if available
+                try:
+                    import json5
+                    print("[JSON Cleaner] Attempting to parse with json5...")
+                    return json5.loads(cleaned_string)
+                except (ImportError, Exception) as e3:
+                    print(f"[JSON Cleaner] JSON5 parsing failed or not available: {e3}")
+                    
+                    # 8. Last resort: Try to extract valid JSON with balanced braces
+                    try:
+                        # Find balanced braces
+                        stack = []
+                        potential_jsons = []
+                        start_index = -1
+                        
+                        for i, char in enumerate(cleaned_string):
+                            if char == '{':
+                                if not stack:  # Start of a potential JSON object
+                                    start_index = i
+                                stack.append('{')
+                            elif char == '}' and stack:
+                                stack.pop()
+                                if not stack and start_index != -1:  # End of a balanced JSON object
+                                    potential_jsons.append(cleaned_string[start_index:i+1])
+                        
+                        # Try each potential JSON object from largest to smallest
+                        if potential_jsons:
+                            for potential_json in sorted(potential_jsons, key=len, reverse=True):
+                                try:
+                                    parsed = json.loads(potential_json)
+                                    print("[JSON Cleaner] Successfully extracted JSON with balanced braces approach")
+                                    return parsed
+                                except Exception:
+                                    # Try next potential JSON
+                                    continue
+                                    
+                        print("[JSON Cleaner] Could not extract valid JSON with balanced braces approach")
+                    except Exception as e4:
+                        print(f"[JSON Cleaner] Last resort extraction failed: {e4}")
+        except Exception as e_general:
+            print(f"[JSON Cleaner] General error during advanced cleaning: {e_general}")
+    
+    # If all attempts fail, return None
+    print("[JSON Cleaner] All JSON parsing attempts failed.")
     return None
