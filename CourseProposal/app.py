@@ -24,123 +24,57 @@ if 'validation_displayed' not in st.session_state:
 def app():
     st.title("📄 Course Proposal File Processor")
 
-    st.subheader("Model Selection")
-    model_choice = st.selectbox(
-        "Select LLM Model:",
-        options=list(MODEL_CHOICES.keys()),
-        index=list(MODEL_CHOICES.keys()).index("DeepSeek-V3")
-    )
-    st.session_state['selected_model'] = model_choice
-
-    st.subheader("Course Proposal Type")
-    cp_type_display = st.selectbox(
-        "Select CP Type:",
-        options=["Excel CP", "Docx CP"],
-        index=0  # default: "Excel CP: New CP"
-    )
-    # Map display values to backend values
-    cp_type_mapping = {
-        "Excel CP": "New CP",
-        "Docx CP": "Old CP"
-    }
-    st.session_state['cp_type'] = cp_type_mapping[cp_type_display]
-
-    # Add a description of the page with improved styling
-    st.markdown(
+    # Info box at the top
+    st.info(
         """
-        <style>
-            .important-note {
-                background-color: #000000;
-                padding: 15px;
-                border-radius: 10px;
-                border-left: 6px solid #2196f3;
-                font-size: 15px;
-            }
-            .header {
-                font-size: 18px;
-                font-weight: bold;
-                color: #333;
-                margin-top: 20px;
-            }
-            .section-title {
-                font-size: 16px;
-                font-weight: bold;
-                margin-top: 10px;
-            }
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
-
-    # Descriptive section
-    st.markdown(
+        **This application uses Agentic Process Automation** (APA) that generates Course Proposals and Course Validation forms for Tertiary Infotech.  
+        **Note:** The input TSC form must follow the requirements below, or generation may fail or produce errors.
         """
-        <div class="important-note">
-            This tool uses Agentic Process Automation to generate Course Proposals and Course Validation forms for Tertiary Infotech.
-            The input TSC form must follow the below requirements, if not the generation might not work properly or might throw errors :(
-        </div>
-        """,
-        unsafe_allow_html=True
     )
 
+    # Section: Important TSC Details
+    st.markdown("### 📝 **Important TSC Details to Look Out For:**")
     st.markdown(
-        '<div class="header">📝 Important TSC Details to Look Out For:</div>',
-        unsafe_allow_html=True
+        "Instructional and Assessment method names in the TSC must match the following exactly (case sensitive):"
     )
-
-    st.markdown("Instructional and Assessment method names in the TSC should be spelled out like the examples below (Case Sensitive)")
     st.markdown("Eg. Case studies ❌")
     st.markdown("Eg. Case Study ✅️")
-    
-    # Use columns to organize the content into sections
+
     col1, col2 = st.columns(2)
-    
     with col1:
-        st.markdown(
-            """
-            <div class="section-title">Instructional Methods:</div>
-            - Didactic Questioning <br>
-            - Demonstration <br>
-            - Practical <br>
-            - Peer Sharing <br>
-            - Role Play <br>
-            - Group Discussion <br>
-            - Case Study <br>
-            """,
-            unsafe_allow_html=True
-        )
-        
+        st.markdown("**Instructional Methods:**")
+        st.markdown("""
+- Interactive Presentation
+- Didactic Questioning
+- Demonstration
+- Practical/Practice
+- Peer Sharing
+- Role Play
+- Group Discussion
+- Case Study
+        """)
     with col2:
-        st.markdown(
-            """
-            <div class="section-title">Assessment Methods:</div>
-            - Written Assessment <br>
-            - Practical Performance <br>
-            - Case Study <br>
-            - Oral Questioning <br>
-            - Role Play <br>
-            """,
-            unsafe_allow_html=True
-        )
+        st.markdown("**Assessment Methods:**")
+        st.markdown("""
+- Written Exam
+- Practical Exam
+- Case Study
+- Oral Questioning
+- Role Play
+        """)
 
-    st.markdown(
-        """
-        <div class="header">💡 Tips:</div>
-        - Colons ( : ) should be included in every LU and Topic, e.g., LU1: xxx, Topic 1: xxx <br>
-        - Ensure LUs are properly formatted using the naming conventions mentioned above. <br>
-        - Double check the industry of the CV and background info of the CP, in case the wrong industry is mentioned! <br>
-        - Ensure your TSC document is in .docx format <br>
-        - Make sure your TSC document is properly formatted <br>
-        - Check that all required sections are present <br>
-        - Verify that the TSC code and title are correct <br>
-        """,
-        unsafe_allow_html=True
-    )
-
-    # Larger upload file label
+    # Tips section
+    st.markdown("### 💡 **Tips:**")
     st.markdown("""
-        <div style='font-size: 1.3em; font-weight: bold;'>Upload a TSC DOCX file</div>
-    """, unsafe_allow_html=True)
+- Use colons (:) in all section headers, e.g., **LO1: ...**, **T1: ...**
+- Topic numbers should be ascending from T1 (e.g., T1, T2, T3, ...)
+- Ensure all required sections are present: LU, LO, Course Level, Proficiency Level, Industry, Background Info
+- Match Knowledge (K#) and Abilities (A#) exactly as listed
+- Instructional and Assessment methods must use the exact names above
+- Double-check mapping between LUs, Topics, and K&A factors
+    """)
+
+    st.markdown("**Upload a TSC DOCX file**")
     uploaded_file = st.file_uploader(
         "Upload a TSC DOCX file",
         type="docx",
@@ -148,31 +82,61 @@ def app():
         label_visibility="collapsed"
     )
 
+    col1, col2 = st.columns([1, 1])
+    with col1:
+        st.subheader("Model Selection")
+        model_keys = list(MODEL_CHOICES.keys())
+        # Custom order: DeepSeek-V3, all Gemini, then all GPT/OpenAI
+        ordered_models = []
+        if 'DeepSeek-V3' in model_keys:
+            ordered_models.append('DeepSeek-V3')
+        # Add all Gemini models next
+        for k in model_keys:
+            if 'gemini' in k.lower() and k not in ordered_models:
+                ordered_models.append(k)
+        # Add all GPT/OpenAI models next
+        for k in model_keys:
+            if (('gpt' in k.lower() or 'openai' in k.lower()) and k not in ordered_models):
+                ordered_models.append(k)
+        # Add any remaining models
+        for k in model_keys:
+            if k not in ordered_models:
+                ordered_models.append(k)
+
+        model_choice = st.selectbox(
+            "Select LLM Model:",
+            options=ordered_models,
+            index=ordered_models.index("DeepSeek-V3") if "DeepSeek-V3" in ordered_models else 0
+        )
+        st.session_state['selected_model'] = model_choice
+    with col2:
+        st.subheader("Course Proposal Type")
+        cp_type_display = st.selectbox(
+            "Select CP Type:",
+            options=["Excel CP", "Docx CP"],
+            index=0
+        )
+        cp_type_mapping = {
+            "Excel CP": "New CP",
+            "Docx CP": "Old CP"
+        }
+        st.session_state['cp_type'] = cp_type_mapping[cp_type_display]
+
     if uploaded_file is not None:
         st.success(f"Uploaded file: {uploaded_file.name}")
-
-        # 1) Save the uploaded file to a temporary location
         with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp_input:
             tmp_input.write(uploaded_file.getbuffer())
             input_tsc_path = tmp_input.name
 
-        # 2) Process button
         if st.button("🚀 Process File"):
             run_processing(input_tsc_path)
             st.session_state['processing_done'] = True
 
-        # 3) Display download buttons after processing
         if st.session_state.get('processing_done'):
             display_validation_results()
             st.subheader("Download Processed Files")
-            
-            # Get CP type to show relevant information
             cp_type = st.session_state.get('cp_type', "New CP")
-            
-            # Get file download data
             file_downloads = st.session_state.get('file_downloads', {})
-            
-            # Display CP Word document
             cp_docx = file_downloads.get('cp_docx')
             if cp_type == "Old CP":
                 if cp_docx and os.path.exists(cp_docx['path']):
@@ -184,8 +148,6 @@ def app():
                         file_name=cp_docx['name'],
                         mime='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
                     )
-            
-            # Display Excel file for New CP
             if cp_type == "New CP":
                 excel_file = file_downloads.get('excel')
                 if excel_file and os.path.exists(excel_file['path']):
@@ -199,23 +161,16 @@ def app():
                     )
                 elif cp_type == "New CP":
                     st.warning("Excel file was not generated. This may be normal if processing was interrupted.")
-            
-            # Display CV validation documents
             cv_docs = file_downloads.get('cv_docs', [])
             if cv_docs:
                 st.markdown("### Course Validation Documents")
-                
-                # Use columns to organize multiple download buttons
                 cols = st.columns(min(3, len(cv_docs)))
                 for idx, doc in enumerate(cv_docs):
                     if os.path.exists(doc['path']):
                         with open(doc['path'], 'rb') as f:
                             data = f.read()
-                        
-                        # Extract name from the filename (e.g. extract "Bernard" from "CP_validation_template_bernard_updated.docx")
                         file_base = os.path.basename(doc['name'])
                         validator_name = file_base.split('_')[3].capitalize()
-                        
                         col_idx = idx % len(cols)
                         with cols[col_idx]:
                             st.download_button(
