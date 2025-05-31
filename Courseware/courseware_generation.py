@@ -1476,6 +1476,9 @@ def app():
                 if generate_ap:
                     try:
                         with st.spinner('Generating Assessment Plan and Assessment Summary Record...'):
+                            print("Context for AP:")
+                            print(context)
+                            
                             ap_output, asr_output = generate_assessment_documents(context, selected_org)
                         if ap_output:
                             st.success(f"Assessment Plan generated: {ap_output}")
@@ -1528,7 +1531,8 @@ def app():
                             print("Context for LP after fixing:")
                             print(context)
                             
-                            
+                            #print("Org name:")
+                            #print(selected_org)
                             lp_output = generate_lesson_plan(context, selected_org)
                         if lp_output:
                             st.success(f"Lesson Plan generated: {lp_output}")
