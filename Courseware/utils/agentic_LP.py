@@ -42,7 +42,7 @@ import tempfile
 from docxtpl import DocxTemplate
 from Courseware.utils.helper import process_logo_image
 
-LP_TEMPLATE_DIR = "Courseware/input/Template/LP_TGS-Ref-No_Course-Title_v1.docx" 
+LP_TEMPLATE_DIR = "Courseware/input/Template/LP_TGS-Ref-No_Course-Title_v2.docx" 
 
 def generate_lesson_plan(context: dict, name_of_organisation: str) -> str:
     """
