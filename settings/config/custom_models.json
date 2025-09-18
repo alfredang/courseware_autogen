@@ -1,0 +1,29 @@
+[
+  {
+    "name": "xin ping try",
+    "provider": "OpenAIChatCompletionClient",
+    "config": {
+      "model": "6",
+      "api_key": "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",
+      "temperature": 0.2
+    }
+  },
+  {
+    "name": "xin ping try ",
+    "provider": "OpenAIChatCompletionClient",
+    "config": {
+      "model": "5",
+      "api_key": "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",
+      "temperature": 0.2
+    }
+  },
+  {
+    "name": "xin ping try 2",
+    "provider": "OpenAIChatCompletionClient",
+    "config": {
+      "model": "3",
+      "api_key": "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",
+      "temperature": 0.2
+    }
+  }
+]

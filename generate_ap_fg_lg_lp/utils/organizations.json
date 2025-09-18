@@ -1,0 +1,206 @@
+[
+    {
+        "name": "Tertiary Infotech Pte Ltd",
+        "uen": "201200696W",
+        "address": "",
+        "logo": "common/logo/tertiary_infotech_pte_ltd.jpg",
+        "templates": {
+            "course_proposal": "",
+            "courseware": "",
+            "assessment": "",
+            "brochure": ""
+        }
+    },
+    {
+        "name": "CareTech168 LLP",
+        "uen": "T13LL1770K",
+        "logo": "common/logo/caretech168_llp.jpg",
+        "address": "",
+        "templates": {
+            "course_proposal": "",
+            "courseware": "",
+            "assessment": "",
+            "brochure": ""
+        }
+    },
+    {
+        "name": "Chelsea Kidz Academy Pte Ltd",
+        "uen": "201509271W",
+        "logo": "common/logo/chelsea_kidz_academy_pte_ltd.jpg",
+        "address": "",
+        "templates": {
+            "course_proposal": "",
+            "courseware": "",
+            "assessment": "",
+            "brochure": ""
+        }
+    },
+    {
+        "name": "Firstcom Academy Pte Ltd",
+        "uen": "201734671R",
+        "logo": "common/logo/firstcom_academy_pte_ltd.jpg",
+        "address": "",
+        "templates": {
+            "course_proposal": "",
+            "courseware": "",
+            "assessment": "",
+            "brochure": ""
+        }
+    },
+    {
+        "name": "Fleuriste Pte Ltd",
+        "uen": "201503118E",
+        "logo": "common/logo/fleuriste_pte_ltd.jpg",
+        "address": "",
+        "templates": {
+            "course_proposal": "",
+            "courseware": "",
+            "assessment": "",
+            "brochure": ""
+        }
+    },
+    {
+        "name": "Genetic Computer School Pte Ltd",
+        "uen": "198902296M",
+        "logo": "common/logo/genetic_computer_school_pte_ltd.jpg",
+        "address": "",
+        "templates": {
+            "course_proposal": "",
+            "courseware": "",
+            "assessment": "",
+            "brochure": ""
+        }
+    },
+    {
+        "name": "Hai Leck Engineering Pte Ltd",
+        "uen": "200903962H",
+        "logo": "common/logo/hai_leck_engineering_pte_ltd.jpg",
+        "address": "",
+        "templates": {
+            "course_proposal": "",
+            "courseware": "",
+            "assessment": "",
+            "brochure": ""
+        }
+    },
+    {
+        "name": "IES Academy Pte Ltd",
+        "uen": "202026912H",
+        "logo": "common/logo/ies_academy_pte_ltd.jpg",
+        "address": "",
+        "templates": {
+            "course_proposal": "",
+            "courseware": "",
+            "assessment": "",
+            "brochure": ""
+        }
+    },
+    {
+        "name": "Info-Tech Systems Integrators Pte Ltd",
+        "uen": "200711480W",
+        "logo": "common/logo/info_tech_systems_integrators_pte_ltd.jpg",
+        "address": "",
+        "templates": {
+            "course_proposal": "",
+            "courseware": "",
+            "assessment": "",
+            "brochure": ""
+        }
+    },
+    {
+        "name": "InnoHat Training Pte Ltd",
+        "uen": "202116663E",
+        "logo": "common/logo/innohat_training_pte_ltd.jpg",
+        "address": "",
+        "templates": {
+            "course_proposal": "",
+            "courseware": "",
+            "assessment": "",
+            "brochure": ""
+        }
+    },
+    {
+        "name": "Laures Solutions Pte Ltd",
+        "uen": "200922279R",
+        "logo": "common/logo/laures_solutions_pte_ltd.jpg",
+        "address": "",
+        "templates": {
+            "course_proposal": "",
+            "courseware": "",
+            "assessment": "",
+            "brochure": ""
+        }
+    },
+    {
+        "name": "QE Safety Consultancy Pte Ltd",
+        "uen": "201422488N",
+        "logo": "common/logo/qe_safety_consultancy_pte_ltd.jpg",
+        "address": "",
+        "templates": {
+            "course_proposal": "",
+            "courseware": "",
+            "assessment": "",
+            "brochure": ""
+        }
+    },
+    {
+        "name": "OOm Pte Ltd",
+        "uen": "200617554M",
+        "logo": "common/logo/oom_pte_ltd.jpg",
+        "address": "",
+        "templates": {
+            "course_proposal": "",
+            "courseware": "",
+            "assessment": "",
+            "brochure": ""
+        }
+    },
+    {
+        "name": "Raffles Skills Lab International Training Centre Pte Ltd",
+        "uen": "201020518M",
+        "logo": "common/logo/raffles_skills_lab_international_training_centre_pte_ltd.jpg",
+        "address": "",
+        "templates": {
+            "course_proposal": "",
+            "courseware": "",
+            "assessment": "",
+            "brochure": ""
+        }
+    },
+    {
+        "name": "TRAINOCATE (S) Pte Ltd",
+        "uen": "199507581C",
+        "logo": "common/logo/trainocate_(s)_pte_ltd.jpg",
+        "address": "",
+        "templates": {
+            "course_proposal": "",
+            "courseware": "",
+            "assessment": "",
+            "brochure": ""
+        }
+    },
+    {
+        "name": "SOQ International Academy Pte Ltd",
+        "uen": "201723514D",
+        "logo": "common/logo/soq_international_academy_pte_ltd.jpg",
+        "address": "",
+        "templates": {
+            "course_proposal": "",
+            "courseware": "",
+            "assessment": "",
+            "brochure": ""
+        }
+    },
+    {
+        "name": "xin ping ",
+        "uen": "32436489137987E",
+        "address": "",
+        "logo": "common/logo/xin_ping_.png",
+        "templates": {
+            "course_proposal": "",
+            "courseware": "",
+            "assessment": "",
+            "brochure": ""
+        }
+    }
+]

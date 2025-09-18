@@ -1,0 +1,66 @@
+{
+  "Course_Proposal_Form": {
+    "null": [
+      "COURSE PROPOSAL (CP) Form",
+      "Instructions to Applicants",
+      "You may submit your application for 1 of the following 2 types of courses by filling up the relevant segments in the Course Proposal Form (CP). Each course application is to be accompanied by 1 CP Form.",
+      "(A) WSQ Singular Course",
+      "(B) WSQ Integrated Course*",
+      "*WSQ Integrated course refers to a course application with more than 1 Technical Skills and Competencies",
+      "(TSC) but not leading to a full qualification.",
+      "For application of WSQ Full Qualification, please click here:",
+      "https://www.tpgateway.gov.sg/plan-courses/course-accreditation select \u201cWhat do I need for the application? s/no b.\u201d",
+      "Title: Create Engaging Social E-Commerce Campaigns on XiaoHongShu",
+      "Organization: Tertiary Infotech Pte Ltd",
+      "Learning Outcomes:",
+      "LO1: Implement XiaoHongShu e-commerce campaigns in alignment to strategic marketing objectives.",
+      "LO2: Analyse XiaoHongShu campaign outcomes using sales performance data and consumer insights.",
+      "LO3: Analyse e-Commerce trends and customer review on XiaoHongShu\u2019s Shop.",
+      "Course Duration: 16 hours",
+      "Instructional Methods:",
+      "Classroom: 7 hours",
+      "Practical: 7 hours",
+      "Didactic Questioning",
+      "Demonstration",
+      "Assessment Methods:",
+      "Written Assessment (2 hours)",
+      "Practical Performance (2 hours)",
+      "TSC Mapping:",
+      "TSC Title: E-Commerce Campaign Management",
+      "TSC Code: TOU-SNM-3014-1.1-1",
+      "TSC Knowledge:",
+      "K1: E-Commerce campaign execution tactics",
+      "K2: Messages to be communicated",
+      "K3: Methods to advertise products online",
+      "K4: Possible media options",
+      "K5: Campaign schedules",
+      "K6: Means of using data gathered from pre-campaign testing",
+      "TSC Abilities:",
+      "A1: Execute e-Commerce campaigns in alignment to e-Commerce strategies, sales and marketing strategies",
+      "A2: Monitor campaign performance and effectiveness in accordance with performance measures",
+      "A3: Analyse information on e-commerce sales and customer feedback",
+      "A4: Identify e-Commerce trends and patterns from campaign analysis",
+      "A5: Monitor social media platforms or online blog or vlog and forums related platforms for customer feedback or review",
+      "Learning Units"
+    ],
+    "LU1: Introduction to E-Commerce Campaign Management (K1, K2, A1)": [
+      "Topic 1: Setup E-Commerce Campaign Management with XiaoHongShu (K1, K2, A1)",
+      "Key elements of e-commerce campaign with XiaoHongShu (K1)",
+      "Communicating effectively on XiaoHongShu (Little Red Book)  (K2)",
+      "How to execute an effective e-commerce campaign on XiaoHongShu (Little Red Book) (A1)"
+    ],
+    "LU2: Performance Monitoring and Analysis (K3, K4, A2, A3)": [
+      "Topic 2: Monitor and Analyze E-Commerce Performance (K3, K4, A2, A3)",
+      "List and advertise products online on XiaoHongShu (K3)",
+      "Advertising media options available on XiaoHongShu (K4)",
+      "Monitor e-commerce performance (A2)",
+      "Analyze online sales performance (A3)"
+    ],
+    "LU3: Social Trends and Feedback Analysis (K5, K6, A4, A5)": [
+      "Topic 3: Analyze Social Trends and Customer Feedbacks  (K5, K6, A4, A5)",
+      "Decide your social e-Commerce campaign schedules (K5)",
+      "Analyze e-commerce trends and patterns from campaign analysis on XiaoHongShu (K6, A4)",
+      "Monitor customer feedback and review (A5)"
+    ]
+  }
+}

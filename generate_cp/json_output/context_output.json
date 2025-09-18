@@ -1,0 +1,392 @@
+{
+    "ADuration": [],
+    "InstructMethods": [],
+    "AssessMethods": [
+        "Written Assessment - Short-Answer Questions (WA-SAQ)",
+        "Case Study (CS)"
+    ],
+    "A_0": [
+        "A1: Anticipate potential issues in systems transition"
+    ],
+    "A_10": [],
+    "A_11": [],
+    "A_12": [],
+    "A_13": [],
+    "A_14": [],
+    "A_15": [],
+    "A_16": [],
+    "A_17": [],
+    "A_1": [
+        "A2: Plan for smooth transition from the old systems to the new systems"
+    ],
+    "A_2": [
+        "A3: Identify potential opportunities to adopt emerging technologies"
+    ],
+    "A_3": [
+        "A4: Plan for staff training any new systems and software"
+    ],
+    "A_4": [],
+    "A_5": [],
+    "A_6": [],
+    "A_7": [],
+    "A_8": [],
+    "A_9": [],
+    "Company": [
+        "LHUB"
+    ],
+    "Conclusion_0": [
+        "Overall, the structured sequencing of these learning units is designed to address the performance gaps identified in the industry while equipping learners with the necessary attributes to excel in their roles as technology professionals. By the end of the course, learners will have gained the ability to effectively plan and execute a smooth transition to Microsoft Copilot, anticipate potential issues, and enhance organizational processes through comprehensive staff training and adoption strategies."
+    ],
+    "CourseTitle": [
+        "Craft Effective Prompts for Microsoft Copilot for Microsoft 365"
+    ],
+    "Hours_0": [
+        7
+    ],
+    "Hours_1": [
+        1
+    ],
+    "Hours_2": [
+        8
+    ],
+    "Hours_3": [
+        "N.A."
+    ],
+    "Hours_4": [],
+    "IM": [
+        "Lecture",
+        "Peer Sharing",
+        "Group Discussion",
+        "Case Study"
+    ],
+    "KA_0": [
+        "K1, K2, A1, A2"
+    ],
+    "KA_1": [
+        "K3, K4, A3, A4"
+    ],
+    "KA_2": [],
+    "KA_3": [],
+    "KA_4": [],
+    "K_0": [
+        "K1: Relevant systems and software"
+    ],
+    "K_10": [],
+    "K_11": [],
+    "K_12": [],
+    "K_13": [],
+    "K_14": [],
+    "K_15": [],
+    "K_16": [],
+    "K_17": [],
+    "K_1": [
+        "K2: Organisation's processes"
+    ],
+    "K_2": [
+        "K3: Systems transition process"
+    ],
+    "K_3": [
+        "K4: Emerging technological trends such as block chain, machine learning, artificial intelligence, robotic process automation and digital currency"
+    ],
+    "K_4": [],
+    "K_5": [],
+    "K_6": [],
+    "K_7": [],
+    "K_8": [],
+    "K_9": [],
+    "LO_0": [
+        "LO1: Plan for a smooth transition to Microsoft Copilot for Microsoft 365, anticipating potential issues in transition."
+    ],
+    "LO_1": [
+        "LO2: Identify the adoption of Microsoft Copilot for Microsoft 365 and plan staff training to enhance organizational processes."
+    ],
+    "LO_2": [],
+    "LO_3": [],
+    "LO_4": [],
+    "LO_5": [],
+    "LO_6": [],
+    "LO_7": [],
+    "LU_0": [
+        "LU1: Get started with Copilot for Microsoft 365"
+    ],
+    "LU_1": [
+        "LU2: Craft effective prompts for Microsoft Copilot for Microsoft 365"
+    ],
+    "LU_2": [],
+    "LU_3": [],
+    "LU_4": [],
+    "LU_5": [],
+    "LU_6": [],
+    "LU_7": [],
+    "LUex_0": [
+        "LU1 lays the foundational knowledge by introducing learners to Microsoft Copilot for Microsoft 365. The facilitator will guide learners through understanding what Copilot is, how it works, and its core components. This unit sets the stage for anticipating potential issues in transition by examining Microsoft's commitment to responsible AI. Learners will explore the possibilities with Copilot across various Microsoft 365 applications, which is crucial for planning a smooth transition and aligning with organizational processes."
+    ],
+    "LUex_1": [
+        "Building on the foundational knowledge, LU2 dives into the practical aspects of crafting effective prompts for Microsoft Copilot. Learners will be led through exercises to summarize, create, draft, edit, and transform content using Copilot across different Microsoft 365 applications. The hands-on activities in this unit are designed to enhance learners' ability to plan staff training and identify the adoption of Copilot, crucial skills for enhancing organizational processes. This unit culminates in a comprehensive understanding of how to leverage Copilot to optimize workflows and improve productivity."
+    ],
+    "LUex_2": [
+        ""
+    ],
+    "LUex_3": [
+        ""
+    ],
+    "LUex_4": [],
+    "LUex_5": [],
+    "LUex_6": [],
+    "LUex_7": [],
+    "Placeholder_0": [
+        "SkillsFuture's report Skills Demand For The Future Economy (https://www.skillsfuture.gov.sg/skillsreport) published in 2025, spotlights the priority skills and jobs in demand in three specially selected, emerging, high-growth areas. This report is designed for Singaporeans as a resource for an individual\u2019s skills development journey over the next one to three years.  Singapore's key growth areas (Digital, Green & Care Economy) bring exciting job and skills opportunities. It also introduced the idea of 'priority skills, ' highly transferable skills across job roles within the three economies. In other words, these skills are applicable in many job roles and will contribute significantly to the individual's long-term career versatility. A new dimension on skills demands growth has been added and analysed alongside skills transferability. Demand growth captures the relative scale of the increase in demand for that skill, while transferability captures the scope of the skill's applicability across different job roles. The two-dimensional analysis seeks to provide deeper insights to the reader into the nature of the priority skills identified. \n\nThe industry is currently facing several challenges and performance gaps that are directly related to the integration and effective use of advanced digital tools and technologies. One of the primary challenges is the rapid pace of technological advancement, which often outpaces the ability of organizations to adapt and integrate these new tools into their existing systems. This is particularly true for tools like Microsoft Copilot, which leverage artificial intelligence to enhance productivity and efficiency. Many organizations struggle with the transition from traditional systems to more advanced, AI-driven solutions, leading to disruptions in workflow and productivity. Additionally, there is often a lack of understanding and expertise in effectively utilizing these tools to their full potential, which can result in underutilization and missed opportunities for optimization. Another significant gap is the resistance to change within organizations, where employees may be hesitant or lack the motivation to adopt new technologies, further hindering the transition process. These challenges highlight the need for comprehensive training programs that not only focus on the technical aspects of these tools but also address the human factors involved in technology adoption.\n\nTo effectively address the challenges and performance gaps identified, there is a critical need for targeted training programs that focus on both the technical and human aspects of technology adoption. Training should be designed to equip employees with the necessary skills and knowledge to smoothly transition to new systems, such as Microsoft Copilot, and to effectively utilize these tools to enhance organizational processes. This includes training on the relevant systems and software, understanding the organization's processes, and the systems transition process. Additionally, training should focus on emerging technological trends, such as artificial intelligence, machine learning, and robotic process automation, to ensure that employees are not only able to use current tools effectively but are also prepared for future technological advancements. Furthermore, training programs should incorporate strategies for overcoming resistance to change, such as fostering a culture of innovation and continuous learning, and providing support and resources to help employees adapt to new technologies. By addressing both the technical and human factors, training can play a crucial role in bridging the performance gaps and enabling organizations to fully leverage the benefits of advanced digital tools.\n\nSeveral job roles within the industry would significantly benefit from training on crafting effective prompts for tools like Microsoft Copilot. These roles include IT professionals, who are responsible for managing and implementing new technologies within the organization. Training would enable them to better understand the capabilities and limitations of AI-driven tools, and to develop strategies for integrating these tools into existing systems. Additionally, roles such as business analysts and data analysts would benefit from training, as it would enhance their ability to leverage AI tools for data analysis and decision-making processes. Furthermore, roles in project management and operations would also benefit, as training would equip them with the skills to plan and manage the transition to new systems, and to optimize workflows and processes using advanced digital tools. Finally, training would be beneficial for roles in human resources and organizational development, as it would enable them to develop and implement strategies for fostering a culture of innovation and continuous learning, and to support employees in adapting to new technologies. By targeting these key roles, training can have a significant impact on the overall performance and productivity of the organization."
+    ],
+    "Placeholder_1": [
+        {
+            "type": "paragraph",
+            "content": "Performance gaps were identified through survey forms distributed to external stakeholders:"
+        },
+        {
+            "type": "bold_paragraph",
+            "content": "Performance Gaps:"
+        },
+        {
+            "type": "bullets",
+            "content": [
+                "Learners are unclear with planning a smooth transition to Microsoft Copilot for Microsoft 365, anticipating potential issues in transition.",
+                "Learners struggle to identify the adoption of Microsoft Copilot for Microsoft 365 and plan staff training to enhance organizational processes.",
+                "Learners lack the ability to effectively integrate emerging technologies like Microsoft Copilot into existing organizational processes."
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": "Through targeted training programs, learners will gain the following attributes to address the identified performance gaps after the training:"
+        },
+        {
+            "type": "bold_paragraph",
+            "content": "Attributes Gained:"
+        },
+        {
+            "type": "bullets",
+            "content": [
+                "Ability to plan and execute a smooth transition to Microsoft Copilot for Microsoft 365, anticipating and mitigating potential issues.",
+                "Proficiency in identifying the adoption of Microsoft Copilot for Microsoft 365 and planning comprehensive staff training to improve organizational processes.",
+                "Skill in integrating emerging technologies such as Microsoft Copilot into existing workflows to enhance productivity and efficiency."
+            ]
+        },
+        {
+            "type": "bold_paragraph",
+            "content": "Post-Training Benefits to Learners:"
+        },
+        {
+            "type": "bullets",
+            "content": [
+                "Enhanced capability to manage and facilitate a seamless transition to new AI-driven tools, minimizing disruptions and maintaining productivity.",
+                "Improved ability to train and support staff in adopting new technologies, leading to more efficient and optimized organizational processes.",
+                "Increased confidence and competence in leveraging advanced digital tools to drive innovation and improve overall organizational performance."
+            ]
+        }
+    ],
+    "Rationale_0": [
+        "For this course, the step-by-step sequencing is employed to scaffold the learners' comprehension and application of crafting effective prompts for Microsoft Copilot for Microsoft 365. The methodology is crucial as it systematically breaks down the intricate facets of transitioning to and adopting Microsoft Copilot into digestible units. This aids in gradually building the learners' knowledge and skills from fundamental to more complex concepts, ensuring a solid foundation before advancing to the next topic. The progression is designed to foster a deeper understanding and the ability to effectively apply the learned concepts in real-world organizational scenarios."
+    ],
+    "TCS_0": [
+        "Digital Technology Adoption and Innovation"
+    ],
+    "TCS_1": [
+        "ACC-ICT-4004-1.1"
+    ],
+    "TopicsEX_0": [],
+    "TopicsEX_1": [],
+    "TopicsEX_2": [],
+    "TopicsEX_3": [],
+    "TopicsEX_4": [],
+    "TopicsEX_5": [],
+    "Topics_0": [
+        {
+            "type": "paragraph",
+            "content": "Topic 1: Introduction to Copilot for Microsoft 365 (K1, A1)"
+        },
+        {
+            "type": "bullets",
+            "content": [
+                "What is Copilot for Microsoft 365?",
+                "Explore how Copilot for Microsoft 365 works",
+                "Explore the core components of Copilot for Microsoft 365",
+                "Examine how Microsoft is committed to responsible AI"
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": "Topic 2: Explore the possibilities with Copilot for Microsoft 365 (K2, A2)"
+        },
+        {
+            "type": "bullets",
+            "content": [
+                "Compose and summarize documents with Copilot in Word",
+                "Summarize and draft emails with Copilot in Outlook",
+                "Design captivating presentations with Copilot in PowerPoint",
+                "Analyze and transform data with Copilot in Excel",
+                "Elevate productivity with Copilot in Teams",
+                "Empower employees through Microsoft Copilot with Graph-grounded chat"
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": "Topic 3: Optimize and extend Copilot for Microsoft 365 (K2, A2)"
+        },
+        {
+            "type": "bullets",
+            "content": [
+                "Examine the art and science of working with AI",
+                "Review best practices for using Copilot for Microsoft 365",
+                "Examine how to build an effective prompt",
+                "Review prompting best practices",
+                "Extend Copilot for Microsoft 365 with plugins",
+                "Explore Microsoft Graph connectors"
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": "LO1 \u2013 Plan for a smooth transition to Microsoft Copilot for Microsoft 365, anticipating potential issues in transition."
+        },
+        {
+            "type": "paragraph",
+            "content": "K1: Relevant systems and software"
+        },
+        {
+            "type": "paragraph",
+            "content": "K2: Organisation's processes"
+        },
+        {
+            "type": "paragraph",
+            "content": "A1: Anticipate potential issues in systems transition"
+        },
+        {
+            "type": "paragraph",
+            "content": "A2: Plan for smooth transition from the old systems to the new systems"
+        }
+    ],
+    "Topics_1": [
+        {
+            "type": "paragraph",
+            "content": "Topic 4: Summarize with Microsoft Copilot for Microsoft 365 (K3, A4)"
+        },
+        {
+            "type": "bullets",
+            "content": [
+                "Planning staff for training for Microsoft Copilot",
+                "Follow along using sample data with Copilot for Microsoft 365",
+                "Simplify and extract key information with Copilot in Word",
+                "Identify key information and summarize with Copilot in PowerPoint",
+                "Spot trends and visualize data with Copilot in Excel",
+                "Highlight key decisions and actions from Teams meetings",
+                "Catch up and prepare for the week with Copilot in Outlook",
+                "Summarize information on a topic with Microsoft Copilot for Microsoft 365"
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": "Topic 5: Create and draft with Microsoft Copilot for Microsoft 365 (K3, K4)"
+        },
+        {
+            "type": "bullets",
+            "content": [
+                "Introduction to creating draft content with Microsoft Copilot in Microsoft 365",
+                "Draft cover letters, marketing plans, and outlines with Microsoft Copilot in Word",
+                "Build new slides, agendas, and to-do lists with Microsoft Copilot in PowerPoint",
+                "Draft emails, replies, and meeting agendas with Microsoft Copilot in Outlook",
+                "Brainstorm new ideas, lists, and reports from across Microsoft 365 with Microsoft Copilot"
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": "Topic 6: Edit and transform content with Microsoft Copilot for Microsoft 365 (K4, A3)"
+        },
+        {
+            "type": "bullets",
+            "content": [
+                "Write, organize, and transform content using Microsoft Copilot in Word",
+                "Add images, slides, and organize your presentation using Microsoft Copilot in PowerPoint",
+                "Format, sort, filter, and highlight data using Microsoft Copilot in Excel",
+                "Rewrite messages and replies for tone using Microsoft Copilot in Outlook"
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": "Topic 7: Ask questions and analyze content with Microsoft Copilot for Microsoft 365 (K4, A3)"
+        },
+        {
+            "type": "bullets",
+            "content": [
+                "Ask Microsoft Copilot for help and recommendations in Word",
+                "Get design and organization tips using Microsoft Copilot in PowerPoint",
+                "Analyze and work with tables using Copilot in Excel",
+                "Ask questions about your notes using Copilot in OneNote",
+                "Chat with Copilot about meetings and messages in Teams"
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": "LO2 \u2013 Identify the adoption of Microsoft Copilot for Microsoft 365 and plan staff training to enhance organizational processes."
+        },
+        {
+            "type": "paragraph",
+            "content": "K3: Systems transition process"
+        },
+        {
+            "type": "paragraph",
+            "content": "K4: Emerging technological trends such as block chain, machine learning, artificial intelligence, robotic process automation and digital currency"
+        },
+        {
+            "type": "paragraph",
+            "content": "A3: Identify potential opportunities to adopt emerging technologies"
+        },
+        {
+            "type": "paragraph",
+            "content": "A4: Plan for staff training any new systems and software"
+        }
+    ],
+    "Topics_2": [],
+    "Topics_3": [],
+    "Topics_4": [],
+    "Topics_5": [],
+    "TotalHours": [],
+    "Assessment_0": [
+        "Written Assessment - Short-Answer Questions (WA-SAQ) \u2013 K1, K2\n\nCase Study (CS) \u2013 A1, A2"
+    ],
+    "Assessment_1": [
+        "Written Assessment - Short-Answer Questions (WA-SAQ) \u2013 K3, K4\n\nCase Study (CS) \u2013 A4, A3"
+    ],
+    "Assessment_2": [],
+    "Assessment_3": [],
+    "Assessment_4": [],
+    "AssessmentJustification": [],
+    "ADuration_0": [
+        "Written Assessment - Short-Answer Questions (WA-SAQ) \u2013 15 mins\n\nCase Study (CS) \u2013 15 mins"
+    ],
+    "ADuration_1": [
+        "Written Assessment - Short-Answer Questions (WA-SAQ) \u2013 15 mins\n\nCase Study (CS) \u2013 15 mins"
+    ],
+    "ADuration_2": [],
+    "ADuration_3": [],
+    "ADuration_4": [],
+    "ADuration_5": [],
+    "ADurationTotal": [
+        "WA-SAQ \u2013 0.5 hr\nCS \u2013 0.5 hr\nTotal \u2013 1 hr"
+    ],
+    "Sequencing": [
+        {
+            "type": "bold_paragraph",
+            "content": "LU1: Get started with Copilot for Microsoft 365"
+        },
+        {
+            "type": "paragraph",
+            "content": "LU1 lays the foundational knowledge by introducing learners to Microsoft Copilot for Microsoft 365. The facilitator will guide learners through understanding what Copilot is, how it works, and its core components. This unit sets the stage for anticipating potential issues in transition by examining Microsoft's commitment to responsible AI. Learners will explore the possibilities with Copilot across various Microsoft 365 applications, which is crucial for planning a smooth transition and aligning with organizational processes."
+        },
+        {
+            "type": "bold_paragraph",
+            "content": "LU2: Craft effective prompts for Microsoft Copilot for Microsoft 365"
+        },
+        {
+            "type": "paragraph",
+            "content": "Building on the foundational knowledge, LU2 dives into the practical aspects of crafting effective prompts for Microsoft Copilot. Learners will be led through exercises to summarize, create, draft, edit, and transform content using Copilot across different Microsoft 365 applications. The hands-on activities in this unit are designed to enhance learners' ability to plan staff training and identify the adoption of Copilot, crucial skills for enhancing organizational processes. This unit culminates in a comprehensive understanding of how to leverage Copilot to optimize workflows and improve productivity."
+        }
+    ]
+}

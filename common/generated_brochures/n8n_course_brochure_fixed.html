@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WSQ - Agentic AI Automation with n8n</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.3;
+            color: #333;
+            background-color: #fff;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .logo {
+            width: 120px;
+            height: 48px;
+            background-color: #2b5a87;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        
+        .tertiary-logo {
+            display: inline-block;
+            background-color: #2b5a87;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-weight: bold;
+            margin-left: 20px;
+            font-size: 14px;
+        }
+        
+        .tertiary-text {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        h1 {
+            font-size: 28px;
+            font-weight: bold;
+            color: #2b5a87;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        h2 {
+            font-size: 22px;
+            font-weight: bold;
+            color: #333;
+            margin: 30px 0 15px 0;
+        }
+        
+        h3 {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2b5a87;
+            margin: 25px 0 10px 0;
+        }
+        
+        p {
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+        
+        
+        .course-outline table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+            border: 2px solid #333;
+        }
+        
+        .course-outline td {
+            padding: 8px 15px;
+            border: 1px solid #333;
+            vertical-align: top;
+        }
+        
+        .course-outline .topic-header {
+            font-weight: bold;
+            background-color: #f5f5f5;
+        }
+        
+        .course-info {
+            background-color: #f8f9fa;
+            padding: 15px 20px;
+            border-radius: 20px;
+            margin: 20px 0;
+        }
+        
+        .course-info h3 {
+            color: #2b5a87;
+            margin-bottom: 15px;
+        }
+        
+        .fee-info {
+            margin: 10px 0;
+        }
+        
+        .funding-section {
+            background-color: #2b5a87;
+            color: white;
+            padding: 20px;
+            border-radius: 20px;
+            margin: 40px 0;
+            border: 2px solid transparent;
+        }
+        
+        .funding-section h2 {
+            color: white;
+            margin-bottom: 20px;
+        }
+        
+        .funding-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background-color: white;
+            color: #333;
+        }
+        
+        .funding-table th,
+        .funding-table td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: center;
+        }
+        
+        .funding-table th {
+            background-color: #f0f0f0;
+            font-weight: bold;
+        }
+        
+        .funding-table .header-row {
+            background-color: #e8e8e8;
+            font-weight: bold;
+        }
+        
+        .certificate-section {
+            background-color: #2b5a87;
+            color: white;
+            padding: 2px 20px;
+            border-radius: 20px;
+            margin: 30px 0;
+            text-align: center;
+        }
+        
+        .certificate-section h3 {
+            color: white;
+            margin-bottom: 15px;
+            font-size: 24px;
+        }
+        
+        .certificate-content {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            text-align: left;
+        }
+        
+        .certificate-item {
+            flex: 1;
+            margin: 0 20px;
+        }
+        
+        .certificate-item h4 {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+        
+        ul {
+            margin: 15px 0;
+            padding-left: 30px;
+        }
+        
+        li {
+            margin-bottom: 8px;
+        }
+        
+        .link {
+            color: #0066cc;
+            text-decoration: underline;
+        }
+        
+        .enquiry-section {
+            background-color: #2b5a87;
+            color: white;
+            padding: 5px 20px;
+            border-radius: 20px;
+            margin: 25px 0 !important;
+            display: block;
+            isolation: isolate;
+            break-inside: avoid;
+        }
+        
+        .enquiry-section h3 {
+            color: white;
+            margin-bottom: 15px;
+            font-size: 24px;
+        }
+        
+        .enquiry-section a {
+            color: white;
+            text-decoration: underline;
+        }
+        
+        .page-break {
+            margin: 40px 0;
+            border-top: 1px solid #ddd;
+            padding-top: 40px;
+        }
+        
+        .brand-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        
+        .brand-logo {
+            background-color: #2b5a87;
+            color: white;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 20px;
+        }
+        
+        .header-logo {
+            width: 200px;
+            height: auto;
+        }
+        
+        /* CSS for automatic page breaks when printing/generating PDF */
+        @media print {
+            .page-break {
+                page-break-before: always;
+                break-before: page;
+                margin: 0 !important;
+                padding-top: 10px !important;
+                border-top: none !important;
+            }
+            
+            .certificate-section {
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+            
+            .funding-section {
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+            
+            .enquiry-section {
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+            
+            .course-info {
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+            
+            .course-outline {
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+            
+            /* Force page break before major sections if they don't fit */
+            .certificate-section,
+            .funding-section,
+            .enquiry-section {
+                page-break-before: auto;
+                break-before: auto;
+            }
+            
+            /* Prevent orphaned headers */
+            h1, h2, h3 {
+                page-break-after: avoid;
+                break-after: avoid;
+            }
+            
+            /* Keep content together */
+            .brand-header {
+                page-break-after: avoid;
+                break-after: avoid;
+                margin-top: 0 !important;
+                margin-bottom: 20px !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Page 1 -->
+        <div class="brand-header">
+            <img src="header_image1.png" alt="Tertiary Infotech Logo" class="header-logo">
+        </div>
+        
+        <h1>WSQ - Agentic AI Automation with n8n</h1>
+        
+        <h2>About This Course</h2>
+        <p>WSQ Agentic AI Automation with n8n is designed for professionals looking to integrate agentic AI, workflow automation, and hybrid reasoning systems into real-world business scenarios. You will learn to identify and design ASR (Agentic System Reasoning) applications using n8n, build intelligent workflows with APIs, webhooks, and automate routine operations. The course covers foundational knowledge in workflow design, low-code interfaces, and HTTP request handling using n8n’s visual environment.</p>
+        
+        <p>You will also delve into the development of AI agents, implement Retrieval Augmented Generation (RAG) using embeddings and vector stores, and build cooperative multi-agent systems with LLMs. Practical modules include setting up Telegram chatbots, AI voice agents, and viral content generators. By the end of the course, you will be capable of decomposing complex automation problems, applying model context protocols, and developing hybrid intelligent applications for business needs using n8n.</p>
+        
+        <h2>What You'll Learn</h2>
+        <p>By end of course, learners should be able to:</p>
+        <ul>
+            <li>Identify required ASR functions based on business needs and design ASR applications accordingly.</li>
+            <li>Analyse business drivers to design and apply search techniques in ASR for expected outcomes.</li>
+            <li>Decompose complex ASR scenarios into subproblems and resolve them using cooperative intelligent subsystems.</li>
+            <li>Design cooperative reasoning modules and create hybrid systems in ASR using suitable techniques and programming.</li>
+            <li>Build hybrid reasoning systems for ASR using appropriate techniques and sub-modules.</li>
+        </ul>
+
+        <div class="certificate-section">
+            <h3>Course Certificate</h3>
+            <p>Two e-certificates will be awarded to trainees who have passed the assessment.</p>
+            
+            <div class="certificate-content">
+                <div class="certificate-item">
+                    <h4>1. Statement of Achievement</h4>
+                    <p><strong>User Interface Design<br>
+                    ICT-DES-3008-1.1 TSC</strong><br>
+                    under Infocomm Technology Skills Framework<br>
+                    issued by WSG/SSG.</p>
+                </div>
+                <div class="certificate-item">
+                    <h4>2. Certification of Achievement</h4>
+                    <p>issued by Tertiary Infotech<br>
+                    Pte Ltd.</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Page 2 -->
+        <div class="page-break">
+            <div class="brand-header">
+                <img src="header_image1.png" alt="Tertiary Infotech Logo" class="header-logo">
+            </div>
+            
+            <h1>WSQ - Agentic AI Automation with n8n</h1>
+            
+            <h2>Course Outline:</h2>
+            <div class="course-outline">
+                <table>
+                    <tr>
+                        <td class="topic-header"><strong>Topic 1: Workflow Automation with n8n</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Overview of n8n<br>
+                        Explore n8n UI<br>
+                        Key Concepts of n8n - Nodes and Logic Flow<br>
+                        Create Automation Workflows on n8n<br>
+                        HTTP Request API and Webhook</td>
+                    </tr>
+                    <tr>
+                        <td class="topic-header"><strong>Topic 2: n8n AI Agents and RAG</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Overview of AI Agents - LLM, Reasoning, Tools and Memory<br>
+                        Create AI Agent Workflows on n8n<br>
+                        Overview of Retrieval Augmented Generation (RAG)<br>
+                        Key Concept of Embedding and Vector Stores<br>
+                        Create RAG Workflows on n8n</td>
+                    </tr>
+                    <tr>
+                        <td class="topic-header"><strong>Topic 3: Collaborative Multi Agents Systems</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Overview of Multi Agents<br>
+                        Create Collaborative Multi AI Agents Systems on n8n<br>
+                        Setup Telegram Chatbot Agent</td>
+                    </tr>
+                    <tr>
+                        <td class="topic-header"><strong>Topic 4: Model Context Protocol</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Overview of Model Context Protocol (MCP)<br>
+                        Setup MCP Server on n8n<br>
+                        Setup MCP Client on n8n</td>
+                    </tr>
+                    <tr>
+                        <td class="topic-header"><strong>Topic 5: Develop Agentic AI Applications with n8n</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Setup Travel AI Voice Agent<br>
+                        Setup Viral Youtube Agent</td>
+                    </tr>
+                    <tr>
+                        <td class="topic-header"><strong>Final Assessment</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Written Assessment (SAQ)<br>
+                        Practical Exam</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Page 3 -->
+        <div class="page-break">
+            <div class="brand-header">
+                <img src="header_image1.png" alt="Tertiary Infotech Logo" class="header-logo">
+            </div>
+            
+            <h2>Course Information</h2>
+            
+            <div class="course-info">
+                <p><strong>Course Code:</strong> <strong>TGS-2023035977</strong></p>
+                
+                <p><strong>Skills Framework:</strong> <strong>Intelligent Reasoning ICT-ACE-5030-1.1 TSC</strong><br>
+                under Infocomm Technology Skills Framework</p>
+                
+                <p><strong>Course Fee (Before Funding):</strong></p>
+                <div class="fee-info">
+                    <p>$1,200.00 (Bef. GST)</p>
+                    <p>$1308.00 (Incl. GST)</p>
+                </div>
+                
+                <p><strong>Time:</strong> 9:30am-6:30pm<br>
+                <strong>Duration:</strong> 24hrs (3 days)</p>
+                
+                <p><strong>Registration Link:</strong><br>
+                <a href="https://www.tertiarycourses.com.sg/wsq-agentic-ai-automation-with-n8n.html" class="link">https://www.tertiarycourses.com.sg/wsq-agentic-ai-automation-with-n8n.html</a></p>
+                
+                <div class="enquiry-section">
+                    <h3>Enquiry</h3>
+                    <p><strong>Email:</strong> <a href="mailto:enquiry@tertiaryinfotech.com">enquiry@tertiaryinfotech.com</a><br>
+                    <strong>Tel:</strong> +65 6100 0613<br>
+                    <strong>Venue:</strong> 12 Woodlands Square, #07-85/86/87,<br>
+                    Woods Square Tower 1, Singapore 733715 (Disabled-Friendly)</p>
+                </div>
+            </div>
+            
+            <h2>Minimum Entry Requirements</h2>
+            
+            <h3>Knowledge and Skills</h3>
+            <ul>
+                <li>Able to operate using computer functions with minimum Computer Literacy<br>
+                Level 2 based on ICAS Computer Skills Assessment Framework.</li>
+                <li>Minimum 3 GCE 'O' Levels Passes including English or WPL Level 5<br>
+                (Average of Reading, Listening, Speaking & Writing Scores).</li>
+            </ul>
+        </div>
+        
+        <!-- Page 4 -->
+        <div class="page-break">
+            <div class="brand-header">
+                <img src="header_image1.png" alt="Tertiary Infotech Logo" class="header-logo">
+            </div>
+            
+            <div class="funding-section">
+                <h2>WSQ Funding</h2>
+                <p>WSQ funding is only applicable to Singaporeans/PRs.<br>
+                Subject to eligibility, the funding support is subjected to<br>
+                funding caps.</p>
+                
+                <p><strong>Baseline:</strong> Singaporean/PR age 21 and above<br>
+                <strong>MCES:</strong> Singaporeans aged 40 years old and above<br>
+                <strong>SME:</strong> Small and Medium Enterprises.</p>
+                
+                <h3 style="color: white;">SkillsFuture Enterprise Credit (SFEC):</h3>
+                <p>Eligible Singapore-registered companies can claim up to $10,000.</p>
+                
+                <div style="background-color: white; color: #333; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                    <h4 style="text-align: center; margin-bottom: 15px; color: #333;">Effective for Courses starting from 1 Jan 2024</h4>
+                    
+                    <table class="funding-table">
+                        <tr class="header-row">
+                            <td rowspan="2"><strong>Full<br>Fee</strong></td>
+                            <td rowspan="2"><strong>GST</strong></td>
+                            <td colspan="2"><strong>Nett Fee after Funding (Inc. GST)</strong></td>
+                        </tr>
+                        <tr class="header-row">
+                            <td><strong>Baseline</strong></td>
+                            <td><strong>MCES / SME</strong></td>
+                        </tr>
+                        <tr>
+                            <td>$1,200</td>
+                            <td>$108.00</td>
+                            <td>$708.00</td>
+                            <td>$468.00</td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <h3 style="color: white;">UTAP Funding</h3>
+                <p>Eligible NTUC members can apply for 50% of the unfunded fee from UTAP, capped at $250 per year. NTUC members aged 40 and above will get increased funding support from $250 to $500.</p>
+                
+                <h3 style="color: white;">Absentee Payroll (AP) Funding</h3>
+                <p>$4.50 per hour, capped at $100,000 per enterprise per calendar year.<br>
+                AP funding will be computed based on the actual number of training hours attended by the trainee.</p>
+            </div>
+        </div>
+        
+        <!-- Page 5 -->
+        <div class="page-break">
+            <div class="brand-header">
+                <img src="header_image1.png" alt="Tertiary Infotech Logo" class="header-logo">
+            </div>
+            
+            <h2>Frequently Asked Questions</h2>
+            
+            <h3>* What are the prerequisites for WSQ Funding?</h3>
+            <ol>
+                <li>You need to be a Singaporean Citizen or Permanent Resident, physically based in Singapore.</li>
+                <li>You must successfully complete the programme and pass the assessment in order to be eligible.</li>
+                <li>You must attend at least 75% of the training.</li>
+            </ol>
+            
+            <h3>* Can I club any other grant with this subsidy?</h3>
+            <p>No, you cannot claim any other grant if you are claiming this subsidy from SSG. You should not be claiming for any other grants, subsidies, or tax concessions, provided unless explicitly permitted.</p>
+            
+            <h3>* Do I need to pay the full fee, and then claim the subsidy from WSQ Funding?</h3>
+            <p>The programme works on a Nett fee model, i.e. you only need to pay the difference between the fee, and the funding amount at the time of enrollment. The training provider (TP) will claim the funding amount from SSG on completion of the programme. In case you fail to complete the programme, or if the claim raised by TP is rejected by SSG then you are liable to pay the funding amount to TP.</p>
+        </div>
+    </div>
+</body>
+</html>

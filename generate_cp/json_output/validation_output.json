@@ -1,0 +1,26 @@
+{
+  "analyst_responses": [
+    {
+      "What are the performance gaps in the industry?": "The industry faces challenges in effectively integrating new technologies with existing systems. This often leads to inefficiencies and resistance to change among staff. Additionally, there is a lack of structured training programs to facilitate the adoption of innovative tools, resulting in underutilization of available resources.",
+      "Why do you think this WSQ course will address the training needs for the industry?": "This course provides a comprehensive framework for integrating new technologies smoothly. By focusing on planning and anticipating potential issues, it equips participants with the skills needed to manage transitions effectively. This ensures that new tools are adopted seamlessly, enhancing overall productivity."
+    },
+    {
+      "What are the performance gaps in the industry?": "There is a noticeable gap in the industry's ability to leverage emerging technologies to their full potential. Many organizations struggle with identifying opportunities for innovation and lack the strategic foresight to implement these technologies effectively. This results in missed opportunities for growth and competitiveness.",
+      "Why do you think this WSQ course will address the training needs for the industry?": "The course emphasizes identifying opportunities for adopting emerging technologies. By equipping participants with the ability to recognize and plan for these opportunities, it fosters a culture of innovation. This strategic approach helps organizations stay ahead in a rapidly evolving technological landscape."
+    },
+    {
+      "What are the performance gaps in the industry?": "Organizations often face challenges in training staff to adapt to new systems and software. This leads to a skills gap where employees are not fully equipped to utilize new tools effectively. Consequently, this hampers productivity and slows down the overall transition process.",
+      "Why do you think this WSQ course will address the training needs for the industry?": "By focusing on planning staff training for new systems, the course ensures that employees are well-prepared to use new tools. This targeted training approach helps bridge the skills gap, enabling staff to contribute more effectively to organizational processes and enhancing overall efficiency."
+    }
+  ],
+  "course_info": {
+    "Course Title": "Craft Effective Prompts for Microsoft Copilot for Microsoft 365",
+    "Industry": "Infocomm Technology",
+    "Learning Outcomes": [
+      "LO1: Plan for a smooth transition to Microsoft Copilot for Microsoft 365, anticipating potential issues in transition.",
+      "LO2: Identify the adoption of Microsoft Copilot for Microsoft 365 and plan staff training to enhance organizational processes."
+    ],
+    "TSC Title": "Digital Technology Adoption and Innovation",
+    "TSC Code": "ACC-ICT-4004-1.1"
+  }
+}
