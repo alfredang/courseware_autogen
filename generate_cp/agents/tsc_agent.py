@@ -26,6 +26,7 @@ def create_tsc_agent(tsc_data, model_choice: str) -> RoundRobinGroupChat:
         2.5. Ensure that any mention of "LU" is followed by a number and a colon.
         2.6. Ensure that the A and K factors are followed by a number and a colon.
         3. Ensure that the K and A factors are correctly mapped to the LUs in brackets.
+        3.1. CRITICAL: If a Topic does NOT have K and A factors in brackets in its header, you MUST add the K and A factors from its parent LU header to the Topic header. Every Topic MUST have K and A factors in brackets.
         4. Catch and amend any spelling errors to the following words:
         Instructional Methods:
         - Didactic Questioning
@@ -49,7 +50,7 @@ def create_tsc_agent(tsc_data, model_choice: str) -> RoundRobinGroupChat:
             "Course_Proposal_Form": {{
                 "null": [
                     "Title: Hands-on AI-Assisted Programming Made Simple with GitHub Copilot",
-                    "Organization: Tertiary Infotech Pte Ltd",
+                    "Organization: Tertiary Infotech Academy Pte Ltd",
                     "Learning Outcomes:",
                     "LO1: Identify gaps in existing programming workflows and propose AI-assisted solutions using GitHub Copilot to enhance efficiency.",
                     "LO2: Explore and apply emerging AI programming tools, including GitHub Copilot, to streamline organizational coding processes.",
@@ -96,12 +97,13 @@ def create_tsc_agent(tsc_data, model_choice: str) -> RoundRobinGroupChat:
         }}
 
         Take note that there can be more than 1 topic per LU, if this is the case, it is already indicated in the data as LUs will already be present and defined, so there is no need for you to further formulate more LUs.
+        IMPORTANT: When a Topic does not have K and A factors in its header, you MUST inherit the K and A factors from the LU header and add them to the Topic header.
         If that is the case, you are to follow the below structure for the JSON output:
         {{
             "Course_Proposal_Form": {{
                 "null": [
                     "Title: Hands-on AI-Assisted Programming Made Simple with GitHub Copilot",
-                    "Organization: Tertiary Infotech Pte Ltd",
+                    "Organization: Tertiary Infotech Academy Pte Ltd",
                     "Learning Outcomes:",
                     "LO1: Identify gaps in existing programming workflows and propose AI-assisted solutions using GitHub Copilot to enhance efficiency.",
                     "LO2: Explore and apply emerging AI programming tools, including GitHub Copilot, to streamline organizational coding processes.",

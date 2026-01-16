@@ -29,7 +29,7 @@ An example JSON schema looks like this, with the LUs as a key-value pair:
     "Course_Proposal_Form": {{
         "null": [
             "Title: Hands-on AI-Assisted Programming Made Simple with GitHub Copilot",
-            "Organization: Tertiary Infotech Pte Ltd",
+            "Organization: Tertiary Infotech Academy Pte Ltd",
             "Learning Outcomes:",
             "LO1: Identify gaps in existing programming workflows and propose AI-assisted solutions using GitHub Copilot to enhance efficiency.",
             "LO2: Explore and apply emerging AI programming tools, including GitHub Copilot, to streamline organizational coding processes.",

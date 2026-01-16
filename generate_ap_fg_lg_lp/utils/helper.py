@@ -117,8 +117,17 @@ def process_logo_image(doc, name_of_organisation, max_width_inch=7, max_height_i
     Returns:
         InlineImage: The resized logo image for use in the document.
     """
-    logo_filename = name_of_organisation.lower().replace(" ", "_") + ".jpg"
-    logo_path = f"generate_ap_fg_lg_lp/utils/logo/{logo_filename}"
+    # Get logo path from organization data
+    from generate_ap_fg_lg_lp.utils.organizations import get_organizations
+    organizations = get_organizations()
+    org = next((o for o in organizations if o["name"] == name_of_organisation), None)
+
+    if org and org.get("logo"):
+        logo_path = org["logo"]
+    else:
+        # Fallback to old logic if organization not found
+        logo_filename = name_of_organisation.lower().replace(" ", "_") + ".jpg"
+        logo_path = f"generate_ap_fg_lg_lp/utils/logo/{logo_filename}"
 
     if not os.path.exists(logo_path):
         raise FileNotFoundError(f"Logo file not found for organisation: {name_of_organisation}")

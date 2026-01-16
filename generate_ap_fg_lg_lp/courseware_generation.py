@@ -147,7 +147,7 @@ if 'context' not in st.session_state:
 if 'asr_output' not in st.session_state:
     st.session_state['asr_output'] = None
 if 'selected_model' not in st.session_state:
-    st.session_state['selected_model'] = "Gemini-Pro-2.5-Exp-03-25"
+    st.session_state['selected_model'] = "DeepSeek-Chat"
 
 ############################################################
 # 1. Pydantic Models
@@ -411,17 +411,33 @@ async def interpret_cp(raw_data: dict, model_client: OpenAIChatCompletionClient)
         [TextMessage(content=agent_task, source="user")], CancellationToken()
     )
     if not response or not response.chat_message:
+        print("ERROR: No response from LLM during CP interpretation")
         return "No content found in the agent's last message."
-    # print(response.chat_message.content)
-    # return response.chat_message.content
+
+    # Debug: Log response length and preview
+    raw_content = response.chat_message.content
+    print(f"CP Interpretation - Response length: {len(raw_content)} chars")
+    print(f"CP Interpretation - First 500 chars: {raw_content[:500]}")
+    print(f"CP Interpretation - Last 500 chars: {raw_content[-500:]}")
 
     try:
-        context = parse_json_content(response.chat_message.content)
+        context = parse_json_content(raw_content)
         if context is None:
-            raise Exception(f"Failed to parse JSON from model response. Raw content: {response.chat_message.content[:500]}...")
+            print("ERROR: parse_json_content returned None - invalid JSON")
+            print(f"Raw response (truncated): {raw_content[:1000]}...")
+            raise Exception(f"Failed to parse JSON from model response. Raw content: {raw_content[:500]}...")
+
+        # Debug: Check if K and A statements were extracted
+        if "Learning_Units" in context:
+            for lu in context["Learning_Units"]:
+                k_count = len(lu.get("K_numbering_description", []))
+                a_count = len(lu.get("A_numbering_description", []))
+                print(f"LU: {lu.get('LU_Title', 'Unknown')} - K statements: {k_count}, A statements: {a_count}")
+
         return context
     except Exception as parse_error:
-        raise Exception(f"Error parsing structured output: {parse_error}. Raw response: {response.chat_message.content[:200]}...")
+        print(f"ERROR: Exception during JSON parsing: {parse_error}")
+        raise Exception(f"Error parsing structured output: {parse_error}. Raw response: {raw_content[:200]}...")
 
 # Streamlit App
 def app():
@@ -446,7 +462,7 @@ def app():
             If any step in the document generation process fails.
     """
 
-    st.title("📄 Courseware Document Generator")
+    st.title("📄 Generate AP/FG/LG/LP")
     
     # ================================================================
     # MODEL SELECTION FEATURE
@@ -457,7 +473,7 @@ def app():
     model_choice = st.selectbox(
         "Select LLM Model:",
         options=list(all_models.keys()),
-        index=0 # Select Default
+        index=list(all_models.keys()).index("DeepSeek-Chat") if "DeepSeek-Chat" in all_models else 0
     )
     st.session_state['selected_model'] = model_choice
 
@@ -476,38 +492,25 @@ def app():
     st.subheader("Step 2: Enter Relevant Details")
     tgs_course_code = st.text_input("Enter TGS Course Code", key="tgs_course_code", placeholder="e.g., TGS-2023039181")
 
-    col1, col2 = st.columns([0.8, 0.2], vertical_alignment="center")
-    # Load organisations from JSON using the utility function
-    org_list = load_organizations()
-    org_names = [org["name"] for org in org_list] if org_list else []
-    
-    # Get the company selected from sidebar (if available)
-    sidebar_selected_company = st.session_state.get('selected_company', None)
-    sidebar_company_name = sidebar_selected_company['name'] if sidebar_selected_company else None
-    
-    # Find the index of the sidebar-selected company in the org list
-    default_index = 0
-    if sidebar_company_name and sidebar_company_name in org_names:
-        default_index = org_names.index(sidebar_company_name)
-    
-    with col1:
-        if org_names:
-            selected_org = st.selectbox(
-                "Select Name of Organisation", 
-                org_names, 
-                key="org_dropdown_main",
-                index=default_index,
-                help="🔗 This will automatically sync with your sidebar company selection"
-            )
-        else:
-            selected_org = st.selectbox("Select Name of Organisation", [], key="org_dropdown_main")
-            st.warning("No organisations found. Click 'Manage' to add organisations.")
+    # Load organisations from JSON using the utility function - cached
+    @st.cache_data
+    def get_cached_organizations():
+        return load_organizations()
 
-    with col2:
-        # Wrap the Manage button in a div that uses flexbox for vertical centering.
-        st.markdown("<br/>", unsafe_allow_html=True)
-        if st.button("Manage", key="manage_button", use_container_width=True):
-            crud_modal.open()
+    org_list = get_cached_organizations()
+    org_names = [org["name"] for org in org_list] if org_list else []
+
+    # Get the company selected from sidebar (automatically use it)
+    sidebar_selected_company = st.session_state.get('selected_company', None)
+    if sidebar_selected_company:
+        selected_org = sidebar_selected_company['name']
+    else:
+        selected_org = org_names[0] if org_names else None
+
+    # Hidden manage button (keep modal functionality for future use)
+    # with col2:
+    #     if st.button("Manage", key="manage_button", use_container_width=True):
+    #         crud_modal.open()
 
     # ---------------------------
     # Modal: CRUD Interface
@@ -618,10 +621,10 @@ def app():
     # Step 4: Select Document(s) to Generate using Checkboxes
     # ================================================================
     st.subheader("Step 4: Select Document(s) to Generate")
-    generate_lg = st.checkbox("Learning Guide (LG)")
-    generate_ap = st.checkbox("Assessment Plan (AP)")
-    generate_lp = st.checkbox("Lesson Plan (LP)")
-    generate_fg = st.checkbox("Facilitator's Guide (FG)")
+    generate_lg = st.checkbox("Learning Guide (LG)", value=True)
+    generate_ap = st.checkbox("Assessment Plan (AP)", value=True)
+    generate_lp = st.checkbox("Lesson Plan (LP)", value=True)
+    generate_fg = st.checkbox("Facilitator's Guide (FG)", value=True)
 
     # ================================================================
     # Step 5: Generate Documents
@@ -648,7 +651,7 @@ def app():
             model_info = selected_config["config"].get("model_info", None)
 
             # Conditionally set response_format: use structured output only for valid OpenAI models.
-            if st.session_state['selected_model'] in ["DeepSeek-V3", "Gemini-Pro-2.5-Exp-03-25", "Gemini-2.5-Pro", "Gemini-2.5-Flash"]:
+            if st.session_state['selected_model'] in ["DeepSeek-V3.1", "Gemini-Pro-2.5-Exp-03-25", "Gemini-2.5-Pro", "Gemini-2.5-Flash"]:
                 cp_response_format = None  # DeepSeek and Gemini might not support structured output this way.
                 lp_response_format = None
             else:
@@ -662,6 +665,7 @@ def app():
                 base_url=base_url,
                 response_format=cp_response_format,  # Only set for valid OpenAI models
                 model_info=model_info,
+                max_tokens=16384,  # Increased to ensure full K/A extraction
             )
 
             timetable_openai_struct_model_client = OpenAIChatCompletionClient(
@@ -671,6 +675,7 @@ def app():
                 base_url=base_url,
                 response_format=lp_response_format,
                 model_info=model_info,
+                max_tokens=16384,  # Increased for full lesson plan extraction
             )
 
             openai_model_client = OpenAIChatCompletionClient(
@@ -679,6 +684,7 @@ def app():
                 temperature=temperature,
                 base_url=base_url,
                 model_info=model_info,
+                max_tokens=16384,  # Increased for full document generation
             )
 
             # Step 1: Parse the CP document

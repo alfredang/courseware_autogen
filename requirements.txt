@@ -26,7 +26,7 @@ llama-parse
 streamlit
 openpyxl
 openai
-# pandas
+pandas
 Pillow
 PyMuPDF
 python-docx
@@ -43,3 +43,7 @@ gspread
 rapidfuzz
 oauth2client
 streamlit-modal
+weasyprint
+#testsave17nov2025
+#testsave22dec2025
+#testsave14jan2026

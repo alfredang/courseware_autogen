@@ -6,7 +6,7 @@ import os
 def validate_knowledge_and_ability():
     try:
         # Read data from the JSON file
-        with open('CourseProposal/json_output/ensemble_output.json', 'r', encoding='utf-8') as file:
+        with open('generate_cp/json_output/ensemble_output.json', 'r', encoding='utf-8') as file:
             data = json.load(file)
 
         # Extract Knowledge and Ability factors from the data
@@ -61,7 +61,8 @@ def validate_knowledge_and_ability():
 
     except Exception as e:
         # Catch any unforeseen errors and print a custom error message before exiting
-        print(f"ERROR: {str(e)}")
+        error_message = f"ERROR: {str(e)}"
+        print(error_message)
         sys.exit(error_message)
 
 
@@ -202,7 +203,12 @@ def update_knowledge_ability_mapping(tsc_json_path, ensemble_output_json_path):
     # Extract the learning units from output_TSC
     course_proposal_form = tsc_data.get("Course_Proposal_Form", {})
     learning_units = {key: value for key, value in course_proposal_form.items() if key.startswith("LU")}
-    
+
+    # Check if Learning Outcomes is a dict (not a list)
+    if not isinstance(ensemble_data.get("Learning Outcomes"), dict):
+        print(f"Error: Learning Outcomes is not a dictionary. Cannot update mapping.")
+        return
+
     # Prepare the Knowledge and Ability Mapping structure in ensemble_output if it does not exist
     if "Knowledge and Ability Mapping" not in ensemble_data["Learning Outcomes"]:
         ensemble_data["Learning Outcomes"]["Knowledge and Ability Mapping"] = {}
@@ -493,7 +499,7 @@ def extract_agent_json(file_path: str, agent_name: str):
     """
     Reads the specified JSON file, finds the specified agent's final response,
     and extracts the substring from the first '{' to the last '}'.
-    
+
     Attempts to parse the extracted substring as JSON, returning
     a Python dictionary. If parsing fails or if no final message
     is found, returns None.
@@ -535,7 +541,65 @@ def extract_agent_json(file_path: str, agent_name: str):
 
     # Parse the extracted substring as JSON
     try:
-        return json.loads(json_str)
-    except json.JSONDecodeError:
-        print(f"Failed to parse {agent_name} content as valid JSON.")
-        return None
+        parsed_json = json.loads(json_str)
+        print(f"✓ Successfully parsed {agent_name} JSON")
+        return parsed_json
+    except json.JSONDecodeError as e:
+        print(f"Failed to parse {agent_name} content as valid JSON on first attempt.")
+        print(f"Error: {e}")
+
+        # Try to fix literal control characters in string values
+        try:
+            # Simple character-by-character parser to escape control chars within strings
+            fixed_chars = []
+            in_string = False
+            escape_next = False
+
+            for i, char in enumerate(json_str):
+                if escape_next:
+                    fixed_chars.append(char)
+                    escape_next = False
+                    continue
+
+                if char == '\\':
+                    fixed_chars.append(char)
+                    escape_next = True
+                    continue
+
+                if char == '"' and not escape_next:
+                    # Toggle string state
+                    in_string = not in_string
+                    fixed_chars.append(char)
+                    continue
+
+                # If we're inside a string, escape control characters
+                if in_string:
+                    if char == '\n':
+                        fixed_chars.append('\\n')
+                    elif char == '\r':
+                        fixed_chars.append('\\r')
+                    elif char == '\t':
+                        fixed_chars.append('\\t')
+                    else:
+                        fixed_chars.append(char)
+                else:
+                    fixed_chars.append(char)
+
+            fixed_json = ''.join(fixed_chars)
+
+            try:
+                parsed_json = json.loads(fixed_json)
+                print(f"✓ Successfully parsed {agent_name} JSON after escaping control characters")
+                return parsed_json
+            except:
+                # Try fixing unquoted keys as well
+                import re
+                fixed_json = re.sub(r'(\w+):', r'"\1":', fixed_json)
+                parsed_json = json.loads(fixed_json)
+                print(f"✓ Successfully parsed {agent_name} JSON after fixing control chars and unquoted keys")
+                return parsed_json
+        except Exception as ex:
+            print(f"Failed to parse {agent_name} content even after attempting fixes.")
+            print(f"Error: {ex}")
+            print(f"JSON string was: {json_str[:500]}...")
+            return None

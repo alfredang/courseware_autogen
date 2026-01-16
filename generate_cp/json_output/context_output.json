@@ -3,10 +3,10 @@
     "InstructMethods": [],
     "AssessMethods": [
         "Written Assessment - Short-Answer Questions (WA-SAQ)",
-        "Case Study (CS)"
+        "Practical Performance (PP)"
     ],
     "A_0": [
-        "A1: Anticipate potential issues in systems transition"
+        "A1: Implement generative models based on existing architectures"
     ],
     "A_10": [],
     "A_11": [],
@@ -17,59 +17,64 @@
     "A_16": [],
     "A_17": [],
     "A_1": [
-        "A2: Plan for smooth transition from the old systems to the new systems"
+        "A2: Analyse problem statements and requirements to select and implement appropriate generative models"
     ],
     "A_2": [
-        "A3: Identify potential opportunities to adopt emerging technologies"
+        "A3: Train generative models on benchmark datasets"
     ],
     "A_3": [
-        "A4: Plan for staff training any new systems and software"
+        "A4: Identify limitations and propose initial improvements to models"
     ],
-    "A_4": [],
+    "A_4": [
+        "A5: Preprocess and prepare data for generative training (e.g., clean and format datasets, use libraries (e.g., Pandas, NumPy) for data manipulation, split data into training, validation and test sets)"
+    ],
     "A_5": [],
     "A_6": [],
     "A_7": [],
     "A_8": [],
     "A_9": [],
     "Company": [
-        "LHUB"
+        "Innhoat Training Pte. Ltd"
     ],
     "Conclusion_0": [
-        "Overall, the structured sequencing of these learning units is designed to address the performance gaps identified in the industry while equipping learners with the necessary attributes to excel in their roles as technology professionals. By the end of the course, learners will have gained the ability to effectively plan and execute a smooth transition to Microsoft Copilot, anticipate potential issues, and enhance organizational processes through comprehensive staff training and adoption strategies."
+        "The structured sequencing of these learning units effectively addresses the identified performance gaps in AI model development while systematically building the technical attributes required for professional competence in generative AI implementation and optimization."
     ],
     "CourseTitle": [
-        "Craft Effective Prompts for Microsoft Copilot for Microsoft 365"
+        "Generative AI Model Development and Fine Tuning"
     ],
     "Hours_0": [
-        7
+        14
     ],
     "Hours_1": [
-        1
+        2
     ],
     "Hours_2": [
-        8
+        24
     ],
     "Hours_3": [
         "N.A."
     ],
     "Hours_4": [],
     "IM": [
-        "Lecture",
-        "Peer Sharing",
-        "Group Discussion",
-        "Case Study"
+        "Interactive Presentation (14 hrs)",
+        "Demonstration",
+        "Practical"
     ],
     "KA_0": [
-        "K1, K2, A1, A2"
+        "K1, K9, K10, A1, A2"
     ],
     "KA_1": [
-        "K3, K4, A3, A4"
+        "K2, K7, K8, A5"
     ],
-    "KA_2": [],
-    "KA_3": [],
+    "KA_2": [
+        "K4, K5, K6, A3"
+    ],
+    "KA_3": [
+        "K3, A4"
+    ],
     "KA_4": [],
     "K_0": [
-        "K1: Relevant systems and software"
+        "K1: Probability theory and statistics (e.g., latent variables, probabilistic modelling)"
     ],
     "K_10": [],
     "K_11": [],
@@ -80,62 +85,82 @@
     "K_16": [],
     "K_17": [],
     "K_1": [
-        "K2: Organisation's processes"
+        "K2: Common dataset formats and evaluation methodologies for generative tasks"
     ],
     "K_2": [
-        "K3: Systems transition process"
+        "K3: Fine-tuning techniques (e.g., supervised fine-tuning, parameter-efficient fine-tuning, perform inference)"
     ],
     "K_3": [
-        "K4: Emerging technological trends such as block chain, machine learning, artificial intelligence, robotic process automation and digital currency"
+        "K4: Optimisation techniques for training neural networks"
     ],
-    "K_4": [],
-    "K_5": [],
-    "K_6": [],
-    "K_7": [],
-    "K_8": [],
-    "K_9": [],
+    "K_4": [
+        "K5: Parallel cluster training and inference"
+    ],
+    "K_5": [
+        "K6: Loss functions and evaluation metrics for generative tasks"
+    ],
+    "K_6": [
+        "K7: Data pre-processing, de-duplication and cleaning techniques (including understanding of training data requirements for AI models, common data quality issues)"
+    ],
+    "K_7": [
+        "K8: Embeddings and tokenisation"
+    ],
+    "K_8": [
+        "K9: Deep learning theory and algorithms (e.g., GANs, VAEs, Transformers)"
+    ],
+    "K_9": [
+        "K10: Machine learning libraries (e.g., TensorFlow, PyTorch, Keras)"
+    ],
     "LO_0": [
-        "LO1: Plan for a smooth transition to Microsoft Copilot for Microsoft 365, anticipating potential issues in transition."
+        "LO1: Implement generative models using deep learning algorithms and analyse their suitability for different problem requirements."
     ],
     "LO_1": [
-        "LO2: Identify the adoption of Microsoft Copilot for Microsoft 365 and plan staff training to enhance organizational processes."
+        "LO2: Preprocess and transform generative datasets using embeddings and tokenisation for model readiness."
     ],
-    "LO_2": [],
-    "LO_3": [],
+    "LO_2": [
+        "LO3: Train generative AI models with neural optimisation techniques using benchmark datasets and performance metrics."
+    ],
+    "LO_3": [
+        "LO4: Identify model weaknesses through evaluation and propose targeted fine-tuning strategies for improvement."
+    ],
     "LO_4": [],
     "LO_5": [],
     "LO_6": [],
     "LO_7": [],
     "LU_0": [
-        "LU1: Get started with Copilot for Microsoft 365"
+        "LU 1: Generative AI Theory"
     ],
     "LU_1": [
-        "LU2: Craft effective prompts for Microsoft Copilot for Microsoft 365"
+        "LU 2: Generative AI Data Preparation"
     ],
-    "LU_2": [],
-    "LU_3": [],
+    "LU_2": [
+        "LU 3: Generative AI Model Training"
+    ],
+    "LU_3": [
+        "LU 4: Generative AI Model Fine Tuning"
+    ],
     "LU_4": [],
     "LU_5": [],
     "LU_6": [],
     "LU_7": [],
     "LUex_0": [
-        "LU1 lays the foundational knowledge by introducing learners to Microsoft Copilot for Microsoft 365. The facilitator will guide learners through understanding what Copilot is, how it works, and its core components. This unit sets the stage for anticipating potential issues in transition by examining Microsoft's commitment to responsible AI. Learners will explore the possibilities with Copilot across various Microsoft 365 applications, which is crucial for planning a smooth transition and aligning with organizational processes."
+        "This foundational unit introduces essential theoretical concepts in probability, deep learning, and machine learning implementation. By starting with fundamental principles, learners develop the necessary theoretical framework to understand more complex concepts in subsequent units. The unit combines theoretical knowledge with practical implementation skills using modern machine learning libraries, establishing a crucial foundation for the rest of the course."
     ],
     "LUex_1": [
-        "Building on the foundational knowledge, LU2 dives into the practical aspects of crafting effective prompts for Microsoft Copilot. Learners will be led through exercises to summarize, create, draft, edit, and transform content using Copilot across different Microsoft 365 applications. The hands-on activities in this unit are designed to enhance learners' ability to plan staff training and identify the adoption of Copilot, crucial skills for enhancing organizational processes. This unit culminates in a comprehensive understanding of how to leverage Copilot to optimize workflows and improve productivity."
+        "Building on the theoretical foundation, this unit focuses on practical aspects of data processing and transformation. Learners develop essential skills in data preprocessing, cleaning, and evaluation methodologies. The progression from theory to data preparation is crucial as it enables learners to understand how theoretical concepts translate into practical data requirements for generative AI models."
     ],
     "LUex_2": [
-        ""
+        "This unit advances to the complex aspects of neural network training and model evaluation. Leveraging knowledge from previous units, learners apply optimization techniques and performance metrics in practical training scenarios. The sequence naturally progresses from data preparation to model training, allowing learners to understand the complete development pipeline."
     ],
     "LUex_3": [
-        ""
+        "The final unit culminates in advanced techniques for model improvement through fine-tuning strategies. This placement is strategic as it requires understanding from all previous units to effectively identify and address model limitations. The sequence concludes with these advanced concepts, enabling learners to optimize and improve model performance effectively."
     ],
     "LUex_4": [],
     "LUex_5": [],
     "LUex_6": [],
     "LUex_7": [],
     "Placeholder_0": [
-        "SkillsFuture's report Skills Demand For The Future Economy (https://www.skillsfuture.gov.sg/skillsreport) published in 2025, spotlights the priority skills and jobs in demand in three specially selected, emerging, high-growth areas. This report is designed for Singaporeans as a resource for an individual\u2019s skills development journey over the next one to three years.  Singapore's key growth areas (Digital, Green & Care Economy) bring exciting job and skills opportunities. It also introduced the idea of 'priority skills, ' highly transferable skills across job roles within the three economies. In other words, these skills are applicable in many job roles and will contribute significantly to the individual's long-term career versatility. A new dimension on skills demands growth has been added and analysed alongside skills transferability. Demand growth captures the relative scale of the increase in demand for that skill, while transferability captures the scope of the skill's applicability across different job roles. The two-dimensional analysis seeks to provide deeper insights to the reader into the nature of the priority skills identified. \n\nThe industry is currently facing several challenges and performance gaps that are directly related to the integration and effective use of advanced digital tools and technologies. One of the primary challenges is the rapid pace of technological advancement, which often outpaces the ability of organizations to adapt and integrate these new tools into their existing systems. This is particularly true for tools like Microsoft Copilot, which leverage artificial intelligence to enhance productivity and efficiency. Many organizations struggle with the transition from traditional systems to more advanced, AI-driven solutions, leading to disruptions in workflow and productivity. Additionally, there is often a lack of understanding and expertise in effectively utilizing these tools to their full potential, which can result in underutilization and missed opportunities for optimization. Another significant gap is the resistance to change within organizations, where employees may be hesitant or lack the motivation to adopt new technologies, further hindering the transition process. These challenges highlight the need for comprehensive training programs that not only focus on the technical aspects of these tools but also address the human factors involved in technology adoption.\n\nTo effectively address the challenges and performance gaps identified, there is a critical need for targeted training programs that focus on both the technical and human aspects of technology adoption. Training should be designed to equip employees with the necessary skills and knowledge to smoothly transition to new systems, such as Microsoft Copilot, and to effectively utilize these tools to enhance organizational processes. This includes training on the relevant systems and software, understanding the organization's processes, and the systems transition process. Additionally, training should focus on emerging technological trends, such as artificial intelligence, machine learning, and robotic process automation, to ensure that employees are not only able to use current tools effectively but are also prepared for future technological advancements. Furthermore, training programs should incorporate strategies for overcoming resistance to change, such as fostering a culture of innovation and continuous learning, and providing support and resources to help employees adapt to new technologies. By addressing both the technical and human factors, training can play a crucial role in bridging the performance gaps and enabling organizations to fully leverage the benefits of advanced digital tools.\n\nSeveral job roles within the industry would significantly benefit from training on crafting effective prompts for tools like Microsoft Copilot. These roles include IT professionals, who are responsible for managing and implementing new technologies within the organization. Training would enable them to better understand the capabilities and limitations of AI-driven tools, and to develop strategies for integrating these tools into existing systems. Additionally, roles such as business analysts and data analysts would benefit from training, as it would enhance their ability to leverage AI tools for data analysis and decision-making processes. Furthermore, roles in project management and operations would also benefit, as training would equip them with the skills to plan and manage the transition to new systems, and to optimize workflows and processes using advanced digital tools. Finally, training would be beneficial for roles in human resources and organizational development, as it would enable them to develop and implement strategies for fostering a culture of innovation and continuous learning, and to support employees in adapting to new technologies. By targeting these key roles, training can have a significant impact on the overall performance and productivity of the organization."
+        "SkillsFuture's report Skills Demand For The Future Economy (https://www.skillsfuture.gov.sg/skillsreport) published in 2025, spotlights the priority skills and jobs in demand in three specially selected, emerging, high-growth areas. This report is designed for Singaporeans as a resource for an individual\u2019s skills development journey over the next one to three years.  Singapore's key growth areas (Digital, Green & Care Economy) bring exciting job and skills opportunities. It also introduced the idea of 'priority skills, ' highly transferable skills across job roles within the three economies. In other words, these skills are applicable in many job roles and will contribute significantly to the individual's long-term career versatility. A new dimension on skills demands growth has been added and analysed alongside skills transferability. Demand growth captures the relative scale of the increase in demand for that skill, while transferability captures the scope of the skill's applicability across different job roles. The two-dimensional analysis seeks to provide deeper insights to the reader into the nature of the priority skills identified. \n\nThe industry currently faces significant challenges in effectively implementing and optimizing advanced AI technologies within existing workflows and systems. Organizations struggle with the complexity of developing and fine-tuning AI models that can meet specific business requirements while maintaining quality and reliability. Technical teams often lack the comprehensive understanding needed to properly preprocess data, select appropriate model architectures, and implement effective training strategies. This has resulted in suboptimal model performance, increased development costs, and longer time-to-market for AI-powered solutions. Additionally, many organizations face difficulties in maintaining and improving their AI models over time, leading to degraded performance and reliability issues. The rapid evolution of AI technologies also means that many existing professionals lack the updated skills needed to work with modern frameworks and methodologies, creating a significant skills gap in the workforce.\n\nTo address these critical performance gaps, professionals in the industry require comprehensive training in both theoretical foundations and practical implementation aspects of AI model development. There is a pressing need for hands-on experience with current machine learning libraries, deep learning algorithms, and model optimization techniques. Professionals need to develop strong capabilities in data preprocessing, including understanding various data formats, cleaning methodologies, and transformation techniques. Training must cover advanced topics such as neural network architecture selection, parallel training implementations, and performance optimization strategies. Furthermore, there is a crucial need for developing skills in model evaluation and fine-tuning, enabling professionals to identify and address model limitations effectively. The training should emphasize practical application through real-world scenarios, allowing participants to gain experience with industry-standard tools and frameworks while developing problem-solving capabilities.\n\nThis specialized training would be particularly beneficial for several key roles within the industry. Machine Learning Engineers and AI Developers would gain essential skills for implementing and optimizing AI models in production environments. Data Scientists would benefit from enhanced capabilities in model development and fine-tuning, enabling them to create more effective solutions for complex business problems. Software Engineers transitioning into AI development roles would acquire the fundamental knowledge and practical skills needed for this specialization. Technical Team Leaders and AI Project Managers would develop a deeper understanding of the technical considerations and challenges involved in AI implementation, enabling better project planning and resource allocation. Additionally, Research Engineers and AI Specialists would benefit from updated knowledge of current methodologies and best practices in model development and optimization, enhancing their ability to drive innovation in their organizations."
     ],
     "Placeholder_1": [
         {
@@ -149,9 +174,10 @@
         {
             "type": "bullets",
             "content": [
-                "Learners are unclear with planning a smooth transition to Microsoft Copilot for Microsoft 365, anticipating potential issues in transition.",
-                "Learners struggle to identify the adoption of Microsoft Copilot for Microsoft 365 and plan staff training to enhance organizational processes.",
-                "Learners lack the ability to effectively integrate emerging technologies like Microsoft Copilot into existing organizational processes."
+                "Learners lack proficiency in implementing and adapting generative models using deep learning algorithms for specific use cases.",
+                "Learners struggle with effective data preprocessing and transformation techniques required for generative AI model training.",
+                "Learners have insufficient knowledge of neural optimization techniques and performance metrics for model training.",
+                "Learners face challenges in identifying model weaknesses and implementing appropriate fine-tuning strategies."
             ]
         },
         {
@@ -165,9 +191,10 @@
         {
             "type": "bullets",
             "content": [
-                "Ability to plan and execute a smooth transition to Microsoft Copilot for Microsoft 365, anticipating and mitigating potential issues.",
-                "Proficiency in identifying the adoption of Microsoft Copilot for Microsoft 365 and planning comprehensive staff training to improve organizational processes.",
-                "Skill in integrating emerging technologies such as Microsoft Copilot into existing workflows to enhance productivity and efficiency."
+                "Ability to implement and customize generative models using deep learning algorithms for diverse problem requirements.",
+                "Proficiency in preprocessing and transforming complex datasets using advanced techniques like embeddings and tokenization.",
+                "Expertise in applying neural optimization techniques and leveraging performance metrics for effective model training.",
+                "Skill in evaluating model performance and implementing targeted fine-tuning strategies for improvement."
             ]
         },
         {
@@ -177,20 +204,21 @@
         {
             "type": "bullets",
             "content": [
-                "Enhanced capability to manage and facilitate a seamless transition to new AI-driven tools, minimizing disruptions and maintaining productivity.",
-                "Improved ability to train and support staff in adopting new technologies, leading to more efficient and optimized organizational processes.",
-                "Increased confidence and competence in leveraging advanced digital tools to drive innovation and improve overall organizational performance."
+                "Enhanced capability to develop customized generative AI solutions that meet specific business requirements.",
+                "Improved efficiency in preparing and transforming data for AI model training, reducing development time and errors.",
+                "Better model performance and reliability through optimized training techniques and proper metric utilization.",
+                "Increased ability to maintain and improve model performance through systematic evaluation and fine-tuning."
             ]
         }
     ],
     "Rationale_0": [
-        "For this course, the step-by-step sequencing is employed to scaffold the learners' comprehension and application of crafting effective prompts for Microsoft Copilot for Microsoft 365. The methodology is crucial as it systematically breaks down the intricate facets of transitioning to and adopting Microsoft Copilot into digestible units. This aids in gradually building the learners' knowledge and skills from fundamental to more complex concepts, ensuring a solid foundation before advancing to the next topic. The progression is designed to foster a deeper understanding and the ability to effectively apply the learned concepts in real-world organizational scenarios."
+        "The step-by-step sequencing employed in this curriculum follows a logical progression from theoretical foundations to practical implementation and optimization. This structured approach ensures learners build a solid understanding of fundamental concepts before advancing to more complex applications. The sequence is designed to gradually develop both theoretical knowledge and practical skills, enabling learners to effectively implement and fine-tune generative AI models."
     ],
     "TCS_0": [
-        "Digital Technology Adoption and Innovation"
+        "Generative AI Model Development and Fine Tuning"
     ],
     "TCS_1": [
-        "ACC-ICT-4004-1.1"
+        "ICT-BAS-0048-1.1"
     ],
     "TopicsEX_0": [],
     "TopicsEX_1": [],
@@ -201,192 +229,188 @@
     "Topics_0": [
         {
             "type": "paragraph",
-            "content": "Topic 1: Introduction to Copilot for Microsoft 365 (K1, A1)"
-        },
-        {
-            "type": "bullets",
-            "content": [
-                "What is Copilot for Microsoft 365?",
-                "Explore how Copilot for Microsoft 365 works",
-                "Explore the core components of Copilot for Microsoft 365",
-                "Examine how Microsoft is committed to responsible AI"
-            ]
+            "content": "Topic 1: Fundamentals of Probability and Deep Learning (K1, K9, A1)"
         },
         {
             "type": "paragraph",
-            "content": "Topic 2: Explore the possibilities with Copilot for Microsoft 365 (K2, A2)"
-        },
-        {
-            "type": "bullets",
-            "content": [
-                "Compose and summarize documents with Copilot in Word",
-                "Summarize and draft emails with Copilot in Outlook",
-                "Design captivating presentations with Copilot in PowerPoint",
-                "Analyze and transform data with Copilot in Excel",
-                "Elevate productivity with Copilot in Teams",
-                "Empower employees through Microsoft Copilot with Graph-grounded chat"
-            ]
+            "content": "Topic 2: Machine Learning Implementation (K10, A2)"
         },
         {
             "type": "paragraph",
-            "content": "Topic 3: Optimize and extend Copilot for Microsoft 365 (K2, A2)"
-        },
-        {
-            "type": "bullets",
-            "content": [
-                "Examine the art and science of working with AI",
-                "Review best practices for using Copilot for Microsoft 365",
-                "Examine how to build an effective prompt",
-                "Review prompting best practices",
-                "Extend Copilot for Microsoft 365 with plugins",
-                "Explore Microsoft Graph connectors"
-            ]
+            "content": "LO1 \u2013 Implement generative models using deep learning algorithms and analyse their suitability for different problem requirements."
         },
         {
             "type": "paragraph",
-            "content": "LO1 \u2013 Plan for a smooth transition to Microsoft Copilot for Microsoft 365, anticipating potential issues in transition."
+            "content": "K1: Probability theory and statistics (e.g., latent variables, probabilistic modelling)"
         },
         {
             "type": "paragraph",
-            "content": "K1: Relevant systems and software"
+            "content": "K9: Deep learning theory and algorithms (e.g., GANs, VAEs, Transformers)"
         },
         {
             "type": "paragraph",
-            "content": "K2: Organisation's processes"
+            "content": "K10: Machine learning libraries (e.g., TensorFlow, PyTorch, Keras)"
         },
         {
             "type": "paragraph",
-            "content": "A1: Anticipate potential issues in systems transition"
+            "content": "A1: Implement generative models based on existing architectures"
         },
         {
             "type": "paragraph",
-            "content": "A2: Plan for smooth transition from the old systems to the new systems"
+            "content": "A2: Analyse problem statements and requirements to select and implement appropriate generative models"
         }
     ],
     "Topics_1": [
         {
             "type": "paragraph",
-            "content": "Topic 4: Summarize with Microsoft Copilot for Microsoft 365 (K3, A4)"
-        },
-        {
-            "type": "bullets",
-            "content": [
-                "Planning staff for training for Microsoft Copilot",
-                "Follow along using sample data with Copilot for Microsoft 365",
-                "Simplify and extract key information with Copilot in Word",
-                "Identify key information and summarize with Copilot in PowerPoint",
-                "Spot trends and visualize data with Copilot in Excel",
-                "Highlight key decisions and actions from Teams meetings",
-                "Catch up and prepare for the week with Copilot in Outlook",
-                "Summarize information on a topic with Microsoft Copilot for Microsoft 365"
-            ]
+            "content": "Topic 1: Data Processing and Evaluation (K2, K7, A5)"
         },
         {
             "type": "paragraph",
-            "content": "Topic 5: Create and draft with Microsoft Copilot for Microsoft 365 (K3, K4)"
-        },
-        {
-            "type": "bullets",
-            "content": [
-                "Introduction to creating draft content with Microsoft Copilot in Microsoft 365",
-                "Draft cover letters, marketing plans, and outlines with Microsoft Copilot in Word",
-                "Build new slides, agendas, and to-do lists with Microsoft Copilot in PowerPoint",
-                "Draft emails, replies, and meeting agendas with Microsoft Copilot in Outlook",
-                "Brainstorm new ideas, lists, and reports from across Microsoft 365 with Microsoft Copilot"
-            ]
+            "content": "Topic 2: Data Transformation (K8, A5)"
         },
         {
             "type": "paragraph",
-            "content": "Topic 6: Edit and transform content with Microsoft Copilot for Microsoft 365 (K4, A3)"
-        },
-        {
-            "type": "bullets",
-            "content": [
-                "Write, organize, and transform content using Microsoft Copilot in Word",
-                "Add images, slides, and organize your presentation using Microsoft Copilot in PowerPoint",
-                "Format, sort, filter, and highlight data using Microsoft Copilot in Excel",
-                "Rewrite messages and replies for tone using Microsoft Copilot in Outlook"
-            ]
+            "content": "LO2 \u2013 Preprocess and transform generative datasets using embeddings and tokenisation for model readiness."
         },
         {
             "type": "paragraph",
-            "content": "Topic 7: Ask questions and analyze content with Microsoft Copilot for Microsoft 365 (K4, A3)"
-        },
-        {
-            "type": "bullets",
-            "content": [
-                "Ask Microsoft Copilot for help and recommendations in Word",
-                "Get design and organization tips using Microsoft Copilot in PowerPoint",
-                "Analyze and work with tables using Copilot in Excel",
-                "Ask questions about your notes using Copilot in OneNote",
-                "Chat with Copilot about meetings and messages in Teams"
-            ]
+            "content": "K2: Common dataset formats and evaluation methodologies for generative tasks"
         },
         {
             "type": "paragraph",
-            "content": "LO2 \u2013 Identify the adoption of Microsoft Copilot for Microsoft 365 and plan staff training to enhance organizational processes."
+            "content": "K7: Data pre-processing, de-duplication and cleaning techniques (including understanding of training data requirements for AI models, common data quality issues)"
         },
         {
             "type": "paragraph",
-            "content": "K3: Systems transition process"
+            "content": "K8: Embeddings and tokenisation"
         },
         {
             "type": "paragraph",
-            "content": "K4: Emerging technological trends such as block chain, machine learning, artificial intelligence, robotic process automation and digital currency"
-        },
-        {
-            "type": "paragraph",
-            "content": "A3: Identify potential opportunities to adopt emerging technologies"
-        },
-        {
-            "type": "paragraph",
-            "content": "A4: Plan for staff training any new systems and software"
+            "content": "A5: Preprocess and prepare data for generative training (e.g., clean and format datasets, use libraries (e.g., Pandas, NumPy) for data manipulation, split data into training, validation and test sets)"
         }
     ],
-    "Topics_2": [],
-    "Topics_3": [],
+    "Topics_2": [
+        {
+            "type": "paragraph",
+            "content": "Topic 1: Neural Network Training (K4, K5, A3)"
+        },
+        {
+            "type": "paragraph",
+            "content": "Topic 2: Model Evaluation (K6, A3)"
+        },
+        {
+            "type": "paragraph",
+            "content": "LO3 \u2013 Train generative AI models with neural optimisation techniques using benchmark datasets and performance metrics."
+        },
+        {
+            "type": "paragraph",
+            "content": "K4: Optimisation techniques for training neural networks"
+        },
+        {
+            "type": "paragraph",
+            "content": "K5: Parallel cluster training and inference"
+        },
+        {
+            "type": "paragraph",
+            "content": "K6: Loss functions and evaluation metrics for generative tasks"
+        },
+        {
+            "type": "paragraph",
+            "content": "A3: Train generative models on benchmark datasets"
+        }
+    ],
+    "Topics_3": [
+        {
+            "type": "paragraph",
+            "content": "Topic 1: Fine-tuning Strategies (K3, A4)"
+        },
+        {
+            "type": "paragraph",
+            "content": "Topic 2: Model Improvement (K3, A4)"
+        },
+        {
+            "type": "paragraph",
+            "content": "LO4 \u2013 Identify model weaknesses through evaluation and propose targeted fine-tuning strategies for improvement."
+        },
+        {
+            "type": "paragraph",
+            "content": "K3: Fine-tuning techniques (e.g., supervised fine-tuning, parameter-efficient fine-tuning, perform inference)"
+        },
+        {
+            "type": "paragraph",
+            "content": "A4: Identify limitations and propose initial improvements to models"
+        }
+    ],
     "Topics_4": [],
     "Topics_5": [],
     "TotalHours": [],
     "Assessment_0": [
-        "Written Assessment - Short-Answer Questions (WA-SAQ) \u2013 K1, K2\n\nCase Study (CS) \u2013 A1, A2"
+        "Written Assessment - Short-Answer Questions (WA-SAQ) \u2013 K1, K9, K10\n\nPractical Performance (PP) \u2013 A1, A2"
     ],
     "Assessment_1": [
-        "Written Assessment - Short-Answer Questions (WA-SAQ) \u2013 K3, K4\n\nCase Study (CS) \u2013 A4, A3"
+        "Written Assessment - Short-Answer Questions (WA-SAQ) \u2013 K2, K7, K8\n\nPractical Performance (PP) \u2013 A5"
     ],
-    "Assessment_2": [],
-    "Assessment_3": [],
+    "Assessment_2": [
+        "Written Assessment - Short-Answer Questions (WA-SAQ) \u2013 K4, K5, K6\n\nPractical Performance (PP) \u2013 A3"
+    ],
+    "Assessment_3": [
+        "Written Assessment - Short-Answer Questions (WA-SAQ) \u2013 K3\n\nPractical Performance (PP) \u2013 A4"
+    ],
     "Assessment_4": [],
     "AssessmentJustification": [],
     "ADuration_0": [
-        "Written Assessment - Short-Answer Questions (WA-SAQ) \u2013 15 mins\n\nCase Study (CS) \u2013 15 mins"
+        "Written Assessment - Short-Answer Questions (WA-SAQ) \u2013 15 mins\n\nPractical Performance (PP) \u2013 15 mins"
     ],
     "ADuration_1": [
-        "Written Assessment - Short-Answer Questions (WA-SAQ) \u2013 15 mins\n\nCase Study (CS) \u2013 15 mins"
+        "Written Assessment - Short-Answer Questions (WA-SAQ) \u2013 15 mins\n\nPractical Performance (PP) \u2013 15 mins"
     ],
-    "ADuration_2": [],
-    "ADuration_3": [],
+    "ADuration_2": [
+        "Written Assessment - Short-Answer Questions (WA-SAQ) \u2013 15 mins\n\nPractical Performance (PP) \u2013 15 mins"
+    ],
+    "ADuration_3": [
+        "Written Assessment - Short-Answer Questions (WA-SAQ) \u2013 15 mins\n\nPractical Performance (PP) \u2013 15 mins"
+    ],
     "ADuration_4": [],
     "ADuration_5": [],
     "ADurationTotal": [
-        "WA-SAQ \u2013 0.5 hr\nCS \u2013 0.5 hr\nTotal \u2013 1 hr"
+        "WA-SAQ \u2013 1 hr\nPP \u2013 1 hr\nTotal \u2013 2 hr"
     ],
     "Sequencing": [
         {
             "type": "bold_paragraph",
-            "content": "LU1: Get started with Copilot for Microsoft 365"
+            "content": "LU1: LU 1: Generative AI Theory"
         },
         {
             "type": "paragraph",
-            "content": "LU1 lays the foundational knowledge by introducing learners to Microsoft Copilot for Microsoft 365. The facilitator will guide learners through understanding what Copilot is, how it works, and its core components. This unit sets the stage for anticipating potential issues in transition by examining Microsoft's commitment to responsible AI. Learners will explore the possibilities with Copilot across various Microsoft 365 applications, which is crucial for planning a smooth transition and aligning with organizational processes."
+            "content": "This foundational unit introduces essential theoretical concepts in probability, deep learning, and machine learning implementation. By starting with fundamental principles, learners develop the necessary theoretical framework to understand more complex concepts in subsequent units. The unit combines theoretical knowledge with practical implementation skills using modern machine learning libraries, establishing a crucial foundation for the rest of the course."
         },
         {
             "type": "bold_paragraph",
-            "content": "LU2: Craft effective prompts for Microsoft Copilot for Microsoft 365"
+            "content": "LU2: LU 2: Generative AI Data Preparation"
         },
         {
             "type": "paragraph",
-            "content": "Building on the foundational knowledge, LU2 dives into the practical aspects of crafting effective prompts for Microsoft Copilot. Learners will be led through exercises to summarize, create, draft, edit, and transform content using Copilot across different Microsoft 365 applications. The hands-on activities in this unit are designed to enhance learners' ability to plan staff training and identify the adoption of Copilot, crucial skills for enhancing organizational processes. This unit culminates in a comprehensive understanding of how to leverage Copilot to optimize workflows and improve productivity."
+            "content": "Building on the theoretical foundation, this unit focuses on practical aspects of data processing and transformation. Learners develop essential skills in data preprocessing, cleaning, and evaluation methodologies. The progression from theory to data preparation is crucial as it enables learners to understand how theoretical concepts translate into practical data requirements for generative AI models."
+        },
+        {
+            "type": "bold_paragraph",
+            "content": "LU3: LU 3: Generative AI Model Training"
+        },
+        {
+            "type": "paragraph",
+            "content": "This unit advances to the complex aspects of neural network training and model evaluation. Leveraging knowledge from previous units, learners apply optimization techniques and performance metrics in practical training scenarios. The sequence naturally progresses from data preparation to model training, allowing learners to understand the complete development pipeline."
+        },
+        {
+            "type": "bold_paragraph",
+            "content": "LU4: LU 4: Generative AI Model Fine Tuning"
+        },
+        {
+            "type": "paragraph",
+            "content": "The final unit culminates in advanced techniques for model improvement through fine-tuning strategies. This placement is strategic as it requires understanding from all previous units to effectively identify and address model limitations. The sequence concludes with these advanced concepts, enabling learners to optimize and improve model performance effectively."
         }
-    ]
+    ],
+    "company_name": "Tertiary Infotech Academy Pte Ltd",
+    "company_uen": "201200696W",
+    "company_address": ""
 }

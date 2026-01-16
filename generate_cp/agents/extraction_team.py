@@ -89,117 +89,125 @@ def create_extraction_team(data, model_choice: str) -> RoundRobinGroupChat:
 
     learning_outcomes_extractor_message = f"""
     You are to extract the following variables from {data}:
-        1) Learning Outcomes, include the terms LO(x): in front of each learning outcome
-        2) Knowledge
-        3) Ability
+        1) Learning Outcomes - include the terms LO1:, LO2:, etc. in front of each learning outcome
+        2) Knowledge statements - MUST extract ALL K# statements from the TSC document
+        3) Ability statements - MUST extract ALL A# statements from the TSC document
 
-        Text Blocks which start with K or A and include a semicolon should be mapped under Knowledge (for K) and Ability (for A).
+        CRITICAL INSTRUCTIONS:
+        - Find ALL text blocks that start with "K1:", "K2:", "K3:", etc. - these are Knowledge statements
+        - Find ALL text blocks that start with "A1:", "A2:", "A3:", etc. - these are Ability statements
+        - Each statement should be a SEPARATE item in the array
+        - Do NOT combine multiple statements into one string
+        - Include the complete description after the colon
 
-        An example output is as follows:
-        "Learning Outcomes":  ["LO1: Calculate profitability ratios to assess an organization's financial health.", "LO2: Calculate performance ratios to evaluate an organization's overall financial performance."], 
-        "Knowledge": ["K1: Ratios for profitability\nK2: Ratios for performance"], 
-        "Ability": ["A1: Calculate ratios for assessing organisation's profitability\nA2: Calculate ratios for assessing organisation's financial performance"], 
-
-
-        Format the extracted data in JSON format, with this structure:
+        Format the extracted data in JSON format with this EXACT structure:
             "Learning Outcomes": {{
-            "Learning Outcomes": [
-
-            ],
-            "Knowledge": [
-
-            ],
-            "Ability": [
-            ]
+                "Learning Outcomes": [
+                    "LO1: First learning outcome description",
+                    "LO2: Second learning outcome description"
+                ],
+                "Knowledge": [
+                    "K1: First knowledge statement description",
+                    "K2: Second knowledge statement description",
+                    "K3: Third knowledge statement description"
+                ],
+                "Ability": [
+                    "A1: First ability statement description",
+                    "A2: Second ability statement description"
+                ]
             }}
+
+        CRITICAL: Extract EVERY K# and A# statement found in the document. Do not skip any.
+        CRITICAL: Each K# and A# must be a separate array item, not combined with newlines.
     """
 
     tsc_and_topics_extractor_message = f"""
     You are to extract the following variables from {data}:
-        1) TSC Title
-        2) TSC Code
-        3) Topic (include the FULL string, including any K's and A's, only include items starting with "Topic" and not "LU" for this particular point)
-        4) Learning Units (do NOT include Topics under this point, do NOT include any brackets consisting of A's or K's), only include items starting with "LU".
+        1) TSC Title - the full title of the TSC
+        2) TSC Code - the code in format XXX-XXX-XXXX-X.X
+        3) Topics - MUST extract ALL topics from ALL Learning Units
+        4) Learning Units - extract all LU titles WITHOUT K/A codes
 
-        An example output is as follows:
-        "TSC Title": "Financial Analysis",
-        "TSC Code": "ACC-MAC-3004-1.1",
-        "Topic": ["Topic 1 Assessing Organization’s Profitability (K1, A1)", "Topic 2 Evaluating an Organization’s Performance Using Ratio Analysis (K2, A2)"],
-        "Learning Units": ["LU1: Data Preparation for Machine Learning (ML)", "LU2: ML Model Development"]
+        CRITICAL INSTRUCTIONS FOR TOPICS:
+        - Extract EVERY topic from the document that starts with "Topic 1:", "Topic 2:", etc.
+        - Include the FULL topic name INCLUDING the K# and A# codes in parentheses
+        - Topics appear under each Learning Unit in the "Course Outline" section
+        - You must extract topics from ALL Learning Units, not just one
+        - Format: "Topic X: Topic Name (K#, A#)"
+
+        CRITICAL INSTRUCTIONS FOR LEARNING UNITS:
+        - Extract all Learning Unit titles (LU1:, LU2:, LU3:, etc.)
+        - Format: "LU1: Learning Unit Title"
+        - Do NOT include the (K#, A#) codes in Learning Units
+        - Only the LU number and title
 
         Format the extracted data in JSON format, with this structure:
             "TSC and Topics": {{
-            "TSC Title": [
-                
-            ],
-            "TSC Code": [
-                
-            ],
+            "TSC Title": ["Generative AI Model Development and Fine Tuning"],
+            "TSC Code": ["ICT-BAS-0048-1.1"],
             "Topics": [
-
+                "Topic 1: Probability Theory and Statistics (K1)",
+                "Topic 2: Deep Learning Theory and Algorithms (K9)",
+                "Topic 3: Machine Learning Libraries (K10)"
             ],
             "Learning Units": [
-
+                "LU1: Foundations of Generative AI",
+                "LU2: Data Preparation for Generative AI"
             ]
         }}
+
+        CRITICAL: Extract ALL Topics from ALL Learning Units in the document.
     """
 
     assessment_methods_extractor_message = f"""
     You are to extract the following variables from {data}:
         1) Assessment Methods (remove the brackets and time values at the end of each string)
-        2) Instructional Methods
-        3) Amount of Practice Hours
-        4) Course Outline, which consists of Learning Units (LUs), Topics under that Learning Unit and their descriptions. A Learning Unit may have more than 1 topic, so nest that topic and its relevant descriptions under that as well.
+        2) Instructional Methods (extract the full string as-is from the TSC document)
+        3) Amount of Practice Hours (insert "N.A." if not found)
+        4) Course Outline - MUST extract ALL Learning Units with their Topics and Details
 
-        Include the full topic names in Course Outline, including any bracketed K and A factors.
+        CRITICAL INSTRUCTIONS FOR COURSE OUTLINE:
+        - Find the "Course Outline:" section in the TSC document
+        - Each Learning Unit (LU1, LU2, etc.) will list topics underneath it
+        - Each topic will have a title in format "Topic X: Name (K#, A#)"
+        - You MUST extract topic details/descriptions that appear under each topic
+        - If no details are explicitly listed, leave Details as empty array []
+        - INCLUDE THE FULL TOPIC TITLE with K and A factors in parentheses
 
-        Format the extracted data in JSON format, with this structure:
+        Format the extracted data in JSON format with this EXACT structure:
             "Assessment Methods": {{
-            "Assessment Methods": [
-                "",
-                ""
-            ],
-            "Amount of Practice Hours": Insert "N.A." if not found or not specified,
-            "Course Outline": {{
-                "Learning Units": {{
-                    "LU1": {{
-                        "Description": [
-                            ""
-                        ]
-                    }},
-                    "LU2": {{
-                        "Description": [
-                            {{
-                                "Topic": "Topic 1: Empathize and Define (K1, A1)",
-                                "Details": [
-                                    "Techniques for understanding user needs",
-                                    "Methods for defining clear problem statements",
-                                    "Exercises: Empathy mapping and problem definition"
-                                ]
-                            }},
-                            {{
-                                "Topic": "Topic 2: Ideate and Prototype (K2, A2)",
-                                "Details": [
-                                    "Strategies for brainstorming and generating creative solutions",
-                                    "Steps to create and refine prototypes",
-                                    "Activities: Brainstorming sessions and prototyping workshops"
-                                ]
-                            }},
-                            {{
-                                "Topic": "Topic 3: Test and Iterate (K3, A3)",
-                                "Details": [
-                                    "Importance of gathering user feedback",
-                                    "Methods for testing and iterating solutions",
-                                    "Workshops: Testing prototypes and iterative improvements"
-                                ]
-                            }}                    
+                "Assessment Methods": ["Written Assessment", "Practical Performance"],
+                "Amount of Practice Hours": "N.A.",
+                "Course Outline": {{
+                    "Learning Units": {{
+                        "LU1": {{
+                            "Description": [
+                                {{
+                                    "Topic": "Topic 1: Full Topic Name (K1, A1)",
+                                    "Details": ["Detail point 1", "Detail point 2"]
+                                }},
+                                {{
+                                    "Topic": "Topic 2: Another Topic (K2, A2)",
+                                    "Details": []
+                                }}
                             ]
+                        }},
+                        "LU2": {{
+                            "Description": [
+                                {{
+                                    "Topic": "Topic 1: Topic Title (K3)",
+                                    "Details": ["Detail 1"]
+                                }}
+                            ]
+                        }}
                     }}
-                    }}
-                }}
-            Instructional Methods: ""
-                }}
-        
+                }},
+                "Instructional Methods": "Interactive Presentation, Demonstration, Practical"
+            }}
+
+        CRITICAL: You MUST extract Course Outline. It is mandatory. Look for the "Course Outline:" section in the document.
+        CRITICAL: Extract ALL Learning Units and ALL Topics listed under each LU.
+        CRITICAL: Instructional Methods should be a STRING, not an array.
     """
 
     aggregator_message = f"""

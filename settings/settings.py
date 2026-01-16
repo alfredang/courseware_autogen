@@ -5,13 +5,15 @@ This module provides UI for managing:
 1. LLM Models and API Keys (add/edit/delete)
 2. Company Details (name, UEN, address, logo, templates)
 
-Author: Claude Code
-Date: September 2025
+Author: Wong Xin Ping
+Date: 18 September 2025
 """
 
 import streamlit as st
 import json
 import os
+import shutil
+from datetime import datetime
 from typing import Dict, List, Any
 import base64
 from PIL import Image
@@ -34,203 +36,250 @@ def app():
         if 'api_keys' in st.session_state:
             del st.session_state['api_keys']
         st.rerun()
-    
-    # Create tabs for different settings sections
-    tab1, tab2 = st.tabs(["🤖 LLM Models & API Keys", "🏢 Company Management"])
-    
-    with tab1:
-        manage_llm_settings()
-    
-    with tab2:
-        manage_company_settings()
+
+    # API & LLM Models section
+    st.subheader("🤖 API & LLM Models")
+    manage_llm_settings()
+
+    st.markdown("---")  # Divider between sections
+
+    # Company Management section
+    st.subheader("🏢 Company Management")
+    manage_company_settings()
+
+def llm_settings_app():
+    """API & LLM Models page"""
+    st.title("🤖 API & LLM Models")
+    manage_llm_settings()
+
+def company_management_app():
+    """Company Management page"""
+    st.title("🏢 Company Management")
+    manage_company_settings()
 
 def manage_llm_settings():
     """Manage LLM Models and API Keys"""
-    st.header("LLM Models & API Keys Management")
-    
+
     # Create sub-tabs for API Keys and Custom Models
     api_tab, models_tab = st.tabs(["🔑 API Keys", "🤖 Custom Models"])
-    
+
     with api_tab:
         manage_api_keys()
-    
+
     with models_tab:
         manage_custom_models()
 
 def manage_api_keys():
     """Manage API Keys section"""
-    st.subheader("API Keys Management")
-    
-    st.info("💡 Add your API keys here to use different LLM providers. Keys are stored securely and used dynamically.")
-    
-    
+    st.subheader("OpenRouter API Key")
+
     # Load current API keys
     current_keys = load_api_keys()
-    
-    updated_keys = {}
-    
-    # Display all providers in a single section
-    st.write("### API Keys")
-    
-    # Sort keys for consistent display
-    sorted_keys = sorted(current_keys.keys())
-    
-    for key in sorted_keys:
-        provider_name = key.replace("_API_KEY", "").replace("_", " ").title()
 
-        # Create columns for API key input and delete button
-        col1, col2 = st.columns([4, 1])
+    # OpenRouter API Key (main focus)
+    openrouter_key = st.text_input(
+        "OpenRouter API Key (Required)",
+        value=current_keys.get("OPENROUTER_API_KEY", ""),
+        type="password",
+        help="Get your API key from openrouter.ai/keys",
+        key="openrouter_api_key_main"
+    )
 
-        with col1:
-            updated_keys[key] = st.text_input(
-                f"{provider_name} API Key",
-                value=current_keys[key],
-                type="password",
-                help=f"Enter your {provider_name} API key",
-                key=f"api_key_{key}"
-            )
-
-        with col2:
-            st.write("") # Empty space for alignment
-            if st.button(f"🗑️", key=f"delete_{key}", help=f"Delete {provider_name} API Key"):
-                if delete_api_key(key):
-                    st.success(f"✅ Deleted {provider_name} API Key!")
-                    st.rerun()
-                else:
-                    st.error(f"❌ Error deleting {provider_name} API Key")
-    
-    # Add new API key section
-    st.write("### Add New API Key")
-    col1, col2 = st.columns([2, 1])
-    
-    with col1:
-        new_provider_name = st.text_input(
-            "Provider Name",
-            placeholder="e.g., CUSTOM_PROVIDER",
-            help="Enter the name of the new API provider (will be converted to PROVIDER_API_KEY format)"
-        )
-    
-    with col2:
-        new_api_key = st.text_input(
-            "API Key",
-            type="password",
-            placeholder="Enter API key"
-        )
-    
-    if st.button("➕ Add New API Key"):
-        if new_provider_name and new_api_key:
-            # Format the key name
-            formatted_key = f"{new_provider_name.upper().replace(' ', '_')}_API_KEY"
-            
-            if formatted_key not in current_keys:
-                # Add to current keys and save immediately
-                current_keys[formatted_key] = new_api_key
-                if save_api_keys(current_keys):
-                    st.success(f"✅ Added and saved new API key: {formatted_key}")
-                    st.rerun()
-                else:
-                    st.error("❌ Error saving new API key")
-            else:
-                st.warning(f"API key {formatted_key} already exists!")
-        else:
-            st.error("Please provide both provider name and API key")
-    
-    # Save API Keys
-    if st.button("💾 Save API Keys", type="primary"):
-        if save_api_keys(updated_keys):
-            st.success("✅ API Keys saved successfully!")
+    # Save button for OpenRouter key
+    if st.button("💾 Save OpenRouter API Key", type="primary"):
+        current_keys["OPENROUTER_API_KEY"] = openrouter_key
+        if save_api_keys(current_keys):
+            st.success("✅ OpenRouter API Key saved successfully!")
             st.rerun()
         else:
-            st.error("❌ Error saving API Keys. Please try again.")
+            st.error("❌ Error saving API Key. Please try again.")
+
+def quick_add_openrouter_model(name: str, model_id: str, temperature: float = 0.2):
+    """Quick add an OpenRouter model with sensible defaults"""
+    success = add_custom_model(
+        name=name,
+        provider="OpenAIChatCompletionClient",
+        model_id=model_id,
+        base_url="https://openrouter.ai/api/v1",
+        temperature=temperature,
+        api_provider="OPENROUTER",
+        custom_api_key=""
+    )
+
+    if success:
+        st.success(f"✅ Model '{name}' added successfully!")
+        # Clear cache to reload models
+        if 'custom_models' in st.session_state:
+            del st.session_state['custom_models']
+        st.rerun()
+    else:
+        st.error(f"❌ Failed to add model '{name}'")
 
 def manage_custom_models():
     """Manage Custom Models section"""
-    st.subheader("Custom Models Management")
-    
+    st.subheader("Add OpenRouter Models")
+
     # Display current models
     from settings.api_manager import get_all_available_models
     all_models = get_all_available_models()
     custom_models = load_custom_models()
-    
+
     # Show all available models
-    st.subheader("All Available Models")
+    st.write("### 📚 Your Models")
     model_df_data = []
     for model_name, config in all_models.items():
         is_custom = any(m["name"] == model_name for m in custom_models)
         model_info = {
             "Model": model_name,
             "Type": "Custom" if is_custom else "Built-in",
-            "Provider": config["provider"],
-            "Base Model": config["config"].get("model", "N/A"),
-            "Temperature": config["config"].get("temperature", "N/A"),
-            "Has API Key": "✅" if config["config"].get("api_key") else "❌"
+            "OpenRouter ID": config["config"].get("model", "N/A"),
+            "Temperature": config["config"].get("temperature", "N/A")
         }
         model_df_data.append(model_info)
-    
+
     st.dataframe(model_df_data, use_container_width=True)
-    
-    # Add new custom model
-    st.subheader("Add Custom Model")
-    
+
+    st.markdown("---")
+
+    # Quick add from dropdown
+    st.write("### 🚀 Quick Add Popular Models")
+
+    # Popular model options with their OpenRouter IDs
+    popular_models = {
+        "GPT-4o": "openai/gpt-4o",
+        "GPT-4o Mini": "openai/gpt-4o-mini",
+        "GPT-4 Turbo": "openai/gpt-4-turbo",
+        "Claude 3.5 Sonnet": "anthropic/claude-3.5-sonnet",
+        "Claude 3 Opus": "anthropic/claude-3-opus",
+        "Claude 3 Haiku": "anthropic/claude-3-haiku",
+        "Gemini 2.0 Flash": "google/gemini-2.0-flash-exp",
+        "Gemini Pro 1.5": "google/gemini-pro-1.5",
+        "Gemini Flash 1.5": "google/gemini-flash-1.5",
+        "DeepSeek Chat": "deepseek/deepseek-chat",
+        "DeepSeek Coder": "deepseek/deepseek-coder",
+        "Llama 3.3 70B": "meta-llama/llama-3.3-70b-instruct",
+        "Llama 3.1 405B": "meta-llama/llama-3.1-405b-instruct",
+        "Mistral Large": "mistralai/mistral-large",
+        "Mixtral 8x22B": "mistralai/mixtral-8x22b-instruct"
+    }
+
+    with st.form("quick_add_model"):
+        col1, col2 = st.columns([3, 1])
+
+        with col1:
+            selected_model = st.selectbox(
+                "Select a Model",
+                options=list(popular_models.keys()),
+                help="Choose from popular OpenRouter models"
+            )
+
+        with col2:
+            quick_temperature = st.slider(
+                "Temperature",
+                min_value=0.0,
+                max_value=2.0,
+                value=0.2,
+                step=0.1,
+                key="quick_temp"
+            )
+
+        quick_submitted = st.form_submit_button("➕ Add Selected Model", type="primary")
+
+        if quick_submitted:
+            model_id = popular_models[selected_model]
+            st.info(f"🔄 Adding {selected_model}...")
+            success = add_custom_model(
+                name=selected_model,
+                provider="OpenAIChatCompletionClient",
+                model_id=model_id,
+                base_url="https://openrouter.ai/api/v1",
+                temperature=quick_temperature,
+                api_provider="OPENROUTER",
+                custom_api_key=""
+            )
+
+            if success:
+                st.success(f"✅ Model '{selected_model}' added successfully!")
+                if 'custom_models' in st.session_state:
+                    del st.session_state['custom_models']
+                st.rerun()
+            else:
+                st.error(f"❌ Failed to add model '{selected_model}'")
+
+    st.markdown("---")
+
+    # Add custom model manually
+    st.write("### ➕ Add Custom Model (Manual)")
+
     # Show examples
-    with st.expander("📝 Examples of Custom Models", expanded=False):
+    with st.expander("📝 Popular OpenRouter Model IDs", expanded=False):
         st.markdown("""
-        **Popular Models You Can Add:**
-        
-        **OpenAI Models:**
-        - GPT-4 Turbo: `gpt-4-0125-preview`
-        - GPT-4o: `gpt-4o`
-        - GPT-4o-mini: `gpt-4o-mini`
-        
-        **Anthropic Models:**
-        - Claude-3 Sonnet: `claude-3-sonnet-20240229`
-        - Claude-3 Haiku: `claude-3-haiku-20240307`
-        - Claude-3.5 Sonnet: `claude-3-5-sonnet-20241022`
-        
-        **Other Providers:**
-        - Groq Llama: `llama3-70b-8192`
-        - Together AI: `meta-llama/Llama-2-70b-chat-hf`
-        - Ollama: `llama2` (local model)
-        - Mistral: `mistral-large-latest`
+        **OpenAI:**
+        - `openai/gpt-4o` - GPT-4o (latest)
+        - `openai/gpt-4o-mini` - GPT-4o Mini
+        - `openai/gpt-4-turbo` - GPT-4 Turbo
+        - `openai/gpt-3.5-turbo` - GPT-3.5 Turbo
+
+        **Anthropic:**
+        - `anthropic/claude-3.5-sonnet` - Claude 3.5 Sonnet (latest)
+        - `anthropic/claude-3-opus` - Claude 3 Opus
+        - `anthropic/claude-3-haiku` - Claude 3 Haiku
+
+        **Google:**
+        - `google/gemini-2.0-flash-exp` - Gemini 2.0 Flash
+        - `google/gemini-pro-1.5` - Gemini Pro 1.5
+        - `google/gemini-flash-1.5` - Gemini Flash 1.5
+
+        **Meta:**
+        - `meta-llama/llama-3.3-70b-instruct` - Llama 3.3 70B
+        - `meta-llama/llama-3.1-405b-instruct` - Llama 3.1 405B
+
+        **DeepSeek:**
+        - `deepseek/deepseek-chat` - DeepSeek Chat
+        - `deepseek/deepseek-coder` - DeepSeek Coder
+
+        **Mistral:**
+        - `mistralai/mistral-large` - Mistral Large
+        - `mistralai/mixtral-8x22b-instruct` - Mixtral 8x22B
+
+        💡 **Tip:** Most model IDs use latest version by default. See full list at [openrouter.ai/models](https://openrouter.ai/models)
         """)
     
     with st.form("add_custom_model"):
         col1, col2 = st.columns(2)
-        
-        with col1:
-            model_name = st.text_input("Model Display Name *", placeholder="e.g., GPT-4-Custom")
-            model_id = st.text_input("Model ID *", placeholder="e.g., gpt-4-0125-preview")
-            temperature = st.slider("Temperature", 0.0, 2.0, 0.2, 0.1)
-        
-        with col2:
-            provider_options = [
-                "OpenAIChatCompletionClient",
-                "AnthropicChatCompletionClient",
-                "GroqChatCompletionClient",
-                "CohereClient",
-                "TogetherClient",
-                "OllamaClient",
-                "Custom"
-            ]
-            provider = st.selectbox("Client Type *", provider_options)
-            base_url = st.text_input("Base URL (optional)", placeholder="e.g., https://api.openai.com/v1")
 
-            api_provider_options = [
-                "OPENAI", "DEEPSEEK", "GEMINI", "OPENROUTER", "GROQ", "GROK",
-                "ANTHROPIC", "COHERE", "HUGGINGFACE", "OLLAMA", "MISTRAL",
-                "TOGETHER", "PERPLEXITY", "REPLICATE", "CUSTOM"
-            ]
-            api_provider = st.selectbox("API Key Provider", api_provider_options)
-        
+        with col1:
+            model_name = st.text_input(
+                "Model Display Name *",
+                placeholder="e.g., GPT-4o-Custom",
+                help="Friendly name shown in dropdowns"
+            )
+            model_id = st.text_input(
+                "OpenRouter Model ID *",
+                placeholder="e.g., openai/gpt-4o",
+                help="Get from openrouter.ai/models"
+            )
+
+        with col2:
+            temperature = st.slider("Temperature", 0.0, 2.0, 0.2, 0.1)
+
+        # Always use OpenRouter
+        provider = "OpenAIChatCompletionClient"
+        base_url = "https://openrouter.ai/api/v1"
+        api_provider = "OPENROUTER"
         custom_api_key = ""
-        if api_provider == "CUSTOM":
-            custom_api_key = st.text_input("Custom API Key", type="password", help="This will be stored with the custom model")
 
         submitted = st.form_submit_button("➕ Add Model", type="primary")
 
         if submitted:
-            if not model_name or not model_id or not provider:
-                st.error("❌ Please fill in all required fields: Model Display Name, Model ID, and Client Type")
+            if not model_name or not model_id:
+                st.error("❌ Please fill in required fields: Model Display Name and Model ID")
+            elif "/" not in model_id:
+                st.error("❌ Invalid model ID format. Must be in format: provider/model-name (e.g., openai/gpt-4o)")
+            elif model_id.count("/") > 1:
+                st.error("❌ Invalid model ID format. Only one '/' allowed (e.g., openai/gpt-4o)")
+            elif len(model_id.split("/")[0]) < 2 or len(model_id.split("/")[1]) < 2:
+                st.error("❌ Invalid model ID. Provider and model name must each be at least 2 characters")
             else:
                 st.info(f"🔄 Adding model '{model_name}'...")
                 success = add_custom_model(
@@ -270,35 +319,98 @@ def manage_custom_models():
                     else:
                         st.error("❌ Error removing model")
 
+def backup_company_files(company: Dict) -> bool:
+    """
+    Move company files to backup folder before deletion
+    Returns True if successful, False otherwise
+    """
+    try:
+        # Create timestamped backup directory
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        company_name_clean = company['name'].lower().replace(' ', '_').replace('/', '_').replace('\\', '_')
+        backup_dir = f"common/deleted_companies/{timestamp}_{company_name_clean}"
+        os.makedirs(backup_dir, exist_ok=True)
+
+        files_moved = []
+
+        # Backup logo file
+        logo_path = company.get('logo', '')
+        if logo_path and os.path.exists(logo_path):
+            logo_backup_dir = os.path.join(backup_dir, 'logo')
+            os.makedirs(logo_backup_dir, exist_ok=True)
+            logo_filename = os.path.basename(logo_path)
+            backup_logo_path = os.path.join(logo_backup_dir, logo_filename)
+            shutil.move(logo_path, backup_logo_path)
+            files_moved.append(f"Logo: {logo_path} → {backup_logo_path}")
+
+        # Backup template files
+        templates = company.get('templates', {})
+        if templates:
+            template_backup_dir = os.path.join(backup_dir, 'templates')
+            os.makedirs(template_backup_dir, exist_ok=True)
+
+            for template_type, template_path in templates.items():
+                if template_path and os.path.exists(template_path):
+                    template_filename = os.path.basename(template_path)
+                    backup_template_path = os.path.join(template_backup_dir, template_filename)
+                    shutil.move(template_path, backup_template_path)
+                    files_moved.append(f"{template_type}: {template_path} → {backup_template_path}")
+
+        # Remove empty template directory if it exists
+        template_dir = f"common/templates/{company_name_clean}"
+        if os.path.exists(template_dir) and not os.listdir(template_dir):
+            os.rmdir(template_dir)
+
+        # Create a metadata file in backup folder
+        metadata = {
+            "company_name": company['name'],
+            "uen": company.get('uen', ''),
+            "deleted_at": timestamp,
+            "files_moved": files_moved
+        }
+
+        metadata_path = os.path.join(backup_dir, 'backup_metadata.json')
+        with open(metadata_path, 'w') as f:
+            json.dump(metadata, f, indent=2)
+
+        return True
+
+    except Exception as e:
+        st.error(f"Error backing up company files: {e}")
+        return False
+
 def manage_company_settings():
     """Manage Company Details"""
-    st.header("Company Management")
-
 
     # Load current organizations
     try:
         organizations = get_organizations()
     except:
         organizations = []
-    
-    # Company selection and editing
-    st.subheader("Select Company to Edit")
-    
-    if organizations:
-        company_names = [org["name"] for org in organizations]
-        selected_company_idx = st.selectbox(
-            "Choose a company:",
-            range(len(company_names)),
-            format_func=lambda x: company_names[x],
-            index=0  # Always default to first company
-        )
 
-        if selected_company_idx is not None and selected_company_idx < len(organizations):
-            edit_company_form(organizations, selected_company_idx)
-    
-    # Add new company
-    st.subheader("Add New Company")
-    add_company_form(organizations)
+    # Create tabs for Edit and Add Company
+    edit_tab, add_tab = st.tabs(["✏️ Edit Company", "➕ Add New Company"])
+
+    with edit_tab:
+        st.subheader("Select Company to Edit")
+
+        if organizations:
+            company_names = [org["name"] for org in organizations]
+            selected_company_idx = st.selectbox(
+                "Choose a company:",
+                range(len(company_names)),
+                format_func=lambda x: company_names[x],
+                index=0  # Always default to first company
+            )
+
+            if selected_company_idx is not None and selected_company_idx < len(organizations):
+                edit_company_form(organizations, selected_company_idx)
+        else:
+            st.info("No companies found. Add a new company in the 'Add New Company' tab.")
+
+    with add_tab:
+        st.subheader("Add New Company")
+        add_company_form(organizations)
 
 def edit_company_form(organizations: List[Dict], company_idx: int):
     """Form to edit existing company"""
@@ -391,10 +503,12 @@ def edit_company_form(organizations: List[Dict], company_idx: int):
             
             # Update the organization in the list
             organizations[company_idx] = updated_company
-            
+
             # Save to file
             if save_organizations(organizations):
                 st.success(f"✅ Company '{new_name}' updated successfully!")
+                # Clear cache to refresh sidebar company list
+                st.cache_data.clear()
                 st.rerun()
             else:
                 st.error("❌ Error updating company. Please try again.")
@@ -406,22 +520,32 @@ def edit_company_form(organizations: List[Dict], company_idx: int):
         if st.session_state.get(f"confirm_delete_{company_idx}", False):
             # Actually delete
             company_name = company['name']  # Store name before deletion
-            organizations.pop(company_idx)
 
-            # Clear any session state that might reference old indices
-            keys_to_remove = [key for key in st.session_state.keys() if key.startswith('confirm_delete_')]
-            for key in keys_to_remove:
-                del st.session_state[key]
+            # Backup company files before deletion
+            backup_success = backup_company_files(company)
 
-            if save_organizations(organizations):
-                st.session_state[f'delete_success_{company_idx}'] = f"✅ Company '{company_name}' deleted successfully!"
-                st.rerun()
+            if backup_success:
+                # Remove from organizations list
+                organizations.pop(company_idx)
+
+                # Clear any session state that might reference old indices
+                keys_to_remove = [key for key in st.session_state.keys() if key.startswith('confirm_delete_')]
+                for key in keys_to_remove:
+                    del st.session_state[key]
+
+                if save_organizations(organizations):
+                    st.session_state[f'delete_success_{company_idx}'] = f"✅ Company '{company_name}' deleted successfully! Files backed up to common/deleted_companies/"
+                    # Clear cache to refresh sidebar company list
+                    st.cache_data.clear()
+                    st.rerun()
+                else:
+                    st.error("❌ Error deleting company from database.")
             else:
-                st.error("❌ Error deleting company.")
+                st.error("❌ Error backing up company files. Deletion cancelled for safety.")
         else:
             # Show confirmation
             st.session_state[f"confirm_delete_{company_idx}"] = True
-            st.warning("Click delete again to confirm removal.")
+            st.warning("⚠️ Click delete again to confirm removal. Files will be moved to backup folder.")
 
     # Show delete success message below the button if it exists
     if f'delete_success_{company_idx}' in st.session_state:
@@ -525,6 +649,8 @@ def add_company_form(organizations: List[Dict]):
                     for key in ['temp_company_name', 'temp_company_uen', 'temp_company_address']:
                         if key in st.session_state:
                             del st.session_state[key]
+                    # Clear cache to refresh sidebar company list
+                    st.cache_data.clear()
                     st.rerun()
                 else:
                     st.error("❌ Error adding company. Please try again.")

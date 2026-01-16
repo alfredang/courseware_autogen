@@ -17,34 +17,96 @@ from typing import Any, Optional, Dict
 def parse_json_content(content: str) -> Optional[Dict[str, Any]]:
     """
     Parse JSON content from various formats including markdown code blocks.
-    
+    Handles literal newlines and other control characters in JSON strings.
+
     Args:
         content: Raw content that may contain JSON
-        
+
     Returns:
         Parsed JSON dictionary or None if parsing fails
     """
-    # Check if the content is wrapped in markdown json blocks
+    # Try to match well-formed markdown blocks with both opening and closing ```
     json_pattern = re.compile(r'```json\s*(\{.*?\})\s*```', re.DOTALL)
     match = json_pattern.search(content)
-    
+
     if match:
-        # If ```json ``` is present, extract the JSON content
+        # If both ```json and ``` are present, extract the JSON content
         json_str = match.group(1)
     else:
-        # If no markdown blocks, assume the entire content is JSON
-        json_str = content
-    
+        # Fallback: Extract from first { to last } (handles missing closing ``` or no markers)
+        first_brace = content.find('{')
+        last_brace = content.rfind('}')
+
+        if first_brace != -1 and last_brace != -1 and last_brace > first_brace:
+            json_str = content[first_brace:last_brace + 1]
+        else:
+            # No braces found, use entire content as-is
+            json_str = content
+
     # Remove any leading/trailing whitespace
     json_str = json_str.strip()
-    
+
     try:
-        # Parse the JSON string
+        # Try to parse the JSON string directly
         parsed_json = json.loads(json_str)
         return parsed_json
     except json.JSONDecodeError as e:
-        print(f"Error parsing JSON: {e}")
-        return None
+        print(f"Error parsing JSON on first attempt: {e}")
+
+        # Try to fix literal control characters in string values
+        try:
+            # Character-by-character parser to escape control chars within strings
+            fixed_chars = []
+            in_string = False
+            escape_next = False
+
+            for i, char in enumerate(json_str):
+                if escape_next:
+                    fixed_chars.append(char)
+                    escape_next = False
+                    continue
+
+                if char == '\\':
+                    fixed_chars.append(char)
+                    escape_next = True
+                    continue
+
+                if char == '"' and not escape_next:
+                    # Toggle string state
+                    in_string = not in_string
+                    fixed_chars.append(char)
+                    continue
+
+                # If we're inside a string, escape control characters
+                if in_string:
+                    if char == '\n':
+                        fixed_chars.append('\\n')
+                    elif char == '\r':
+                        fixed_chars.append('\\r')
+                    elif char == '\t':
+                        fixed_chars.append('\\t')
+                    else:
+                        fixed_chars.append(char)
+                else:
+                    fixed_chars.append(char)
+
+            fixed_json = ''.join(fixed_chars)
+
+            try:
+                parsed_json = json.loads(fixed_json)
+                print("✓ Successfully parsed JSON after escaping control characters")
+                return parsed_json
+            except:
+                # Try fixing unquoted keys as well
+                fixed_json = re.sub(r'(\w+):', r'"\1":', fixed_json)
+                parsed_json = json.loads(fixed_json)
+                print("✓ Successfully parsed JSON after fixing control chars and unquoted keys")
+                return parsed_json
+        except Exception as ex:
+            print(f"Failed to parse JSON content even after attempting fixes.")
+            print(f"Error: {ex}")
+            print(f"JSON string preview: {json_str[:500]}...")
+            return None
 
 
 def save_uploaded_file(uploaded_file, save_dir: str) -> str:

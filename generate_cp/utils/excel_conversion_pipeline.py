@@ -568,6 +568,25 @@ def map_new_key_names_excel(generated_mapping_path, generated_mapping, output_js
     # excel_data_path = "generate_cp/json_output/excel_data.json"
     excel_data = load_json_file(excel_data_path)
 
+    # Check if excel_data loaded successfully
+    if excel_data is None:
+        print(f"Failed to load excel data from '{excel_data_path}', cannot proceed. Exiting.")
+        return
+
+    # Check if excel_data is a list and has at least one item
+    if not isinstance(excel_data, list) or len(excel_data) == 0:
+        print(f"Error: excel_data is not a valid list or is empty. Cannot proceed. Exiting.")
+        return
+
+    # Check if first item exists and has course_overview
+    if excel_data[0] is None or not isinstance(excel_data[0], dict):
+        print(f"Error: excel_data[0] is None or not a dictionary. Cannot proceed. Exiting.")
+        return
+
+    if "course_overview" not in excel_data[0]:
+        print(f"Error: 'course_overview' not found in excel_data[0]. Cannot proceed. Exiting.")
+        return
+
     # **Load existing JSON file first**
     existing_data = load_json_file(output_json_file) # Load existing data, returns {} if file not found or invalid JSON
 

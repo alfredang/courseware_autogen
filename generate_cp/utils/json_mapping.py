@@ -104,8 +104,9 @@ def map_values(mapping_source, ensemble_output, research_output):
     introductory_string = "SkillsFuture's report Skills Demand For The Future Economy (https://www.skillsfuture.gov.sg/skillsreport) published in 2025, spotlights the priority skills and jobs in demand in three specially selected, emerging, high-growth areas. This report is designed for Singaporeans as a resource for an individual’s skills development journey over the next one to three years.  Singapore's key growth areas (Digital, Green & Care Economy) bring exciting job and skills opportunities. It also introduced the idea of 'priority skills, ' highly transferable skills across job roles within the three economies. In other words, these skills are applicable in many job roles and will contribute significantly to the individual's long-term career versatility. A new dimension on skills demands growth has been added and analysed alongside skills transferability. Demand growth captures the relative scale of the increase in demand for that skill, while transferability captures the scope of the skill's applicability across different job roles. The two-dimensional analysis seeks to provide deeper insights to the reader into the nature of the priority skills identified. \n\n"
 
     background_analysis = ""
-    for key, value in research_output["Background Analysis"].items():
-        background_analysis += f"{value.strip()}\n\n"
+    if "Background Analysis" in research_output and isinstance(research_output["Background Analysis"], dict):
+        for key, value in research_output["Background Analysis"].items():
+            background_analysis += f"{value.strip()}\n\n"
 
     # Insert the introductory string at the beginning
     background_analysis = introductory_string + background_analysis.strip()
@@ -114,63 +115,76 @@ def map_values(mapping_source, ensemble_output, research_output):
     performance_analysis = "Performance gaps were identified through survey forms distributed to external stakeholders:\n\n"
 
     # Iterate through the performance analysis
-    for key, value in research_output["Performance Analysis"].items():
-        if key == "Performance Gaps":
-            performance_analysis += f"{key}:\n"
-            if isinstance(value, list):
-                for item in value:
-                    performance_analysis += f"•\t{item.strip()}\n"
-            else:
-                performance_analysis += f"•\t{value.strip()}\n"
-            performance_analysis += "\n"
+    if "Performance Analysis" in research_output and isinstance(research_output["Performance Analysis"], dict):
+        for key, value in research_output["Performance Analysis"].items():
+            if key == "Performance Gaps":
+                performance_analysis += f"{key}:\n"
+                if isinstance(value, list):
+                    for item in value:
+                        performance_analysis += f"•\t{item.strip()}\n"
+                else:
+                    performance_analysis += f"•\t{value.strip()}\n"
+                performance_analysis += "\n"
 
-    performance_analysis += "Through targeted training programs, learners will gain the following attributes to address the identified performance gaps after the training:\n\n"
+        performance_analysis += "Through targeted training programs, learners will gain the following attributes to address the identified performance gaps after the training:\n\n"
 
-    for key, value in research_output["Performance Analysis"].items():
-        if key == "Attributes Gained":
-            performance_analysis += f"{key}:\n"
-            if isinstance(value, list):
-                for item in value:
-                    performance_analysis += f"•\t{item.strip()}\n"
-            else:
-                performance_analysis += f"•\t{value.strip()}\n"
-            performance_analysis += "\n"
+        for key, value in research_output["Performance Analysis"].items():
+            if key == "Attributes Gained":
+                performance_analysis += f"{key}:\n"
+                if isinstance(value, list):
+                    for item in value:
+                        performance_analysis += f"•\t{item.strip()}\n"
+                else:
+                    performance_analysis += f"•\t{value.strip()}\n"
+                performance_analysis += "\n"
+
+        for key, value in research_output["Performance Analysis"].items():
+            if key == "Post-Training Benefits to Learners":
+                performance_analysis += f"{key}:\n"
+                if isinstance(value, list):
+                    for item in value:
+                        performance_analysis += f"•\t{item.strip()}\n"
+                else:
+                    performance_analysis += f"•\t{value.strip()}\n"
+                performance_analysis += "\n"
 
     mapping_source["#Placeholder[1]"] = [performance_analysis.strip()]
 
-    for key, value in research_output["Performance Analysis"].items():
-        if key == "Post-Training Benefits to Learners":
-            performance_analysis += f"{key}:\n"
-            if isinstance(value, list):
-                for item in value:
-                    performance_analysis += f"•\t{item.strip()}\n"
-            else:
-                performance_analysis += f"•\t{value.strip()}\n"
-            performance_analysis += "\n"
-
-    mapping_source["#Placeholder[1]"] = [performance_analysis.strip()]
-
-    if "Sequencing Explanation" in research_output["Sequencing Analysis"]:
-        mapping_source["#Rationale[0]"] = [research_output["Sequencing Analysis"]["Sequencing Explanation"]]
+    if "Sequencing Analysis" in research_output and isinstance(research_output["Sequencing Analysis"], dict):
+        if "Sequencing Explanation" in research_output["Sequencing Analysis"]:
+            mapping_source["#Rationale[0]"] = [research_output["Sequencing Analysis"]["Sequencing Explanation"]]
 
     # Mapping for Hours
     mapping_source["#Hours[0]"] = [ensemble_output["Course Information"]["Classroom Hours"]]
     mapping_source["#Hours[1]"] = [ensemble_output["Course Information"]["Number of Assessment Hours"]]
     mapping_source["#Hours[2]"] = [ensemble_output["Course Information"]["Course Duration (Number of Hours)"]]
-    mapping_source["#Hours[3]"] = [ensemble_output["Assessment Methods"]["Amount of Practice Hours"]]
+    mapping_source["#Hours[3]"] = [ensemble_output.get("Assessment Methods", {}).get("Amount of Practice Hours", "N.A.")]
 
-    mapping_source["#Conclusion[0]"] = [research_output["Sequencing Analysis"]["Conclusion"]]
+    # Safely access Conclusion
+    if "Sequencing Analysis" in research_output and isinstance(research_output["Sequencing Analysis"], dict):
+        if "Conclusion" in research_output["Sequencing Analysis"]:
+            mapping_source["#Conclusion[0]"] = [research_output["Sequencing Analysis"]["Conclusion"]]
+        else:
+            mapping_source["#Conclusion[0]"] = ["The course structure is designed to progressively build knowledge and skills."]
+    else:
+        mapping_source["#Conclusion[0]"] = ["The course structure is designed to progressively build knowledge and skills."]
 
     cp_type = st.session_state.get('cp_type', "New CP")
     if cp_type == "Old CP":
-        mapping_source["#AssessmentJustification"] = [research_output["Assessment Phrasing"]]
+        if "Assessment Phrasing" in research_output:
+            mapping_source["#AssessmentJustification"] = [research_output["Assessment Phrasing"]]
+        else:
+            mapping_source["#AssessmentJustification"] = ["Assessment methods are aligned with learning outcomes."]
 
     # Mapping for Course Title
     mapping_source["#CourseTitle"] = [ensemble_output["Course Information"]["Course Title"]]
 
     # Mapping for TSC
-    mapping_source["#TCS[0]"] = [ensemble_output["TSC and Topics"]["TSC Title"][0]]
-    mapping_source["#TCS[1]"] = [ensemble_output["TSC and Topics"]["TSC Code"][0]]
+    # Handle both string and array formats from LLM
+    tsc_title = ensemble_output["TSC and Topics"]["TSC Title"]
+    tsc_code = ensemble_output["TSC and Topics"]["TSC Code"]
+    mapping_source["#TCS[0]"] = [tsc_title[0] if isinstance(tsc_title, list) else tsc_title]
+    mapping_source["#TCS[1]"] = [tsc_code[0] if isinstance(tsc_code, list) else tsc_code]
 
     mapping_source["#Company"] = [ensemble_output["Course Information"]["Name of Organisation"]]
 
@@ -196,10 +210,13 @@ def map_values(mapping_source, ensemble_output, research_output):
             mapping_source[f"#LU[{i}]"] = [lu]
 
     # Mapping for Learning Unit Descriptions (from research_output)
-    for i in range(1, 6):  # LU1 to LU5
-        lu_key = f"LU{i}"
-        if lu_key in research_output["Sequencing Analysis"]:
-            mapping_source[f"#LUex[{i-1}]"] = [research_output["Sequencing Analysis"][lu_key]["Description"]]
+    if "Sequencing Analysis" in research_output and isinstance(research_output["Sequencing Analysis"], dict):
+        for i in range(1, 6):  # LU1 to LU5
+            lu_key = f"LU{i}"
+            if lu_key in research_output["Sequencing Analysis"]:
+                lu_data = research_output["Sequencing Analysis"][lu_key]
+                if isinstance(lu_data, dict) and "Description" in lu_data:
+                    mapping_source[f"#LUex[{i-1}]"] = [lu_data["Description"]]
 
     # Mapping for Knowledge and Abilities
     knowledge = ensemble_output["Learning Outcomes"]["Knowledge"]
@@ -214,7 +231,7 @@ def map_values(mapping_source, ensemble_output, research_output):
         if f"#A[{i}]" in mapping_source:
             mapping_source[f"#A[{i}]"] = [a]
 
-    # Normalize the course outline
+    # Normalize the course outline from Assessment Methods
     normalized_course_outline = normalize_course_outline(ensemble_output['Assessment Methods']['Course Outline'])
 
     # Build a mapping from topic titles to their details

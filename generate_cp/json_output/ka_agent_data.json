@@ -1,12 +1,19 @@
 {
   "KA_Analysis": {
-    "K1": "The candidate will respond to a series of questions related to relevant systems and software, ensuring understanding of their functionalities and applications.",
-    "A1": "The candidate will perform scenario-based exercises to anticipate potential issues in systems transition, demonstrating problem-solving skills.",
-    "K2": "The candidate will explain the organization's processes through written assessments, showcasing their comprehension of internal workflows.",
-    "A2": "The candidate will plan and submit a transition strategy for moving from old to new systems, highlighting their planning abilities.",
-    "K3": "The candidate will describe the systems transition process in detail, assessing their theoretical knowledge of change management.",
-    "A3": "The candidate will identify and propose opportunities to adopt emerging technologies, demonstrating their ability to innovate.",
-    "K4": "The candidate will discuss emerging technological trends, reflecting their awareness of advancements like blockchain and AI.",
-    "A4": "The candidate will design a training plan for staff on new systems, showcasing their ability to prepare and educate others."
+    "K1": "Written assessments evaluate understanding of probability distributions, statistical modeling concepts, and latent variable theory through scenario-based questions.",
+    "K2": "Candidates demonstrate knowledge of dataset formats and evaluation methods through structured response questions and format identification tasks.",
+    "K3": "Assessment includes technical questions on fine-tuning approaches, parameter optimization, and inference processes in model development.",
+    "K4": "Evaluation covers neural network optimization principles through problem-solving questions focused on training methodology and convergence concepts.",
+    "K5": "Testing addresses distributed computing knowledge through questions on parallel processing architectures and cluster management principles.",
+    "K6": "Assessment examines understanding of various loss functions and evaluation metrics through comparative analysis questions.",
+    "K7": "Questions focus on data quality principles, cleaning methodologies, and preprocessing requirements for AI model training.",
+    "K8": "Evaluation tests comprehension of embedding techniques and tokenization methods through technical analysis questions.",
+    "K9": "Assessment covers deep learning architectures through detailed questions about GANs, VAEs, and transformer models.",
+    "K10": "Testing examines familiarity with major ML libraries through framework-specific technical questions.",
+    "A1": "Practical assessment requires implementing and configuring generative models using established architectures.",
+    "A2": "Hands-on exercises involve analyzing requirements and selecting appropriate generative solutions for given scenarios.",
+    "A3": "Performance evaluation through practical implementation of model training using standard benchmark datasets.",
+    "A4": "Project-based assessment requiring analysis of model limitations and documented improvement proposals.",
+    "A5": "Practical tasks involving data preprocessing, cleaning, and preparation using industry-standard libraries."
   }
 }

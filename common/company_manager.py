@@ -66,16 +66,9 @@ def get_company_info_display() -> Dict[str, str]:
     }
 
 def show_company_info(show_in_sidebar: bool = False):
-    """Show current company information"""
-    company = get_selected_company()
-    
-    container = st.sidebar if show_in_sidebar else st
-    
-    with container.expander("📋 Current Company Info", expanded=False):
-        st.write(f"**Company:** {company.get('name', 'N/A')}")
-        st.write(f"**UEN:** {company.get('uen', 'N/A')}")
-        if company.get('address'):
-            st.write(f"**Address:** {company.get('address')}")
+    """Show current company information - DISABLED"""
+    # This function has been disabled per user request
+    pass
 
 def get_template_fallback_info(template_type: str) -> Dict[str, str]:
     """
@@ -96,6 +89,6 @@ def get_template_fallback_info(template_type: str) -> Dict[str, str]:
     return {
         "template_path": template_path,
         "using_fallback": using_fallback,
-        "fallback_company": "Tertiary Infotech Pte Ltd" if using_fallback else None,
+        "fallback_company": "Tertiary Infotech Academy Pte Ltd" if using_fallback else None,
         "company_name": company.get("name", "")
     }

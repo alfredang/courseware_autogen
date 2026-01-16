@@ -78,13 +78,27 @@ def get_topics_for_all_k_statements(fg_data):
     """
     k_to_topics = {}
 
-    for lu in fg_data["learning_units"]:  
-        for topic in lu["topics"]:  
-            for k in topic["tsc_knowledges"]:  
-                k_id = f"{k['id']}: {k['text']}"  
+    print(f"DEBUG SAQ: Extracting K statements from {len(fg_data.get('learning_units', []))} learning units")
+
+    for lu in fg_data["learning_units"]:
+        lu_title = lu.get("learning_unit_title", "Unknown LU")
+        print(f"DEBUG SAQ: Processing LU: {lu_title}")
+
+        for topic in lu["topics"]:
+            topic_name = topic.get("name", "Unknown Topic")
+            k_statements = topic.get("tsc_knowledges", [])
+            print(f"  Topic: {topic_name} - {len(k_statements)} K statements")
+
+            for k in k_statements:
+                k_id = f"{k['id']}: {k['text']}"
+                print(f"    Found K: {k['id']} - {k['text'][:50]}...")
+
                 if k_id not in k_to_topics:
                     k_to_topics[k_id] = []
                 k_to_topics[k_id].append(topic["name"])
+
+    print(f"DEBUG SAQ: Total unique K statements extracted: {len(k_to_topics)}")
+    print(f"DEBUG SAQ: K IDs: {[k.split(':')[0] for k in k_to_topics.keys()]}")
 
     return k_to_topics
 
@@ -105,7 +119,7 @@ async def retrieve_content_for_knowledge_statement_async(k_topics, index):
     # Handle case when no slide deck is provided
     if index is not None:
         query_engine = index.as_query_engine(
-            similarity_top_k=10,
+            similarity_top_k=15,  # Increased for more context
             verbose=True,
             response_mode="compact",
         )
@@ -127,8 +141,10 @@ async def retrieve_content_for_knowledge_statement_async(k_topics, index):
         if not response or not response.source_nodes:
             return k_statement, "⚠️ No relevant information found."
 
+        # Include page metadata for better context (Option 3: Premium mode enhancement)
         markdown_result = "\n\n".join([
-            f"### {node.text}" for node in response.source_nodes
+            f"### Page {node.metadata.get('page', 'Unknown')}\n{node.text}"
+            for node in response.source_nodes
         ])
 
         return k_statement, markdown_result  
@@ -137,6 +153,115 @@ async def retrieve_content_for_knowledge_statement_async(k_topics, index):
     results = await asyncio.gather(*tasks)  
 
     return dict(results)  
+
+async def group_similar_k_statements(k_topics, model_client):
+    """
+    Groups similar K statements together when there are more than 8 K statements.
+
+    Args:
+        k_topics (dict): Dictionary mapping K statements to their topics
+        model_client: The model client for grouping
+
+    Returns:
+        list: List of grouped K statements, where each group is a dict with:
+            - "k_statements": list of K IDs
+            - "combined_text": combined text of all K statements in group
+            - "topics": combined list of all topics
+    """
+    k_count = len(k_topics)
+
+    # If 8 or fewer K statements, no grouping needed
+    if k_count <= 8:
+        return [{"k_statements": [k], "combined_text": k, "topics": topics}
+                for k, topics in k_topics.items()]
+
+    # Group similar K statements using LLM
+    grouping_agent = AssistantAgent(
+        name="k_grouping_agent",
+        model_client=model_client,
+        system_message="""
+        You are an expert at analyzing and grouping similar knowledge statements.
+        Given a list of knowledge statements, group similar ones together to reduce the total to around 6-8 groups.
+
+        Guidelines:
+        1. Group K statements that cover similar concepts or topics
+        2. Each group should have a clear thematic connection
+        3. Try to create 6-8 groups total
+        4. Return the grouping as valid JSON
+
+        Output format:
+        ```json
+        {
+            "groups": [
+                {
+                    "k_ids": ["K1", "K3", "K5"],
+                    "theme": "Brief description of common theme"
+                },
+                {
+                    "k_ids": ["K2", "K4"],
+                    "theme": "Brief description of common theme"
+                }
+            ]
+        }
+        ```
+        Return only the JSON between triple backticks followed by 'TERMINATE'.
+        """
+    )
+
+    # Prepare K statements for grouping
+    k_list = list(k_topics.keys())
+    k_summary = "\n".join([f"{i+1}. {k}" for i, k in enumerate(k_list)])
+
+    task = f"""
+    I have {k_count} knowledge statements. Please group similar ones together to create 6-8 groups:
+
+    {k_summary}
+
+    Group these K statements by similarity and return the grouping in JSON format.
+    """
+
+    response = await grouping_agent.on_messages(
+        [TextMessage(content=task, source="user")], CancellationToken()
+    )
+
+    if not response or not response.chat_message:
+        # Fallback: return individual K statements if grouping fails
+        return [{"k_statements": [k], "combined_text": k, "topics": topics}
+                for k, topics in k_topics.items()]
+
+    try:
+        grouping_result = parse_json_content(response.chat_message.content)
+        groups = grouping_result.get("groups", [])
+
+        # Build grouped K statements
+        grouped_k = []
+        for group in groups:
+            k_ids = group.get("k_ids", [])
+            # Match k_ids with actual K statements
+            matched_ks = []
+            combined_topics = []
+
+            for k_statement in k_list:
+                k_id = k_statement.split(":")[0].strip()
+                if k_id in k_ids:
+                    matched_ks.append(k_statement)
+                    combined_topics.extend(k_topics[k_statement])
+
+            if matched_ks:
+                grouped_k.append({
+                    "k_statements": matched_ks,
+                    "combined_text": " | ".join(matched_ks),
+                    "topics": list(set(combined_topics))  # Remove duplicates
+                })
+
+        return grouped_k if grouped_k else [{"k_statements": [k], "combined_text": k, "topics": topics}
+                                             for k, topics in k_topics.items()]
+
+    except Exception as e:
+        # Fallback: return individual K statements if parsing fails
+        return [{"k_statements": [k], "combined_text": k, "topics": topics}
+                for k, topics in k_topics.items()]
+
 
 async def generate_saq_for_k(qa_generation_agent, course_title, assessment_duration, k_statement, content):
     """
@@ -188,6 +313,16 @@ async def generate_saq_for_k(qa_generation_agent, course_title, assessment_durat
 
     qa_result = parse_json_content(response.chat_message.content)
 
+    # Validate the parsed result
+    if qa_result is None or not isinstance(qa_result, dict):
+        response_content = response.chat_message.content
+        raise ValueError(
+            f"Failed to parse SAQ response for {k_statement}. "
+            f"Response length: {len(response_content)} chars. "
+            f"Starts with: {response_content[:100]}... "
+            f"Ends with: ...{response_content[-100:]}"
+        )
+
     # Directly extract keys from the parsed JSON object:
     return {
         "scenario": qa_result.get("scenario", "Scenario not provided."),
@@ -226,31 +361,31 @@ async def generate_saq(extracted_data: FacilitatorGuideExtraction, index, model_
         name="question_answer_generator",
         model_client=model_client,
         system_message=f"""
-        You are an expert question-answer crafter with deep domain expertise. Your task is to generate a scenario-based question and answer pair for a given knowledge statement while strictly grounding your response in the provided retrieved content. You must not hallucinate or fabricate details.
+        You are an expert at creating simple, clear short-answer questions.
 
         Guidelines:
-        1. Base your response entirely on the retrieved content. If the content does not directly address the knowledge statement, do not invent new details. Instead, use minimal general context only to bridge gaps, but ensure that every key element of the final question and answer is explicitly supported by the retrieved content.
-        2. Craft a realistic scenario in 2-3 sentences that reflects the context from the retrieved content while clearly addressing the given knowledge statement.
-        3. Formulate one direct, simple question that ties the scenario to the knowledge statement. The question should be directly answerable using the retrieved content.
-        4. Provide concise, practical bullet-point answers that list the key knowledge points explicitly mentioned in the retrieved content.         
-        5. Ensure the overall assessment strictly follows the SAQ structure.
-        6. Do not mention about the source of the content in the scenario or question.
-        7. Structure the final output in **valid JSON** with the format:
+        1. Keep questions SIMPLE and DIRECT - avoid complex scenarios
+        2. Create a brief 1-2 sentence scenario that relates to the knowledge statement
+        3. Ask ONE clear question that can be answered in 3-5 bullet points
+        4. Answers should be short, practical bullet points (5-10 words each)
+        5. Base your answer on the retrieved content, but keep it simple and easy to understand
+        6. Do not mention sources or references in the scenario or question
 
+        Output format (valid JSON):
         ```json
         {{
-            "scenario": "<scenario>",
-            "question_statement": "<question>",
+            "scenario": "<simple 1-2 sentence scenario>",
+            "question_statement": "<simple, direct question>",
             "knowledge_id": "<knowledge_id>",
             "answer": [
-                "<bullet_point_1>",
-                "<bullet_point_2>",
-                "<bullet_point_3>"
+                "<short bullet point 1>",
+                "<short bullet point 2>",
+                "<short bullet point 3>"
             ]
         }}
         ```
-        
-        7. Return the JSON between triple backticks followed by 'TERMINATE'.
+
+        Return the JSON between triple backticks followed by 'TERMINATE'.
         """,
     )
 
@@ -259,14 +394,19 @@ async def generate_saq(extracted_data: FacilitatorGuideExtraction, index, model_
         ""
     )
     # print(f"############# ASSESSMENT DURATION\n{assessment_duration}\n#############")
-    
-    # Create async tasks for generating a Q&A pair for each knowledge statement
+
+    # Create one question per K statement (no grouping)
     tasks = [
         generate_saq_for_k(qa_generation_agent, extracted_data["course_title"], assessment_duration, k, content)
         for k, content in k_content_dict.items()
     ]
+
+    print(f"DEBUG SAQ: Generating {len(tasks)} questions...")
     results = await asyncio.gather(*tasks)
     questions = [q for q in results if q is not None]
+
+    print(f"DEBUG SAQ: Successfully generated {len(questions)} questions")
+    print(f"DEBUG SAQ: Failed questions: {len(results) - len(questions)}")
 
     # Return the output with the same structure as before
     return {

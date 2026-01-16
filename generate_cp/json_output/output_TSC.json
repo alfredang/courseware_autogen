@@ -1,66 +1,50 @@
 {
   "Course_Proposal_Form": {
     "null": [
-      "COURSE PROPOSAL (CP) Form",
-      "Instructions to Applicants",
-      "You may submit your application for 1 of the following 2 types of courses by filling up the relevant segments in the Course Proposal Form (CP). Each course application is to be accompanied by 1 CP Form.",
-      "(A) WSQ Singular Course",
-      "(B) WSQ Integrated Course*",
-      "*WSQ Integrated course refers to a course application with more than 1 Technical Skills and Competencies",
-      "(TSC) but not leading to a full qualification.",
-      "For application of WSQ Full Qualification, please click here:",
-      "https://www.tpgateway.gov.sg/plan-courses/course-accreditation select \u201cWhat do I need for the application? s/no b.\u201d",
-      "Title: Create Engaging Social E-Commerce Campaigns on XiaoHongShu",
-      "Organization: Tertiary Infotech Pte Ltd",
-      "Learning Outcomes:",
-      "LO1: Implement XiaoHongShu e-commerce campaigns in alignment to strategic marketing objectives.",
-      "LO2: Analyse XiaoHongShu campaign outcomes using sales performance data and consumer insights.",
-      "LO3: Analyse e-Commerce trends and customer review on XiaoHongShu\u2019s Shop.",
-      "Course Duration: 16 hours",
-      "Instructional Methods:",
-      "Classroom: 7 hours",
-      "Practical: 7 hours",
-      "Didactic Questioning",
-      "Demonstration",
-      "Assessment Methods:",
-      "Written Assessment (2 hours)",
-      "Practical Performance (2 hours)",
-      "TSC Mapping:",
-      "TSC Title: E-Commerce Campaign Management",
-      "TSC Code: TOU-SNM-3014-1.1-1",
-      "TSC Knowledge:",
-      "K1: E-Commerce campaign execution tactics",
-      "K2: Messages to be communicated",
-      "K3: Methods to advertise products online",
-      "K4: Possible media options",
-      "K5: Campaign schedules",
-      "K6: Means of using data gathered from pre-campaign testing",
-      "TSC Abilities:",
-      "A1: Execute e-Commerce campaigns in alignment to e-Commerce strategies, sales and marketing strategies",
-      "A2: Monitor campaign performance and effectiveness in accordance with performance measures",
-      "A3: Analyse information on e-commerce sales and customer feedback",
-      "A4: Identify e-Commerce trends and patterns from campaign analysis",
-      "A5: Monitor social media platforms or online blog or vlog and forums related platforms for customer feedback or review",
-      "Learning Units"
+      "Course Title: Generative AI Model Development and Fine Tuning",
+      "Organization: Innhoat Training Pte. Ltd",
+      "Learning Outcomes",
+      "LO1: Implement generative models using deep learning algorithms and analyse their suitability for different problem requirements.",
+      "LO2: Preprocess and transform generative datasets using embeddings and tokenisation for model readiness.",
+      "LO3: Train generative AI models with neural optimisation techniques using benchmark datasets and performance metrics.",
+      "LO4: Identify model weaknesses through evaluation and propose targeted fine-tuning strategies for improvement.",
+      "Course Duration: 3 days (24 hrs)",
+      "Instructional Methods: Interactive Presentation (14 hrs), Demonstration, Practical",
+      "Assessment Methods: Written Assessment (1 hr), Practical Performance (1 hr)",
+      "Course Mapping",
+      "TSC: ICT-BAS-0048-1.1 Generative AI Model Development and Fine Tuning",
+      "Knowledge:",
+      "K1: Probability theory and statistics (e.g., latent variables, probabilistic modelling)",
+      "K2: Common dataset formats and evaluation methodologies for generative tasks",
+      "K3: Fine-tuning techniques (e.g., supervised fine-tuning, parameter-efficient fine-tuning, perform inference)",
+      "K4: Optimisation techniques for training neural networks",
+      "K5: Parallel cluster training and inference",
+      "K6: Loss functions and evaluation metrics for generative tasks",
+      "K7: Data pre-processing, de-duplication and cleaning techniques (including understanding of training data requirements for AI models, common data quality issues)",
+      "K8: Embeddings and tokenisation",
+      "K9: Deep learning theory and algorithms (e.g., GANs, VAEs, Transformers)",
+      "K10: Machine learning libraries (e.g., TensorFlow, PyTorch, Keras)",
+      "A1: Implement generative models based on existing architectures",
+      "A2: Analyse problem statements and requirements to select and implement appropriate generative models",
+      "A3: Train generative models on benchmark datasets",
+      "A4: Identify limitations and propose initial improvements to models",
+      "A5: Preprocess and prepare data for generative training (e.g., clean and format datasets, use libraries (e.g., Pandas, NumPy) for data manipulation, split data into training, validation and test sets)"
     ],
-    "LU1: Introduction to E-Commerce Campaign Management (K1, K2, A1)": [
-      "Topic 1: Setup E-Commerce Campaign Management with XiaoHongShu (K1, K2, A1)",
-      "Key elements of e-commerce campaign with XiaoHongShu (K1)",
-      "Communicating effectively on XiaoHongShu (Little Red Book)  (K2)",
-      "How to execute an effective e-commerce campaign on XiaoHongShu (Little Red Book) (A1)"
+    "LU 1: Generative AI Theory (K1, K9, K10, A1, A2)": [
+      "Topic 1: Fundamentals of Probability and Deep Learning (K1, K9, A1)",
+      "Topic 2: Machine Learning Implementation (K10, A2)"
     ],
-    "LU2: Performance Monitoring and Analysis (K3, K4, A2, A3)": [
-      "Topic 2: Monitor and Analyze E-Commerce Performance (K3, K4, A2, A3)",
-      "List and advertise products online on XiaoHongShu (K3)",
-      "Advertising media options available on XiaoHongShu (K4)",
-      "Monitor e-commerce performance (A2)",
-      "Analyze online sales performance (A3)"
+    "LU 2: Generative AI Data Preparation (K2, K7, K8, A5)": [
+      "Topic 1: Data Processing and Evaluation (K2, K7, A5)",
+      "Topic 2: Data Transformation (K8, A5)"
     ],
-    "LU3: Social Trends and Feedback Analysis (K5, K6, A4, A5)": [
-      "Topic 3: Analyze Social Trends and Customer Feedbacks  (K5, K6, A4, A5)",
-      "Decide your social e-Commerce campaign schedules (K5)",
-      "Analyze e-commerce trends and patterns from campaign analysis on XiaoHongShu (K6, A4)",
-      "Monitor customer feedback and review (A5)"
+    "LU 3: Generative AI Model Training (K4, K5, K6, A3)": [
+      "Topic 1: Neural Network Training (K4, K5, A3)",
+      "Topic 2: Model Evaluation (K6, A3)"
+    ],
+    "LU 4: Generative AI Model Fine Tuning (K3, A4)": [
+      "Topic 1: Fine-tuning Strategies (K3, A4)",
+      "Topic 2: Model Improvement (K3, A4)"
     ]
   }
 }

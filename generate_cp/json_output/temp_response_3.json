@@ -1,18 +1,20 @@
 {
     "course_info": {
-        "Course Title": "Craft Effective Prompts for Microsoft Copilot for Microsoft 365",
+        "Course Title": "Generative AI Model Development and Fine Tuning",
         "Industry": "Infocomm Technology",
         "Learning Outcomes": [
-            "LO1: Plan for a smooth transition to Microsoft Copilot for Microsoft 365, anticipating potential issues in transition.",
-            "LO2: Identify the adoption of Microsoft Copilot for Microsoft 365 and plan staff training to enhance organizational processes."
+            "LO1: Implement generative models using deep learning algorithms and analyse their suitability for different problem requirements.",
+            "LO2: Preprocess and transform generative datasets using embeddings and tokenisation for model readiness.",
+            "LO3: Train generative AI models with neural optimisation techniques using benchmark datasets and performance metrics.",
+            "LO4: Identify model weaknesses through evaluation and propose targeted fine-tuning strategies for improvement."
         ],
-        "TSC Title": "Digital Technology Adoption and Innovation",
-        "TSC Code": "ACC-ICT-4004-1.1"
+        "TSC Title": "G",
+        "TSC Code": "I"
     },
     "analyst_responses": [
         {
-            "What are the performance gaps in the industry?": "Organizations often face challenges in training staff to adapt to new systems and software. This leads to a skills gap where employees are not fully equipped to utilize new tools effectively. Consequently, this hampers productivity and slows down the overall transition process.",
-            "Why do you think this WSQ course will address the training needs for the industry?": "By focusing on planning staff training for new systems, the course ensures that employees are well-prepared to use new tools. This targeted training approach helps bridge the skills gap, enabling staff to contribute more effectively to organizational processes and enhancing overall efficiency."
+            "What are the performance gaps in the industry?": "Many organizations face challenges in optimizing and fine-tuning their AI models to achieve desired performance levels. The lack of expertise in model evaluation and improvement strategies often results in suboptimal model performance and inefficient resource utilization.",
+            "Why do you think this WSQ course will address the training needs for the industry?": "Through hands-on training in model optimization and fine-tuning techniques, participants learn to identify and address model weaknesses effectively. This knowledge enables them to improve model performance systematically and implement more efficient AI solutions that meet business objectives."
         }
     ]
 }

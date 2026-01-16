@@ -207,7 +207,7 @@ def process_excel_update(json_data_path, excel_template_path, output_excel_path,
         if "3 - Methodologies" in sheet_mapping:
             # Create the DataFrame using your helper function (provided separately)
             methods_df = create_assessment_dataframe(ensemble_output)
-            
+
             # append the K and A descriptions in excel_data.json to the dataframe under the KA column
             # excel_json_data = os.path.join('..', 'json_output', 'excel_data.json')
             excel_json_data = "generate_cp/json_output/excel_data.json"
@@ -218,6 +218,26 @@ def process_excel_update(json_data_path, excel_template_path, output_excel_path,
                 save_dataframe_to_excel(methodologies_df, "generate_cp/json_output/assessment_dataframe.xlsx")
                 # For example, insert starting at row 18 and column 2 (B18)
                 insert_dataframe_into_sheet(sheet_xml_path, start_row=7, start_col=10, df=methodologies_df)
+
+                # Auto-set assessment validation in H14 based on unique assessment methods
+                if "MOA" in methodologies_df.columns:
+                    unique_methods = methodologies_df["MOA"].nunique()
+                    has_mcq = methodologies_df["MOA"].str.contains("MCQ", case=False, na=False).any()
+
+                    # If MCQ is used, need 3+ methods (MCQ + 2 others)
+                    # Otherwise, need 2+ methods
+                    required_count = 3 if has_mcq else 2
+
+                    if unique_methods >= required_count:
+                        validation_text = "Sufficient # of Mode(s) of Assessment Declared:\n Do note that MCQ can only be used as a supplementary method. If you have chosen MCQ as a mode of assessment, do ensure you have at least 2 other appropriate methods chosen."
+                    else:
+                        validation_text = "Insufficient # of Mode(s) of Assessment Declared:\n Do note that MCQ can only be used as a supplementary method. If you have chosen MCQ as a mode of assessment, do ensure you have at least 2 other appropriate methods chosen."
+
+                    # Update cell H14 in "3 - Instructional Design" sheet
+                    if "3 - Instructional Design" in sheet_mapping:
+                        design_sheet_xml_path = os.path.join(temp_dir, sheet_mapping["3 - Instructional Design"])
+                        update_cell_in_sheet(design_sheet_xml_path, "H14", validation_text)
+                        print(f"Assessment validation set to: {'Sufficient' if unique_methods >= required_count else 'Insufficient'} ({unique_methods} unique methods)")
             else:
                 print("Warning: DataFrame is empty. Nothing to insert.")
         else:
@@ -442,7 +462,7 @@ def preserve_excel_metadata(template_path, modified_path, output_path):
         for element in root_content_types_template.findall("Override"): # Copy Override elements from template
             if not any(override.get('PartName') == element.get('PartName') for override in root_content_types_modified.findall("Override")): # Avoid duplicates
                 root_content_types_modified.append(element)
-        tree_content_types_modified.write(content_types_path_modified)
+        tree_content_types_modified.write(content_types_path_modified, xml_declaration=True, encoding='UTF-8', standalone=True)
 
 
         # Update xl/_rels/workbook.xml.rels - Example, needs to be comprehensive based on diff report
@@ -454,7 +474,7 @@ def preserve_excel_metadata(template_path, modified_path, output_path):
         for element in root_workbook_rels_template.findall("Relationship"): # Copy Relationship elements from template
              if not any(rel.get('Id') == element.get('Id') for rel in root_workbook_rels_modified.findall("Relationship")): # Avoid duplicates
                 root_workbook_rels_modified.append(element)
-        tree_workbook_rels_modified.write(workbook_rels_path_modified)
+        tree_workbook_rels_modified.write(workbook_rels_path_modified, xml_declaration=True, encoding='UTF-8', standalone=True)
 
         output_zip_path = output_path[:-5] + ".zip" # Path for the zip archive before renaming
         # Check if zip file already exists and remove it

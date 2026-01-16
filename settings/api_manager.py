@@ -124,7 +124,7 @@ def add_custom_model(name: str, provider: str, model_id: str, base_url: str = ""
             st.error("Please use a different name to distinguish between models.")
             st.info("💡 **Naming Examples:**")
             st.info("• 'GPT-4o', 'GPT-4 Turbo', 'GPT-4o Mini'")
-            st.info("• 'Claude 3.5 Sonnet', 'Claude 3.5 Haiku'")
+            st.info("• 'Anthropic Sonnet', 'Anthropic Haiku'")
             st.info("• 'Gemini Pro', 'Gemini Flash', 'Gemini 2.0'")
             return False
 

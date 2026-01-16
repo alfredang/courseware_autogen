@@ -1,9 +1,9 @@
 [
     {
-        "name": "Tertiary Infotech Pte Ltd",
+        "name": "Tertiary Infotech Academy Pte Ltd",
         "uen": "201200696W",
         "address": "",
-        "logo": "common/logo/tertiary_infotech_pte_ltd.jpg",
+        "logo": "generate_ap_fg_lg_lp/utils/logo/tertiary_infotech_pte_ltd.jpg",
         "templates": {
             "course_proposal": "",
             "courseware": "",
@@ -14,7 +14,7 @@
     {
         "name": "CareTech168 LLP",
         "uen": "T13LL1770K",
-        "logo": "common/logo/caretech168_llp.jpg",
+        "logo": "generate_ap_fg_lg_lp/utils/logo/caretech168_llp.jpg",
         "address": "",
         "templates": {
             "course_proposal": "",
@@ -26,7 +26,7 @@
     {
         "name": "Chelsea Kidz Academy Pte Ltd",
         "uen": "201509271W",
-        "logo": "common/logo/chelsea_kidz_academy_pte_ltd.jpg",
+        "logo": "generate_ap_fg_lg_lp/utils/logo/chelsea_kidz_academy_pte_ltd.jpg",
         "address": "",
         "templates": {
             "course_proposal": "",
@@ -38,7 +38,7 @@
     {
         "name": "Firstcom Academy Pte Ltd",
         "uen": "201734671R",
-        "logo": "common/logo/firstcom_academy_pte_ltd.jpg",
+        "logo": "generate_ap_fg_lg_lp/utils/logo/firstcom_academy_pte_ltd.jpg",
         "address": "",
         "templates": {
             "course_proposal": "",
@@ -50,7 +50,7 @@
     {
         "name": "Fleuriste Pte Ltd",
         "uen": "201503118E",
-        "logo": "common/logo/fleuriste_pte_ltd.jpg",
+        "logo": "generate_ap_fg_lg_lp/utils/logo/fleuriste_pte_ltd.jpg",
         "address": "",
         "templates": {
             "course_proposal": "",
@@ -62,7 +62,7 @@
     {
         "name": "Genetic Computer School Pte Ltd",
         "uen": "198902296M",
-        "logo": "common/logo/genetic_computer_school_pte_ltd.jpg",
+        "logo": "generate_ap_fg_lg_lp/utils/logo/genetic_computer_school_pte_ltd.jpg",
         "address": "",
         "templates": {
             "course_proposal": "",
@@ -74,7 +74,7 @@
     {
         "name": "Hai Leck Engineering Pte Ltd",
         "uen": "200903962H",
-        "logo": "common/logo/hai_leck_engineering_pte_ltd.jpg",
+        "logo": "generate_ap_fg_lg_lp/utils/logo/hai_leck_engineering_pte_ltd.jpg",
         "address": "",
         "templates": {
             "course_proposal": "",
@@ -86,7 +86,7 @@
     {
         "name": "IES Academy Pte Ltd",
         "uen": "202026912H",
-        "logo": "common/logo/ies_academy_pte_ltd.jpg",
+        "logo": "generate_ap_fg_lg_lp/utils/logo/ies_academy_pte_ltd.jpg",
         "address": "",
         "templates": {
             "course_proposal": "",
@@ -98,7 +98,7 @@
     {
         "name": "Info-Tech Systems Integrators Pte Ltd",
         "uen": "200711480W",
-        "logo": "common/logo/info_tech_systems_integrators_pte_ltd.jpg",
+        "logo": "generate_ap_fg_lg_lp/utils/logo/info_tech_systems_integrators_pte_ltd.jpg",
         "address": "",
         "templates": {
             "course_proposal": "",
@@ -110,7 +110,7 @@
     {
         "name": "InnoHat Training Pte Ltd",
         "uen": "202116663E",
-        "logo": "common/logo/innohat_training_pte_ltd.jpg",
+        "logo": "generate_ap_fg_lg_lp/utils/logo/innohat_training_pte_ltd.jpg",
         "address": "",
         "templates": {
             "course_proposal": "",
@@ -122,7 +122,7 @@
     {
         "name": "Laures Solutions Pte Ltd",
         "uen": "200922279R",
-        "logo": "common/logo/laures_solutions_pte_ltd.jpg",
+        "logo": "generate_ap_fg_lg_lp/utils/logo/laures_solutions_pte_ltd.jpg",
         "address": "",
         "templates": {
             "course_proposal": "",
@@ -134,7 +134,7 @@
     {
         "name": "QE Safety Consultancy Pte Ltd",
         "uen": "201422488N",
-        "logo": "common/logo/qe_safety_consultancy_pte_ltd.jpg",
+        "logo": "generate_ap_fg_lg_lp/utils/logo/qe_safety_consultancy_pte_ltd.jpg",
         "address": "",
         "templates": {
             "course_proposal": "",
@@ -146,7 +146,7 @@
     {
         "name": "OOm Pte Ltd",
         "uen": "200617554M",
-        "logo": "common/logo/oom_pte_ltd.jpg",
+        "logo": "generate_ap_fg_lg_lp/utils/logo/oom_pte_ltd.jpg",
         "address": "",
         "templates": {
             "course_proposal": "",
@@ -158,7 +158,7 @@
     {
         "name": "Raffles Skills Lab International Training Centre Pte Ltd",
         "uen": "201020518M",
-        "logo": "common/logo/raffles_skills_lab_international_training_centre_pte_ltd.jpg",
+        "logo": "generate_ap_fg_lg_lp/utils/logo/raffles_skills_lab_international_training_centre_pte_ltd.jpg",
         "address": "",
         "templates": {
             "course_proposal": "",
@@ -170,7 +170,7 @@
     {
         "name": "TRAINOCATE (S) Pte Ltd",
         "uen": "199507581C",
-        "logo": "common/logo/trainocate_(s)_pte_ltd.jpg",
+        "logo": "generate_ap_fg_lg_lp/utils/logo/trainocate_(s)_pte_ltd.jpg",
         "address": "",
         "templates": {
             "course_proposal": "",
@@ -182,7 +182,7 @@
     {
         "name": "SOQ International Academy Pte Ltd",
         "uen": "201723514D",
-        "logo": "common/logo/soq_international_academy_pte_ltd.jpg",
+        "logo": "generate_ap_fg_lg_lp/utils/logo/soq_international_academy_pte_ltd.jpg",
         "address": "",
         "templates": {
             "course_proposal": "",
@@ -192,10 +192,34 @@
         }
     },
     {
-        "name": "xin ping ",
-        "uen": "32436489137987E",
+        "name": "EDUPEDIA LANGUAGE AND TRAINING PTE. LTD.",
+        "uen": "202113650K",
         "address": "",
-        "logo": "common/logo/xin_ping_.png",
+        "logo": "common/logo/edupedia_language_and_training_pte._ltd..jpeg",
+        "templates": {
+            "course_proposal": "",
+            "courseware": "",
+            "assessment": "",
+            "brochure": ""
+        }
+    },
+    {
+        "name": "Singapore Dental Association",
+        "uen": "S67SS0020A",
+        "address": "",
+        "logo": "common/logo/singapore_dental_association.png",
+        "templates": {
+            "course_proposal": "",
+            "courseware": "",
+            "assessment": "",
+            "brochure": ""
+        }
+    },
+    {
+        "name": "xin ping example v2",
+        "uen": "202116663E",
+        "address": "",
+        "logo": "common/logo/xin_ping_example_v2.png",
         "templates": {
             "course_proposal": "",
             "courseware": "",

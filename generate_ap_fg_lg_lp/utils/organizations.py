@@ -70,7 +70,7 @@ def get_default_organization() -> Dict[str, Any]:
     
     # Fallback empty organization
     return {
-        "name": "Tertiary Infotech Pte Ltd",
+        "name": "Tertiary Infotech Academy Pte Ltd",
         "uen": "201200696W",
         "logo": "common/logo/tertiary_infotech_pte_ltd.jpg",
         "address": "",
@@ -90,7 +90,7 @@ def replace_company_branding(content: str, company: Dict[str, Any]) -> str:
         "{{COMPANY_ADDRESS}}": company.get("address", ""),
         "{{COMPANY_LOGO}}": company.get("logo", ""),
         # Legacy support
-        "Tertiary Infotech Pte Ltd": company.get("name", "Tertiary Infotech Pte Ltd"),
+        "Tertiary Infotech Pte Ltd": company.get("name", "Tertiary Infotech Academy Pte Ltd"),
         "201200696W": company.get("uen", "201200696W")
     }
     

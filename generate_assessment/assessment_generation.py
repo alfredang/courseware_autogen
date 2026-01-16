@@ -151,7 +151,7 @@ if 'cs_output' not in st.session_state:
 if 'assessment_generated_files' not in st.session_state:
     st.session_state['assessment_generated_files'] = {}
 if 'selected_model' not in st.session_state:
-    st.session_state['selected_model'] = "Gemini-2.5-Pro"
+    st.session_state['selected_model'] = "DeepSeek-Chat"
 
 ################################################################################
 # Helper function for robust text extraction from slide pages.
@@ -193,12 +193,89 @@ def parse_fg(fg_path, LLAMA_API_KEY):
         api_key=LLAMA_API_KEY,
         result_type="markdown",
         fast_mode=True,
-        num_workers=8
+        num_workers=8,
+        # Use new parameter names to avoid deprecation warning
+        # parsing_instruction is deprecated, use content_guideline_instruction instead
     )
     parsed_content = parser.get_json_result(fg_path)
     return json.dumps(parsed_content)
 
+def extract_master_k_a_list(fg_markdown):
+    """
+    Extracts the master list of K and A statements from the FG markdown using regex.
+    Returns a dict with 'knowledge' and 'abilities' lists.
+    """
+    import re
+    import json
+
+    master_k = []
+    master_a = []
+
+    # Parse JSON to extract all text content from pages
+    try:
+        fg_json = json.loads(fg_markdown)
+        all_text = ""
+
+        # Extract text from all pages
+        if isinstance(fg_json, list):
+            for doc in fg_json:
+                if "pages" in doc:
+                    for page in doc["pages"]:
+                        if "text" in page:
+                            all_text += page["text"] + "\n"
+
+        print(f"DEBUG: Extracted {len(all_text)} chars of text from JSON")
+        print(f"DEBUG: Text sample (first 2000 chars):\n{all_text[:2000]}\n")
+
+    except json.JSONDecodeError:
+        # Not JSON, treat as plain text
+        all_text = fg_markdown
+        print(f"DEBUG: Using plain text markdown (not JSON)")
+
+    # Try multiple patterns to match different formats
+    patterns_k = [
+        r'(K\d+):\s*(.+?)(?=\n(?:K\d+:|A\d+:|TSC |##|\n\n|$))',  # Standard format
+        r'\*\*?(K\d+):\*\*?\s*(.+?)(?=\n\*\*?(?:K\d+:|A\d+:)|\n\n|$)',  # Bold format
+        r'(K\d+)\s*[-–]\s*(.+?)(?=\n(?:K\d+|A\d+)|\n\n|$)',  # Dash format
+    ]
+
+    patterns_a = [
+        r'(A\d+):\s*(.+?)(?=\n(?:K\d+:|A\d+:|TSC |##|\n\n|$))',  # Standard format
+        r'\*\*?(A\d+):\*\*?\s*(.+?)(?=\n\*\*?(?:K\d+:|A\d+:)|\n\n|$)',  # Bold format
+        r'(A\d+)\s*[-–]\s*(.+?)(?=\n(?:K\d+|A\d+)|\n\n|$)',  # Dash format
+    ]
+
+    # Try all patterns for K statements
+    for pattern in patterns_k:
+        for match in re.finditer(pattern, all_text, re.DOTALL | re.MULTILINE):
+            k_id = match.group(1)
+            k_text = match.group(2).strip().replace('\n', ' ').replace('*', '')
+            # Avoid duplicates
+            if not any(k['id'] == k_id for k in master_k):
+                master_k.append({"id": k_id, "text": k_text})
+
+    # Try all patterns for A statements
+    for pattern in patterns_a:
+        for match in re.finditer(pattern, all_text, re.DOTALL | re.MULTILINE):
+            a_id = match.group(1)
+            a_text = match.group(2).strip().replace('\n', ' ').replace('*', '')
+            # Avoid duplicates
+            if not any(a['id'] == a_id for a in master_a):
+                master_a.append({"id": a_id, "text": a_text})
+
+    print(f"Master K/A List Extraction - Found {len(master_k)} K statements, {len(master_a)} A statements")
+    if master_k:
+        print(f"  K IDs: {[k['id'] for k in master_k]}")
+    if master_a:
+        print(f"  A IDs: {[a['id'] for a in master_a]}")
+
+    return {"knowledge": master_k, "abilities": master_a}
+
 async def interpret_fg(fg_data, model_client):
+    # First, extract the master K/A list using regex
+    print("🔧 USING NEW CODE WITH AUTO-INJECTION v2.0")
+    master_list = extract_master_k_a_list(fg_data)
+
     interpreter = AssistantAgent(
         name="Interpreter",
         model_client=model_client,
@@ -207,12 +284,12 @@ async def interpret_fg(fg_data, model_client):
         - Course Title
         - TSC Proficiency Level
         - Learning Units (LUs):
-            * Name of the Learning Unit
+            * Name of the Learning Unit (learning_unit_title field)
             * Topics in the Learning Unit:
                 - Name of the Topic
                 - Description of the Topic (bullet points or sub-topics)
-                - Full Knowledge Statements associated with the topic, including their identifiers and text (e.g., K1: Range of AI applications)
-                - Full Ability Statements associated with the topic, including their identifiers and text (e.g., A1: Analyze algorithms in the AI applications)
+                - Full Knowledge Statements (tsc_knowledges) associated with the topic, including their identifiers and text (e.g., K1: Range of AI applications)
+                - Full Ability Statements (tsc_abilities) associated with the topic, including their identifiers and text (e.g., A1: Analyze algorithms in the AI applications)
             * Learning Outcome (LO) for each Learning Unit
         - Assessment Types and Durations:
             * Extract assessment types and their durations in the format:
@@ -221,14 +298,52 @@ async def interpret_fg(fg_data, model_client):
                 {{"code": "CS", "duration": "30 mins"}}
             * Interpret abbreviations of assessment methods to their correct types (e.g., "WA-SAQ," "PP," "CS").
 
-            Use this JSON schema:
-            {json.dumps(FacilitatorGuideExtraction.model_json_schema(), indent=2)}
+        CRITICAL INSTRUCTIONS FOR K AND A STATEMENTS:
+        1. The document will contain a complete list of TSC Knowledge statements (K1, K2, K3... Kn) and TSC Abilities (A1, A2, A3... An)
+        2. You MUST extract EVERY SINGLE K and A statement - do not skip any
+        3. Each K/A statement should appear in the relevant topics where it's used
+        4. If a K/A statement appears in multiple topics, include it in all relevant topics
+        5. Double-check that you've included ALL K statements from K1 to the highest K number
+        6. Double-check that you've included ALL A statements from A1 to the highest A number
+        7. Do NOT skip K4, K5, A2, A3, etc. - extract them ALL
+
+        Use this JSON schema:
+        {json.dumps(FacilitatorGuideExtraction.model_json_schema(), indent=2)}
         """
     )
 
+    # Build the master list string for the prompt
+    master_k_str = "\n".join([f"  {k['id']}: {k['text']}" for k in master_list['knowledge']])
+    master_a_str = "\n".join([f"  {a['id']}: {a['text']}" for a in master_list['abilities']])
+
     agent_task = f"""
     Please extract and structure the following data: {fg_data}.
-    **Return the extracted information as a complete JSON dictionary containing the specified fields. Do not truncate or omit any data. Include all fields and their full content. Do not use '...' or any placeholders to replace data.**
+
+    MASTER LIST OF ALL K AND A STATEMENTS (YOU MUST INCLUDE ALL OF THESE):
+
+    TSC Knowledge Statements:
+    {master_k_str if master_k_str else "  (None found - extract from document)"}
+
+    TSC Ability Statements:
+    {master_a_str if master_a_str else "  (None found - extract from document)"}
+
+    INSTRUCTIONS:
+    1. Extract course title, TSC proficiency level, and learning units from the document
+    2. For each topic in each learning unit, map the relevant K and A statements from the master list above
+    3. EVERY K and A statement from the master list MUST appear in at least one topic
+    4. If a K/A statement isn't clearly associated with a specific topic, add it to the most relevant topic
+    5. Include the full learning_unit_title for each learning unit
+    6. Extract assessment types and durations
+
+    VALIDATION - Before returning, verify:
+    - ALL K statements from the master list are included in topics
+    - ALL A statements from the master list are included in topics
+    - No K or A statements are skipped
+
+    Return the extracted information as a complete JSON dictionary containing the specified fields.
+    Do not truncate or omit any data. Include all fields and their full content.
+    Do not use '...' or any placeholders to replace data.
+
     Simply return the JSON dictionary object directly.
     """
 
@@ -237,9 +352,80 @@ async def interpret_fg(fg_data, model_client):
         [TextMessage(content=agent_task, source="user")], CancellationToken()
     )
     if not response or not response.chat_message:
-        return "No content found in the agent's last message."
+        print("ERROR: No response from LLM during FG interpretation")
+        return None
 
-    context = parse_json_content(response.chat_message.content)
+    # Debug: Log raw response
+    raw_content = response.chat_message.content
+    print(f"FG Interpretation - Response length: {len(raw_content)} chars")
+    print(f"FG Interpretation - First 500 chars: {raw_content[:500]}")
+    print(f"FG Interpretation - Last 500 chars: {raw_content[-500:]}")
+
+    context = parse_json_content(raw_content)
+
+    if context is None:
+        print("ERROR: parse_json_content returned None - invalid JSON")
+        print(f"Raw response: {raw_content}")
+    else:
+        # Validate K/A extraction
+        all_k_ids = set()
+        all_a_ids = set()
+
+        if "learning_units" in context:
+            for lu in context["learning_units"]:
+                for topic in lu.get("topics", []):
+                    for k in topic.get("tsc_knowledges", []):
+                        all_k_ids.add(k.get("id", ""))
+                    for a in topic.get("tsc_abilities", []):
+                        all_a_ids.add(a.get("id", ""))
+
+        print(f"FG Interpretation - Extracted K statements: {sorted(all_k_ids)}")
+        print(f"FG Interpretation - Extracted A statements: {sorted(all_a_ids)}")
+        print(f"FG Interpretation - Total: {len(all_k_ids)} K, {len(all_a_ids)} A")
+
+        # Check for missing K/A statements and inject them from master list
+        missing_k = [k for k in master_list['knowledge'] if k['id'] not in all_k_ids]
+        missing_a = [a for a in master_list['abilities'] if a['id'] not in all_a_ids]
+
+        if missing_k or missing_a:
+            print(f"⚠️ LLM missed some K/A statements. Injecting them from master list...")
+            print(f"  Missing K: {[k['id'] for k in missing_k]}")
+            print(f"  Missing A: {[a['id'] for a in missing_a]}")
+
+            # Find the first topic in the first learning unit to inject missing K/A
+            if "learning_units" in context and context["learning_units"]:
+                first_lu = context["learning_units"][0]
+                if "topics" in first_lu and first_lu["topics"]:
+                    first_topic = first_lu["topics"][0]
+
+                    # Inject missing K statements
+                    if "tsc_knowledges" not in first_topic:
+                        first_topic["tsc_knowledges"] = []
+                    for k in missing_k:
+                        first_topic["tsc_knowledges"].append(k)
+
+                    # Inject missing A statements
+                    if "tsc_abilities" not in first_topic:
+                        first_topic["tsc_abilities"] = []
+                    for a in missing_a:
+                        first_topic["tsc_abilities"].append(a)
+
+                    print(f"✅ Injected {len(missing_k)} K and {len(missing_a)} A statements into first topic")
+
+                    # Verify after injection
+                    all_k_ids_after = set()
+                    all_a_ids_after = set()
+                    for lu in context["learning_units"]:
+                        for topic in lu.get("topics", []):
+                            for k in topic.get("tsc_knowledges", []):
+                                all_k_ids_after.add(k.get("id", ""))
+                            for a in topic.get("tsc_abilities", []):
+                                all_a_ids_after.add(a.get("id", ""))
+
+                    print(f"After injection - Total: {len(all_k_ids_after)} K, {len(all_a_ids_after)} A")
+                    print(f"  K IDs: {sorted(all_k_ids_after)}")
+                    print(f"  A IDs: {sorted(all_a_ids_after)}")
+
     return context
 
 ################################################################################
@@ -262,16 +448,14 @@ def parse_slides(slides_path, LLAMA_CLOUD_API_KEY):
     Settings.llm = llm
 
     documents = LlamaParse(
-        result_type="markdown", 
+        result_type="markdown",
         verbose=True,
         num_workers=8,
         target_pages=target_pages,
         invalidate_cache=True,
         api_key=LLAMA_CLOUD_API_KEY
     ).load_data(slides_path)
-    
-    st.success("✅ Document parsed successfully!")
-    
+
     page_nodes = get_page_nodes(documents)
     node_parser = MarkdownElementNodeParser(
         llm=llm, num_workers=8
@@ -315,23 +499,93 @@ def generate_documents(context: dict, assessment_type: str, output_dir: str) -> 
         ans_template = TEMPLATES["ANSWER"]
     
     # Add company branding to context
-    context['company_name'] = selected_company.get('name', 'Tertiary Infotech Pte Ltd')
+    context['company_name'] = selected_company.get('name', 'Tertiary Infotech Academy Pte Ltd')
     context['company_uen'] = selected_company.get('uen', '201200696W')
     context['company_address'] = selected_company.get('address', '')
     question_doc = DocxTemplate(qn_template)
     answer_doc = DocxTemplate(ans_template)
+    # Format questions for template rendering
+    def format_questions(questions):
+        formatted = []
+        for q in questions:
+            formatted_q = {**q}
+
+            # Keep ability_id as list - template iterates it correctly
+            # Just ensure it's always a list
+            if "ability_id" in formatted_q:
+                ability_ids = formatted_q["ability_id"]
+                if not isinstance(ability_ids, list):
+                    formatted_q["ability_id"] = [ability_ids] if ability_ids else []
+                elif not ability_ids:
+                    formatted_q["ability_id"] = []
+
+            # Remove learning_outcome_id for PP and CS - only need ability
+            # Use None instead of "" to remove it from template context
+            if assessment_type in ["PP", "CS"]:
+                formatted_q.pop("learning_outcome_id", None)  # Remove the key entirely
+            else:
+                # For other types (SAQ), ensure learning_outcome_id is present
+                if "learning_outcome_id" not in formatted_q or not formatted_q["learning_outcome_id"]:
+                    formatted_q["learning_outcome_id"] = ""
+                elif isinstance(formatted_q["learning_outcome_id"], list):
+                    formatted_q["learning_outcome_id"] = ", ".join(formatted_q["learning_outcome_id"])
+
+            formatted.append(formatted_q)
+        return formatted
+
+    # Deduplicate questions by ability_id for PP/CS
+    def deduplicate_questions(questions):
+        if assessment_type not in ["PP", "CS"]:
+            return questions
+
+        seen_abilities = set()
+        unique_questions = []
+
+        print(f"DEBUG: Before deduplication - {len(questions)} questions:")
+        for i, q in enumerate(questions):
+            ability_ids = q.get("ability_id", [])
+            print(f"  Q{i+1}: Ability={ability_ids}")
+
+        for q in questions:
+            ability_ids = q.get("ability_id", [])
+            if isinstance(ability_ids, list):
+                ability_key = tuple(sorted(ability_ids))
+            else:
+                ability_key = (ability_ids,)
+
+            if ability_key not in seen_abilities:
+                seen_abilities.add(ability_key)
+                unique_questions.append(q)
+                print(f"✅ Kept question with abilities: {ability_ids}")
+            else:
+                print(f"⚠️ Skipped duplicate question for abilities: {ability_ids}")
+
+        print(f"Deduplication: {len(questions)} → {len(unique_questions)} questions")
+        print(f"Final unique abilities: {sorted([tuple(q.get('ability_id', [])) for q in unique_questions])}")
+        return unique_questions
+
+    deduped_questions = deduplicate_questions(context.get("questions", []))
+    formatted_questions = format_questions(deduped_questions)
+
+    # Debug: Show what's in each question
+    print(f"DEBUG: Rendering {len(formatted_questions)} questions for {assessment_type}")
+    for i, q in enumerate(formatted_questions[:3]):  # Show first 3
+        lo_id = q.get("learning_outcome_id", "N/A")
+        a_ids = q.get("ability_id", "N/A")
+        print(f"  Q{i+1}: LO={lo_id}, Ability={a_ids}")
+
     answer_context = {
         **context,
         "questions": [
             {**question, "answer": _ensure_list(question.get("answer"))}
-            for question in context.get("questions", [])
+            for question in formatted_questions
         ]
     }
     question_context = {
         **context,
         "questions": [
             {**question, "answer": None}
-            for question in context.get("questions", [])
+            for question in formatted_questions
         ]
     }
     answer_doc.render(answer_context, autoescape=True)
@@ -354,20 +608,11 @@ def generate_documents(context: dict, assessment_type: str, output_dir: str) -> 
 # Streamlit app
 ################################################################################
 def app():
-    st.title("📄 Assessment Generator")
-    
-    # Show current company info
-    show_company_info()
-    
+    st.title("📄 Generate Assessment")
+
     # Get selected company and templates
     selected_company = get_selected_company()
     assessment_template_path = get_company_template("assessment")
-    
-    # Show template status
-    if assessment_template_path:
-        st.success(f"✅ Using {selected_company['name']} Assessment template")
-    else:
-        st.info(f"ℹ️ Using default Tertiary Infotech template with {selected_company['name']} branding")
     
     st.subheader("Model Selection")
     # Get all available models (including custom ones)
@@ -375,18 +620,21 @@ def app():
     model_choice = st.selectbox(
         "Select LLM Model:",
         options=list(all_models.keys()),
-        index=list(all_models.keys()).index("Gemini-2.5-Pro") if "Gemini-2.5-Pro" in all_models else 0
+        index=list(all_models.keys()).index("DeepSeek-Chat") if "DeepSeek-Chat" in all_models else 0
     )
     st.session_state['selected_model'] = model_choice
 
     st.subheader("Step 1: Upload Relevant Documents")
     st.write("Upload your Facilitator Guide (.docx) to generate assessments. Trainer Slide Deck (.pdf) is optional for enhanced content.")
-    fg_doc_file = st.file_uploader("Upload Facilitator Guide (.docx)", type=["docx"])
-    slide_deck_file = st.file_uploader("Upload Trainer Slide Deck (.pdf) - Optional", type=["pdf"])
-    
+
     # Load API keys from Settings UI with fallback to secrets
     api_keys = load_api_keys()
     LLAMA_API_KEY = api_keys.get("LLAMA_CLOUD_API_KEY", "") or st.secrets.get("LLAMA_CLOUD_API_KEY", "")
+
+    # Check LLAMA API key availability upfront
+    if not LLAMA_API_KEY:
+        st.error("❌ LLAMA Cloud API key not found. Please add it to Settings or secrets.toml.")
+        return
 
     selected_config = get_model_config(st.session_state['selected_model'])
     
@@ -456,6 +704,7 @@ def app():
         temperature=temperature,
         base_url=base_url,
         model_info=model_info,
+        max_tokens=16384,  # Increased for FG parsing (needs to extract full course structure)
     )
 
     model_client = OpenAIChatCompletionClient(
@@ -464,129 +713,254 @@ def app():
         temperature=temperature,
         base_url=base_url,
         model_info=model_info,
+        max_tokens=4096,
     )
 
-    st.subheader("Step 2: Parse Documents")
-    if st.button("Parse Documents"):
-        if not fg_doc_file:
-            st.error("❌ Please upload the Facilitator Guide.")
-            return
+    fg_doc_file = st.file_uploader("Upload Facilitator Guide (.docx)", type=["docx"])
 
-        # Use the same LLAMA_API_KEY loaded above (no need to reload)
-        if not LLAMA_API_KEY:
-            st.error("❌ LLAMA Cloud API key not found. Please add it to Settings or secrets.toml.")
-            return
-        
-        # Initialize variables before the try block
+    # Auto-parse Facilitator Guide when uploaded
+    if fg_doc_file is not None and 'fg_parsed' not in st.session_state:
         fg_filepath = None
-        slides_filepath = None
-        
         try:
-            # Save uploaded files
-            fg_filepath = utils.save_uploaded_file(fg_doc_file, "data")
-            
-            with st.spinner("Parsing FG Document..."):
+            with st.spinner("Auto-parsing Facilitator Guide..."):
+                fg_filepath = utils.save_uploaded_file(fg_doc_file, "data")
                 fg_data = parse_fg(fg_filepath, LLAMA_API_KEY)
-                st.session_state['fg_data'] = asyncio.run(interpret_fg(fg_data, structured_model_client))
-                st.success("✅ Successfully parsed the Facilitator Guide.")
-        
-            # Parse slide deck only if uploaded
-            if slide_deck_file:
-                slides_filepath = utils.save_uploaded_file(slide_deck_file, "data")
-                with st.spinner("Parsing Slide Deck..."):
-                    st.session_state['index'] = parse_slides(
-                        slides_filepath,
-                        LLAMA_API_KEY,
-                    )
-                    st.success("✅ Successfully parsed the Slide Deck.")
-            else:
-                # Clear any existing slide deck index if no file uploaded
-                st.session_state['index'] = None
-                st.info("ℹ️ No slide deck uploaded. Assessment will be generated from Facilitator Guide only.")
+                interpreted_data = asyncio.run(interpret_fg(fg_data, structured_model_client))
 
+                # Validate the interpreted data is a dictionary
+                if interpreted_data is None or not isinstance(interpreted_data, dict):
+                    error_msg = "Failed to parse Facilitator Guide. "
+                    if interpreted_data is None:
+                        error_msg += "The LLM returned None (check console logs for details). "
+                    else:
+                        error_msg += f"The LLM returned {type(interpreted_data)} instead of dict. "
+                    error_msg += "This usually means: (1) JSON was truncated due to max_tokens limit, (2) Invalid JSON format, or (3) LLM timeout. Check terminal/console for debug logs."
+                    raise ValueError(error_msg)
+
+                st.session_state['fg_data'] = interpreted_data
+                st.session_state['fg_parsed'] = True
+                st.success("✅ Facilitator Guide automatically parsed and ready for assessment generation!")
         except Exception as e:
-            st.error(f"Error parsing documents: {e}")
-
+            st.error(f"❌ Error auto-parsing Facilitator Guide: {e}")
+            if 'fg_data' in st.session_state:
+                del st.session_state['fg_data']
         finally:
-            # Ensure variables are not None before trying to delete
             if fg_filepath and os.path.exists(fg_filepath):
                 os.remove(fg_filepath)
+
+    slide_deck_file = st.file_uploader("Upload Trainer Slide Deck (.pdf) - Optional", type=["pdf"])
+
+    # Auto-parse Slide Deck when uploaded
+    if slide_deck_file is not None and 'slides_parsed' not in st.session_state:
+        slides_filepath = None
+        try:
+            with st.spinner("Auto-parsing Trainer Slide Deck..."):
+                slides_filepath = utils.save_uploaded_file(slide_deck_file, "data")
+                st.session_state['index'] = parse_slides(slides_filepath, LLAMA_API_KEY)
+                st.session_state['slides_parsed'] = True
+            # Success message outside spinner context to ensure spinner clears first
+            st.success("✅ Trainer Slide Deck automatically parsed for enhanced content!")
+        except Exception as e:
+            st.error(f"❌ Error auto-parsing Slide Deck: {e}")
+            if 'index' in st.session_state:
+                del st.session_state['index']
+        finally:
             if slides_filepath and os.path.exists(slides_filepath):
                 os.remove(slides_filepath)
 
-    st.subheader("Step 3: Generate Assessments")
-    st.write("Select the type of assessment to generate:")
-    saq = st.checkbox("Short Answer Questions (SAQ)")
-    pp = st.checkbox("Practical Performance (PP)")
-    cs = st.checkbox("Case Study (CS)")
+    # Clear parsing flags if files are removed
+    if fg_doc_file is None and 'fg_parsed' in st.session_state:
+        del st.session_state['fg_parsed']
+        if 'fg_data' in st.session_state:
+            del st.session_state['fg_data']
+        if 'assessment_generated_files' in st.session_state:
+            del st.session_state['assessment_generated_files']
 
-    if st.button("Generate Assessments"):
-        st.session_state['assessment_generated_files'] = {}
+    if slide_deck_file is None and 'slides_parsed' in st.session_state:
+        del st.session_state['slides_parsed']
+        if 'index' in st.session_state:
+            del st.session_state['index']
 
-        if not st.session_state.get('fg_data'):
-            st.error("❌ Please parse the documents first.")
-            return
-        else:
-            selected_types = []
-            if saq:
-                selected_types.append("WA (SAQ)")
-            if pp:
-                selected_types.append("PP")
-            if cs:
-                selected_types.append("CS")
-            if not selected_types:
-                st.error("❌ Please select at least one assessment type to generate.")
-                return
+    st.subheader("Step 2: Generate Assessments")
 
-            st.success("✅ Proceeding with assessment generation...")
-            try:
-                # Use slide deck index if available, otherwise None
-                index = st.session_state.get('index', None)
-                
-                for assessment_type in selected_types:
-                    max_retries = 3
-                    base_delay = 30
-                    
-                    for attempt in range(max_retries):
-                        try:
-                            if assessment_type == "WA (SAQ)":
-                                with st.spinner(f"Generating Written Assessment (SAQ)... (attempt {attempt + 1}/{max_retries})"):
-                                    saq_context = asyncio.run(generate_saq(st.session_state['fg_data'], index, model_client))
-                                    files = generate_documents(saq_context, assessment_type, "output")
-                                    st.session_state['assessment_generated_files'][assessment_type] = files
-                            elif assessment_type == "PP":
-                                with st.spinner(f"Generating Practical Performance... (attempt {attempt + 1}/{max_retries})"):
-                                    pp_context = asyncio.run(generate_pp(st.session_state['fg_data'], index, model_client))
-                                    files = generate_documents(pp_context, assessment_type, "output")
-                                    st.session_state['assessment_generated_files'][assessment_type] = files
-                            elif assessment_type == "CS":
-                                with st.spinner(f"Generating Case Study... (attempt {attempt + 1}/{max_retries})"):
-                                    cs_context = asyncio.run(generate_cs(st.session_state['fg_data'], index, model_client))
-                                    files = generate_documents(cs_context, assessment_type, "output")
-                                    st.session_state['assessment_generated_files'][assessment_type] = files
-                            break  # Success, exit retry loop
-                        except Exception as e:
-                            error_str = str(e)
-                            if ("connection" in error_str.lower() or "503" in error_str or 
-                                "overloaded" in error_str.lower() or "unavailable" in error_str.lower() or
-                                "timeout" in error_str.lower()):
-                                if attempt < max_retries - 1:  # Not the last attempt
-                                    delay = base_delay * (2 ** attempt)
-                                    st.warning(f"Connection issue for {assessment_type}, retrying in {delay} seconds...")
-                                    import time
-                                    time.sleep(delay)
-                                    continue
+    # Show Generate Assessments button if FG is parsed
+    if st.session_state.get('fg_data') and isinstance(st.session_state.get('fg_data'), dict) and not st.session_state.get('assessment_generated_files'):
+        if st.button("🚀 Generate Assessments", type="primary"):
+            assessments = st.session_state['fg_data'].get('assessments', [])
+
+            # Auto-detect which assessment types are available
+            available_types = []
+
+            # Debug: Show all assessment codes found
+            print(f"DEBUG: Found {len(assessments)} assessments in FG:")
+            for i, assessment in enumerate(assessments):
+                code = assessment.get('code', '')
+                duration = assessment.get('duration', '')
+                print(f"  Assessment {i+1}: code='{code}', duration='{duration}'")
+
+            for assessment in assessments:
+                code = assessment.get('code', '').upper().strip()
+
+                # Use word boundary matching to avoid false positives (e.g., "PROCESS" shouldn't match "CS")
+                detected = False
+
+                # Check for WA (SAQ)
+                if 'WA-SAQ' in code or 'WA (SAQ)' in code or 'SAQ' in code or (code.startswith('WA') and 'SAQ' in code):
+                    if 'WA (SAQ)' not in available_types:
+                        available_types.append('WA (SAQ)')
+                        print(f"DEBUG: Detected WA (SAQ) from code: '{code}'")
+                    detected = True
+
+                # Check for PP - be more strict
+                if code == 'PP' or 'PP' == code or '-PP' in code or 'PP-' in code or '(PP)' in code:
+                    if 'PP' not in available_types:
+                        available_types.append('PP')
+                        print(f"DEBUG: Detected PP from code: '{code}'")
+                    detected = True
+
+                # Check for CS - be VERY strict to avoid false positives
+                # Only match exact CS or CS with delimiters, not substrings
+                if code == 'CS' or code == 'CASE STUDY' or code == 'WA-CS' or code == 'CS-' in code or code.startswith('CS-') or code.endswith('-CS') or '(CS)' in code:
+                    if 'CS' not in available_types:
+                        available_types.append('CS')
+                        print(f"DEBUG: Detected CS from code: '{code}'")
+                    detected = True
+
+                if not detected:
+                    print(f"DEBUG: Skipped unrecognized code: '{code}'")
+
+            if available_types:
+                st.info(f"📋 Auto-detected assessment types: {', '.join(available_types)}")
+                st.info("🚀 Starting automatic assessment generation...")
+
+                # Auto-generate assessments
+                st.session_state['assessment_generated_files'] = {}
+
+                try:
+                    # Use slide deck index if available, otherwise None
+                    index = st.session_state.get('index', None)
+
+                    for assessment_type in available_types:
+                        max_retries = 3
+                        base_delay = 30
+
+                        for attempt in range(max_retries):
+                            try:
+                                if assessment_type == "WA (SAQ)":
+                                    with st.spinner(f"Auto-generating Written Assessment (SAQ)... (attempt {attempt + 1}/{max_retries})"):
+                                        saq_context = asyncio.run(generate_saq(st.session_state['fg_data'], index, model_client))
+                                        files = generate_documents(saq_context, assessment_type, "output")
+                                        st.session_state['assessment_generated_files'][assessment_type] = files
+                                elif assessment_type == "PP":
+                                    with st.spinner(f"Auto-generating Practical Performance... (attempt {attempt + 1}/{max_retries})"):
+                                        pp_context = asyncio.run(generate_pp(st.session_state['fg_data'], index, model_client))
+                                        files = generate_documents(pp_context, assessment_type, "output")
+                                        st.session_state['assessment_generated_files'][assessment_type] = files
+                                elif assessment_type == "CS":
+                                    with st.spinner(f"Auto-generating Case Study... (attempt {attempt + 1}/{max_retries})"):
+                                        cs_context = asyncio.run(generate_cs(st.session_state['fg_data'], index, model_client))
+                                        files = generate_documents(cs_context, assessment_type, "output")
+                                        st.session_state['assessment_generated_files'][assessment_type] = files
+                                break  # Success, exit retry loop
+                            except Exception as e:
+                                error_str = str(e)
+                                if ("connection" in error_str.lower() or "503" in error_str or
+                                    "overloaded" in error_str.lower() or "unavailable" in error_str.lower() or
+                                    "timeout" in error_str.lower()):
+                                    if attempt < max_retries - 1:  # Not the last attempt
+                                        delay = base_delay * (2 ** attempt)
+                                        st.warning(f"Connection issue for {assessment_type}, retrying in {delay} seconds...")
+                                        import time
+                                        time.sleep(delay)
+                                        continue
+                                    else:
+                                        raise Exception(f"Failed to generate {assessment_type} after {max_retries} attempts. Last error: {error_str}")
                                 else:
-                                    raise Exception(f"Failed to generate {assessment_type} after {max_retries} attempts. Last error: {error_str}")
-                            else:
-                                # Re-raise non-connection errors immediately
-                                raise e
+                                    # Re-raise non-connection errors immediately
+                                    raise e
 
-                if st.session_state['assessment_generated_files']:
-                    st.success("✅ Assessments successfully generated!")
+                    if st.session_state['assessment_generated_files']:
+                        st.success("✅ All assessments automatically generated!")
 
-            except Exception as e:
-                st.error(f"Error generating assessments: {e}")
+                except Exception as e:
+                    st.error(f"Error auto-generating assessments: {e}")
+            else:
+                st.warning("⚠️ No assessment types detected in the document. Please ensure your Facilitator Guide contains assessment duration and ratio information.")
+
+    # Manual override section (for cases where auto-detection fails or user wants to override)
+    with st.expander("🔧 Manual Assessment Selection (Optional Override)"):
+        st.write("Use this section only if auto-detection failed or you want to generate specific assessments manually:")
+        saq = st.checkbox("Short Answer Questions (SAQ)")
+        pp = st.checkbox("Practical Performance (PP)")
+        cs = st.checkbox("Case Study (CS)")
+
+        if st.button("Generate Selected Assessments"):
+            st.session_state['assessment_generated_files'] = {}
+
+            if not st.session_state.get('fg_data'):
+                st.error("❌ Please upload the Facilitator Guide first.")
+                return
+            else:
+                selected_types = []
+                if saq:
+                    selected_types.append("WA (SAQ)")
+                if pp:
+                    selected_types.append("PP")
+                if cs:
+                    selected_types.append("CS")
+                if not selected_types:
+                    st.error("❌ Please select at least one assessment type to generate.")
+                    return
+
+                st.success("✅ Proceeding with manual assessment generation...")
+                try:
+                    # Use slide deck index if available, otherwise None
+                    index = st.session_state.get('index', None)
+
+                    for assessment_type in selected_types:
+                        max_retries = 3
+                        base_delay = 30
+
+                        for attempt in range(max_retries):
+                            try:
+                                if assessment_type == "WA (SAQ)":
+                                    with st.spinner(f"Generating Written Assessment (SAQ)... (attempt {attempt + 1}/{max_retries})"):
+                                        saq_context = asyncio.run(generate_saq(st.session_state['fg_data'], index, model_client))
+                                        files = generate_documents(saq_context, assessment_type, "output")
+                                        st.session_state['assessment_generated_files'][assessment_type] = files
+                                elif assessment_type == "PP":
+                                    with st.spinner(f"Generating Practical Performance... (attempt {attempt + 1}/{max_retries})"):
+                                        pp_context = asyncio.run(generate_pp(st.session_state['fg_data'], index, model_client))
+                                        files = generate_documents(pp_context, assessment_type, "output")
+                                        st.session_state['assessment_generated_files'][assessment_type] = files
+                                elif assessment_type == "CS":
+                                    with st.spinner(f"Generating Case Study... (attempt {attempt + 1}/{max_retries})"):
+                                        cs_context = asyncio.run(generate_cs(st.session_state['fg_data'], index, model_client))
+                                        files = generate_documents(cs_context, assessment_type, "output")
+                                        st.session_state['assessment_generated_files'][assessment_type] = files
+                                break  # Success, exit retry loop
+                            except Exception as e:
+                                error_str = str(e)
+                                if ("connection" in error_str.lower() or "503" in error_str or
+                                    "overloaded" in error_str.lower() or "unavailable" in error_str.lower() or
+                                    "timeout" in error_str.lower()):
+                                    if attempt < max_retries - 1:  # Not the last attempt
+                                        delay = base_delay * (2 ** attempt)
+                                        st.warning(f"Connection issue for {assessment_type}, retrying in {delay} seconds...")
+                                        import time
+                                        time.sleep(delay)
+                                        continue
+                                    else:
+                                        raise Exception(f"Failed to generate {assessment_type} after {max_retries} attempts. Last error: {error_str}")
+                                else:
+                                    # Re-raise non-connection errors immediately
+                                    raise e
+
+                    if st.session_state['assessment_generated_files']:
+                        st.success("✅ Manual assessments successfully generated!")
+
+                except Exception as e:
+                    st.error(f"Error generating assessments: {e}")
 
     generated_files = st.session_state.get('assessment_generated_files', {})
     # Check if any assessment type has a valid QUESTION or ANSWER file

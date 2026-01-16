@@ -27,12 +27,6 @@ def app():
     # Get selected company and templates
     selected_company = get_selected_company()
     cp_template_path = get_company_template("course_proposal")
-    
-    # Show template status
-    if cp_template_path:
-        st.success(f"✅ Using {selected_company['name']} Course Proposal template")
-    else:
-        st.info(f"ℹ️ Using default Tertiary Infotech template with {selected_company['name']} branding")
 
     st.subheader("Model Selection")
     # Get all available models (including custom ones)
@@ -40,7 +34,7 @@ def app():
     model_choice = st.selectbox(
         "Select LLM Model:",
         options=list(all_models.keys()),
-        index=list(all_models.keys()).index("Gemini-2.5-Pro") if "Gemini-2.5-Pro" in all_models else 0
+        index=list(all_models.keys()).index("Claude-Sonnet-3.5") if "Claude-Sonnet-3.5" in all_models else 0
     )
     st.session_state['selected_model'] = model_choice
 
@@ -85,66 +79,6 @@ def app():
     )
 
     # Descriptive section
-    st.markdown(
-        """
-        <div class="important-note">
-            This tool uses Agentic Process Automation to generate Course Proposals and Course Validation forms for Tertiary Infotech.
-            The input TSC form must follow the below requirements, if not the generation might not work properly or might throw errors :(
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-    st.markdown(
-        '<div class="header">📝 Important TSC Details to Look Out For:</div>',
-        unsafe_allow_html=True
-    )
-
-    st.markdown("Instructional and Assessment method names in the TSC should be spelled out like the examples below (Case Sensitive)")
-    st.markdown("Eg. Case studies ❌")
-    st.markdown("Eg. Case Study ✅️")
-    
-    # Use columns to organize the content into sections
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.markdown(
-            """
-            <div class="section-title">Instructional Methods:</div>
-            - Didactic Questioning <br>
-            - Demonstration <br>
-            - Practical <br>
-            - Peer Sharing <br>
-            - Role Play <br>
-            - Group Discussion <br>
-            - Case Study <br>
-            """,
-            unsafe_allow_html=True
-        )
-        
-    with col2:
-        st.markdown(
-            """
-            <div class="section-title">Assessment Methods:</div>
-            - Written Assessment <br>
-            - Practical Performance <br>
-            - Case Study <br>
-            - Oral Questioning <br>
-            - Role Play <br>
-            """,
-            unsafe_allow_html=True
-        )
-
-    st.markdown(
-        """
-        <div class="header">💡 Tips:</div>
-        - Colons ( : ) should be included in every LU and Topic, e.g., LU1: xxx, Topic 1: xxx <br>
-        - Ensure LUs are properly formatted using the naming conventions mentioned above. <br>
-        - Double check the industry of the CV and background info of the CP, in case the wrong industry is mentioned!
-        """,
-        unsafe_allow_html=True
-    )
-
     uploaded_file = st.file_uploader("Upload a TSC DOCX file", type="docx", key='uploaded_file')
 
     if uploaded_file is not None:

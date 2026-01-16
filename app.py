@@ -17,9 +17,9 @@ def lazy_import_brochure_v2():
     import generate_brochure_v2.brochure_generation_v2 as brochure_generation_v2
     return brochure_generation_v2
 
-def lazy_import_annex():
-    import add_assessment_to_ap.annex_assessment as annex_assessment
-    return annex_assessment
+def lazy_import_annex_v2():
+    import add_assessment_to_ap.annex_assessment_v2 as annex_assessment_v2
+    return annex_assessment_v2
 
 def lazy_import_course_proposal():
     import generate_cp.app as course_proposal_app
@@ -36,6 +36,7 @@ def lazy_import_settings():
 
 st.set_page_config(layout="wide")
 
+@st.cache_data
 def get_base64_image(image_path):
     try:
         with open(image_path, "rb") as f:
@@ -47,16 +48,28 @@ def get_base64_image(image_path):
             data = f.read()
         return base64.b64encode(data).decode()
 
-# Initialize API system
-try:
-    from settings.api_manager import initialize_api_system
-    initialize_api_system()
-except ImportError:
-    pass
+# Initialize API system - cached
+@st.cache_resource
+def initialize_apis():
+    try:
+        from settings.api_manager import initialize_api_system
+        initialize_api_system()
+    except ImportError:
+        pass
 
-# Get organizations and setup company selection
-organizations = get_organizations()
-default_org = get_default_organization()
+initialize_apis()
+
+# Get organizations and setup company selection - cached
+@st.cache_data
+def get_cached_organizations():
+    return get_organizations()
+
+@st.cache_data
+def get_cached_default_organization():
+    return get_default_organization()
+
+organizations = get_cached_organizations()
+default_org = get_cached_default_organization()
 
 with st.sidebar:
     # Company Selection
@@ -81,7 +94,7 @@ with st.sidebar:
     else:
         selected_company = default_org
         st.session_state['selected_company_idx'] = 0
-    
+
     # Store selected company in session state for other modules
     st.session_state['selected_company'] = selected_company
     
@@ -91,6 +104,7 @@ with st.sidebar:
     
     # Display company info
     company_display_name = selected_company["name"].replace(" Pte Ltd", "").replace(" LLP", "")
+    company_uen = selected_company.get("uen", "N/A")
     st.markdown(
         f"""
         <div style="display: flex; justify-content: left;">
@@ -103,17 +117,82 @@ with st.sidebar:
                 </div>
             </div>
         </div>
-        <br/>
+        <div style="margin-top: 5px; margin-bottom: 15px;">
+            <p style="margin: 0; font-size: 0.9rem; color: #666;">UEN: {company_uen}</p>
+        </div>
         """,
         unsafe_allow_html=True
     )
+    # Initialize settings expansion state
+    if 'settings_expanded' not in st.session_state:
+        st.session_state.settings_expanded = False
+
+    # Build dynamic menu options based on settings expansion state
+    menu_options = [
+        "Generate CP",
+        "Generate AP/FG/LG/LP",
+        "Generate Assessment",
+        "Generate Brochure v2",
+        "Add Assessment to AP",
+        "Check Documents",
+        f"Settings {'▼' if not st.session_state.settings_expanded else '▲'}"
+    ]
+
+    menu_icons = [
+        "filetype-doc",
+        "file-earmark-richtext",
+        "clipboard-check",
+        "file-earmark-pdf",
+        "folder-symlink",
+        "search",
+        "gear"
+    ]
+
+    # Add sub-options if Settings is expanded
+    if st.session_state.settings_expanded:
+        menu_options.extend(["    ├ API & LLM Models", "    └ Company Management"])
+        menu_icons.extend(["", ""])
+
+    # Custom CSS for menu styling
+    st.markdown("""
+    <style>
+    /* General menu styling */
+    div[data-testid="stSidebar"] .nav-link {
+        font-size: 0.95rem !important;
+    }
+
+    /* Sub-menu items styling */
+    div[data-testid="stSidebar"] .nav-link:has-text("├"),
+    div[data-testid="stSidebar"] .nav-link:has-text("└") {
+        font-size: 0.8rem !important;
+        color: #777 !important;
+        background-color: rgba(240, 240, 240, 0.3) !important;
+        padding-left: 2rem !important;
+        border-left: 2px solid #ddd !important;
+        margin-left: 0.5rem !important;
+    }
+
+    /* Settings arrow positioning */
+    .nav-link[data-option*="Settings"] .nav-link-text {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
     selected = option_menu(
         "",  # Title of the sidebar
-        ["Generate CP", "Generate AP/FG/LG/LP", "Generate Assessment", "Generate Brochure v2", "Add Assessment to AP", "Check Documents", "Settings"],  # Options
-        icons=["filetype-doc", "file-earmark-richtext", "clipboard-check", "file-earmark-pdf", "folder-symlink", "search", "gear"],  # Icon names
+        menu_options,
+        icons=menu_icons,
         menu_icon="boxes",  # Icon for the sidebar title
         default_index=0,  # Default selected item
     )
+
+    # Handle Settings expansion/collapse
+    if "Settings" in selected:
+        st.session_state.settings_expanded = not st.session_state.settings_expanded
+        st.rerun()
 
 # Display the selected app - using lazy loading for performance
 if selected == "Generate CP":
@@ -137,9 +216,17 @@ elif selected == "Generate Brochure v2":
     brochure_generation_v2.app()
 
 elif selected == "Add Assessment to AP":
-    annex_assessment = lazy_import_annex()
-    annex_assessment.app()  # Display Annex Assessment app
+    annex_assessment_v2 = lazy_import_annex_v2()
+    annex_assessment_v2.app()  # Display Annex Assessment app (local upload)
 
-elif selected == "Settings":
+elif "Settings" in selected:
     settings = lazy_import_settings()
-    settings.app()  # Display Settings app
+    settings.app()  # Display full Settings app
+
+elif selected == "    ├ API & LLM Models":
+    settings = lazy_import_settings()
+    settings.llm_settings_app()  # Display only API & LLM Models page
+
+elif selected == "    └ Company Management":
+    settings = lazy_import_settings()
+    settings.company_management_app()  # Display only Company Management page

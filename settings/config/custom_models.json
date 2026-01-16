@@ -1,29 +1,32 @@
 [
   {
-    "name": "xin ping try",
+    "name": "GPT-4 Turbo",
     "provider": "OpenAIChatCompletionClient",
     "config": {
-      "model": "6",
-      "api_key": "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",
-      "temperature": 0.2
+      "model": "openai/gpt-4-turbo",
+      "api_key": "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",
+      "temperature": 0.2,
+      "base_url": "https://openrouter.ai/api/v1"
     }
   },
   {
-    "name": "xin ping try ",
+    "name": "GPT-4o",
     "provider": "OpenAIChatCompletionClient",
     "config": {
-      "model": "5",
-      "api_key": "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",
-      "temperature": 0.2
+      "model": "openai/gpt-4o",
+      "api_key": "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",
+      "temperature": 0.2,
+      "base_url": "https://openrouter.ai/api/v1"
     }
   },
   {
-    "name": "xin ping try 2",
+    "name": "xinping model try ",
     "provider": "OpenAIChatCompletionClient",
     "config": {
-      "model": "3",
-      "api_key": "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",
-      "temperature": 0.2
+      "model": "meta-llama/llama-3.1-405b-instruct",
+      "api_key": "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",
+      "temperature": 0.2,
+      "base_url": "https://openrouter.ai/api/v1"
     }
   }
 ]

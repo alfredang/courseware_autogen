@@ -960,7 +960,7 @@ def app():
     Returns:
         None
     """
-    st.title("📄 Integrate Assessment to Annex of AP")
+    st.title("📄 Add Assessment to AP")
     st.subheader("Instructions:")
     st.markdown("""
     **What you must input:**  

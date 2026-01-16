@@ -23,9 +23,9 @@ Dependencies:
     - jinja2
 
 Author:
-    Claude Code Assistant
+    Wong Xin Ping
 Date:
-    3 March 2025
+    18 September 2025
 ===============================================================================
 """
 
@@ -88,7 +88,7 @@ try:
 except ImportError:
     SELENIUM_AVAILABLE = False
 
-# PDF generation imports - prioritize libraries that don't need external deps  
+# PDF generation imports - prioritize libraries that don't need external deps
 PDF_GENERATOR = None
 try:
     from xhtml2pdf import pisa
@@ -393,24 +393,35 @@ def extract_learning_outcomes_list(soup):
 def extract_tsc_title(soup):
     """Extract TSC title from Skills Framework text"""
     text = soup.get_text()
+    # TSC code pattern that handles both standard and extended formats
+    # Standard: XXX-XXX-####-#.#
+    # Extended: XXX-XXX-####-#.#-#
+    tsc_code_pattern = r'[A-Z]{3}-[A-Z]{3}-[0-9]+-[0-9\.]+(?:-[0-9]+)?'
+
     patterns = [
+        # MOST SPECIFIC: "follows the guideline of TSC-CODE: TITLE under FRAMEWORK Skills Framework"
+        rf'follows.*?guideline.*?of\s+{tsc_code_pattern}:\s+([\w\s&-]+?)\s+under\s+.+?Skills\s+Framework',
         # More specific patterns first - "guideline of" patterns
-        r'guideline of\s+(.*?)\s+([A-Z]{3}-[A-Z]{3}-[0-9]+-[0-9\.]+)\s+TSC',
-        r'follows the guideline of\s+(.*?)\s+([A-Z]{3}-[A-Z]{3}-[0-9]+-[0-9\.]+)',
-        r'guideline of\s+([A-Z]{3}-[A-Z]{3}-[0-9]+-[0-9\.]+):\s+(.*?)\s+under\s+[A-Z]+\s+Skills',
+        rf'guideline of\s+(.*?)\s+({tsc_code_pattern})\s+TSC',
+        rf'follows the guideline of\s+(.*?)\s+({tsc_code_pattern})',
+        rf'guideline of\s+({tsc_code_pattern}):\s+(.*?)\s+under\s+.+?Skills',
         # Pattern for technical skills format "Data Storytelling and Visualisation FSE-DAT-5020-1.1 Level 5 TSC"
-        r'(?:and\s+proficiency\s+level:\s*)?([A-Za-z\s&-]+?)\s+([A-Z]{3}-[A-Z]{3}-[0-9]+-[0-9\.]+)\s+Level\s+[0-9]+\s*TSC\s+under',
+        rf'(?:and\s+proficiency\s+level:\s*)?([A-Za-z\s&-]+?)\s+({tsc_code_pattern})\s+Level\s+[0-9]+\s*TSC\s+under',
         # Pattern for descriptive format "Data Analytics and Information Technology Management - Data Mining and Modelling Level 4 TSC"
         r'([\w\s&-]+?)\s+Level\s+[0-9]+\s*TSC\s+under\s+[\w\s]+Skills\s+Framework',
         # Generic patterns (less specific, use as fallback)
-        r'([A-Z]{3}-[A-Z]{3}-[0-9]+-[0-9\.]+):\s+(.*?)\s+under\s+.*?Skills\s+Framework'
+        rf'({tsc_code_pattern}):\s+([\w\s&-]+?)\s+under\s+.+?Skills\s+Framework'
     ]
 
     for pattern in patterns:
         match = re.search(pattern, text, re.IGNORECASE)
         if match:
-            # For "guideline of" patterns - title is in group 1
-            if 'guideline of' in pattern:
+            # MOST SPECIFIC pattern (index 0): TSC-CODE: TITLE under Framework
+            # This pattern has only 1 group which is the title
+            if 'follows.*?guideline.*?of\s+[A-Z]{3}-[A-Z]{3}' in pattern and len(match.groups()) == 1:
+                return match.group(1).strip()
+            # For "guideline of" patterns - title is in group 1 or 2
+            elif 'guideline of' in pattern:
                 if ':' in match.group(0) and len(match.groups()) >= 2:
                     # Pattern with TSC code first, title is in group 2
                     return match.group(2).strip()
@@ -419,6 +430,9 @@ def extract_tsc_title(soup):
                     return match.group(1).strip()
             # For descriptive format pattern (only has one group - the title)
             elif 'Level.*TSC.*under.*Skills.*Framework' in pattern:
+                return match.group(1).strip()
+            # Generic pattern (last one): TSC-CODE: TITLE under Framework
+            elif len(match.groups()) == 1:
                 return match.group(1).strip()
             # For technical skills patterns (group 1 is title, group 2 is TSC code)
             elif len(match.groups()) >= 2:
@@ -432,26 +446,26 @@ def extract_tsc_title(soup):
 def extract_tsc_code(soup):
     """Extract TSC code from Skills Framework text"""
     text = soup.get_text()
+
+    # TSC code pattern that handles both standard and extended formats
+    # Standard: XXX-XXX-####-#.#
+    # Extended: XXX-XXX-####-#.#-#
+    tsc_code_pattern = r'[A-Z]{3}-[A-Z]{3}-[0-9]+-[0-9\.]+(?:-[0-9]+)?'
+
     patterns = [
-        # Pattern for standard TSC code format
-        r'[\w\s&]+?\s*([A-Z]{3}-[A-Z]{3}-[0-9]+-[0-9\.]+)\s+Level\s+[0-9]+\s*TSC\s+under',
-        r'[\w\s&]+?\s*([A-Z]{3}-[A-Z]{3}-[0-9]+-[0-9\.]+)\s*TSC\s+under',
-        # Existing patterns
-        r'guideline of\s+.*?\s+([A-Z]{3}-[A-Z]{3}-[0-9]+-[0-9\.]+)\s+TSC',
-        r'([A-Z]{3}-[A-Z]{3}-[0-9]+-[0-9\.]+)\s+TSC',
-        r'([A-Z]{3}-[A-Z]{3}-[0-9]+-[0-9\.]+)'
+        # More flexible TSC code patterns
+        rf'({tsc_code_pattern})\s+(?:Level\s+[0-9]+\s*)?TSC',
+        rf'guideline.*?of.*?({tsc_code_pattern})',
+        rf'follows.*?({tsc_code_pattern})',
+        rf'TSC[:\s]+({tsc_code_pattern})',
+        rf'({tsc_code_pattern})',  # Generic fallback
     ]
 
     for pattern in patterns:
         match = re.search(pattern, text, re.IGNORECASE)
         if match:
-            return match.group(1).strip()
-
-    # Check if it's descriptive format without standard TSC code
-    descriptive_match = re.search(r'([\w\s&-]+?)\s+Level\s+[0-9]+\s*TSC\s+under\s+[\w\s]+Skills\s+Framework', text, re.IGNORECASE)
-    if descriptive_match:
-        return "Not Applicable"  # No standard TSC code format
-
+            tsc_code = match.group(1).strip()
+            return tsc_code
     return "Not Applicable"
 
 
@@ -509,23 +523,52 @@ def get_framework_from_tsc_code(tsc_code):
 def extract_tsc_framework(soup):
     """Extract TSC framework from Skills Framework text"""
     text = soup.get_text()
+
+    # TSC code pattern that handles both standard and extended formats
+    tsc_code_pattern = r'[A-Z]{3}-[A-Z]{3}-[0-9]+-[0-9\.]+(?:-[0-9]+)?'
+
     patterns = [
-        # New pattern for "FSE-DAT-5020-1.1 Level 5 TSC under Financial Services Skills Framework" (handles \xa0)
-        r'[A-Z]{3}-[A-Z]{3}-[0-9]+-[0-9\.]+\s+(?:Level\s+[0-9]+\s*)?TSC\s+under\s+([\w\s]+?)\s+Skills\s+Framework',
-        # Existing patterns
-        r'TSC\s+under\s+([\w\s]+?)\s+Skills\s+Framework',
-        r'under\s+([\w\s]+?)\s+Skills\s+Framework',
-        r'([\w\s]+?)\s+Skills\s+Framework'
+        # MOST SPECIFIC: "follows the guideline of TSC-CODE: Title under FRAMEWORK Skills Framework"
+        rf'follows.*?guideline.*?of\s+{tsc_code_pattern}:.*?under\s+([A-Z][A-Za-z\s&]+?)\s+Skills?\s+Framework',
+        # More flexible patterns
+        rf'{tsc_code_pattern}.*?TSC.*?under\s+([\w\s&]+?)\s+Skills?\s+Framework',
+        r'TSC.*?under\s+([\w\s&]+?)\s+Skills?\s+Framework',
+        r'under\s+([A-Z][A-Za-z\s&]+?)\s+Skills?\s+Framework',  # More restrictive - must start with capital letter
+        rf'follows.*?guideline.*?of\s+([\w\s&]+?)\s+{tsc_code_pattern}',
+        r'(ICT|Financial Services|Healthcare|Engineering|Manufacturing|Logistics|Tourism|Security|Arts|Marine|Trade Associations and Chambers|Food Service)\s+Skills?\s+Framework',
+        r'Skills?\s+Framework[:\s]+([\w\s&]+?)(?:\.|,|\n|TSC)',
+        r'Framework[:\s]+([\w\s&]+?)(?:\s+TSC|\s+issued|\s+by)',
     ]
 
     for pattern in patterns:
-        match = re.search(pattern, text, re.IGNORECASE)
+        match = re.search(pattern, text, re.IGNORECASE | re.DOTALL)
         if match:
             framework = match.group(1).strip()
-            # Clean up common extra words
+            # Clean up common extra words and normalize
             framework = re.sub(r'\s+', ' ', framework)
-            return framework
+            framework = framework.replace('&amp;', '&')
 
+            # Filter out common false matches and invalid words
+            invalid_frameworks = [
+                'and', 'the', 'of', 'by', 'certification', 'certifying', 'competency',
+                'achievement', 'opencert', 'skillsfuture', 'singapore', 'above',
+                'statement', 'from', 'that', 'they', 'have', 'achieved'
+            ]
+            framework_lower = framework.lower()
+
+            # Check if it's a valid framework (length and not in invalid list)
+            if len(framework) > 2 and framework_lower not in invalid_frameworks:
+                # Also check if it doesn't start with invalid words
+                if not any(framework_lower.startswith(invalid) for invalid in invalid_frameworks):
+                    return framework
+
+    # Fallback: Try to extract TSC code and map it
+    tsc_code = extract_tsc_code(soup)
+    if tsc_code and tsc_code != "Not Applicable":
+        prefix = tsc_code.split('-')[0] if '-' in tsc_code else tsc_code[:3]
+        framework = get_framework_from_tsc_code(prefix)
+        if framework != "Not Applicable":
+            return framework
     return "Not Applicable"
 
 
@@ -592,23 +635,35 @@ def extract_wsq_funding_table(soup):
 
 def extract_tgs_reference_number(soup):
     """Extract TGS reference number (course code)"""
+
+    # METHOD 1: Look for <span class="value"> which typically contains the course code
+    value_spans = soup.find_all('span', class_='value')
+    for span in value_spans:
+        text = span.get_text().strip()
+        # Match TGS-XXXXXXXXXX format
+        if re.match(r'^TGS-\d{10}$', text):
+            return text
+
+    # METHOD 2: Look for "Course Code: TGS-XXXXXXXXXX" pattern in HTML
     text = soup.get_text()
+
+    # Most specific pattern first - full TGS code with "Course Code" label
     patterns = [
-        r'Course Code[:\s]+([A-Z0-9-]+)',
-        r'TGS[:\s]*-?[:\s]*([0-9]+)',
-        r'Reference[:\s]+([A-Z0-9-]+)',
-        r'Code[:\s]+([A-Z0-9-]+)'
+        r'Course Code[:\s]+(TGS-\d{10})',
+        r'TGS Reference[:\s]+(TGS-\d{10})',
+        r'Reference Number[:\s]+(TGS-\d{10})',
+        r'\b(TGS-\d{10})\b',  # Any standalone TGS-XXXXXXXXXX format
     ]
-    
+
     for pattern in patterns:
         match = re.search(pattern, text, re.IGNORECASE)
         if match:
             code = match.group(1)
-            # Format as TGS if not already
-            if not code.startswith('TGS'):
-                code = f"TGS-{code}"
+            # Ensure it starts with TGS-
+            if not code.startswith('TGS-'):
+                code = f"TGS-{code.replace('TGS', '').strip('-')}"
             return code
-    
+
     # Generate a TGS code format as fallback
     import random
     return f"TGS-{random.randint(2020000000, 2030000000)}"
@@ -653,10 +708,137 @@ def extract_duration_hrs(soup):
 def extract_course_topics_with_subtopics(soup):
     """Extract course topics with subtopics as CourseTopic objects"""
     topics = []
-    
+
+    import re
+
+    try:
+        # SIMPLIFIED APPROACH: Find all LU or Topic headings in <strong> tags, then extract their content
+        all_strong_tags = soup.find_all('strong')
+
+        for strong_tag in all_strong_tags:
+            text = strong_tag.get_text().strip()
+
+            # Check if this is an LU heading - match both "LU1:" and "LU 1:" formats
+            lu_match = re.match(r'^LU\s*(\d+):\s*(.+)', text)
+            # Also check for Topic format - match "Topic 1", "Topic 1:", "Topic 1 -", etc.
+            topic_match = re.match(r'^Topic\s+(\d+)\s*[:\-]?\s*(.+)', text, re.IGNORECASE)
+
+            if lu_match or topic_match:
+                # Get the number and title from whichever match succeeded
+                match = lu_match if lu_match else topic_match
+                lu_number = match.group(1)
+                lu_title = text
+                subtopics = []
+
+                # Get the parent <p> tag
+                p_tag = strong_tag.parent
+                if not p_tag or p_tag.name != 'p':
+                    continue
+
+                # Get all following siblings until we hit the next LU or entry requirements
+                current = p_tag
+                for _ in range(50):
+                    current = current.find_next_sibling()
+                    if not current:
+                        break
+
+                    current_text = current.get_text().strip()
+
+                    # FIRST: Check if we should stop (BEFORE extracting)
+                    # Stop if we hit another LU or Topic (both "LU1:" and "Topic 1" formats)
+                    if current.find('strong'):
+                        strong_text = current.find('strong').get_text().strip()
+                        if re.match(r'^LU\s*\d+:', strong_text) or re.match(r'^Topic\s+\d+', strong_text, re.IGNORECASE):
+                            break
+
+                    # Stop if we hit entry requirements section
+                    if any(term in current_text.lower() for term in ['minimum entry requirement', 'entry requirement', 'course info', 'knowledge and skills']):
+                        break
+
+                    # Stop if we hit a heading that suggests we're out of course content
+                    if current.name in ['h2', 'h3'] and any(term in current_text.lower() for term in ['requirement', 'prerequisite', 'promotion', 'funding']):
+                        break
+
+                    # THEN: Extract content (only if we didn't break above)
+
+                    # FORMAT 1: <p> tags with T1., T2. topics (period separator)
+                    if current.name == 'p' and re.match(r'^T\d+\.', current_text):
+                        # Filter out assessment-related subtopics
+                        if not any(term in current_text.lower() for term in [
+                            'written assessment', 'wa-saq', 'practical performance', 'pp)', '(pp'
+                        ]):
+                            subtopics.append(current_text)
+
+                    # FORMAT 1: <p> tags with • bullet points
+                    elif current.name == 'p' and '•' in current_text:
+                        # Split by bullet and add each one
+                        bullets = current_text.split('•')
+                        for bullet in bullets[1:]:  # Skip first empty item
+                            bullet = bullet.strip()
+                            # Filter out assessment-related subtopics
+                            if len(bullet) > 15 and not any(term in bullet.lower() for term in [
+                                'written assessment', 'wa-saq', 'practical performance', 'pp)', '(pp'
+                            ]):
+                                subtopics.append(f"  • {bullet}")
+
+                    # FORMAT 2: <ul> lists with <li> items (T1:, T2:, etc.)
+                    elif current.name == 'ul':
+                        list_items = current.find_all('li', recursive=False)
+                        for li in list_items:
+                            li_text = li.get_text().strip()
+                            # Filter out assessment-related subtopics
+                            if len(li_text) > 10 and not any(term in li_text.lower() for term in [
+                                'written assessment', 'wa-saq', 'practical performance', 'pp)', '(pp'
+                            ]):
+                                subtopics.append(li_text)
+
+                    # FORMAT 3: <p> tags with multiple T1:, T2:, etc. separated by <br> (colon separator)
+                    elif current.name == 'p' and re.search(r'T\d+:', current_text):
+                        # Check if this paragraph contains <br> tags
+                        br_tags = current.find_all('br')
+                        if br_tags:
+                            # Split by <br> to get individual T# items
+                            # Get the HTML and split by <br> tags
+                            html_content = str(current)
+                            # Split by <br> or <br/> or <br />
+                            parts = re.split(r'<br\s*/?>', html_content)
+                            for part in parts:
+                                # Extract text from HTML
+                                from bs4 import BeautifulSoup as BS
+                                part_soup = BS(part, 'html.parser')
+                                part_text = part_soup.get_text().strip()
+                                # Check if it starts with T#: and filter out assessment-related subtopics
+                                if re.match(r'^T\d+:', part_text) and len(part_text) > 10 and not any(term in part_text.lower() for term in [
+                                    'written assessment', 'wa-saq', 'practical performance', 'pp)', '(pp'
+                                ]):
+                                    subtopics.append(part_text)
+                        else:
+                            # Single T#: item without <br>
+                            if re.match(r'^T\d+:', current_text) and len(current_text) > 10 and not any(term in current_text.lower() for term in [
+                                'written assessment', 'wa-saq', 'practical performance', 'pp)', '(pp'
+                            ]):
+                                subtopics.append(current_text)
+
+                # Add this LU to topics
+                if subtopics:
+                    topics.append(CourseTopic(title=lu_title, subtopics=subtopics))
+
+        # Add Final Assessment at the end
+        if not any('final assessment' in t.title.lower() for t in topics):
+            topics.append(CourseTopic(title="Final Assessment", subtopics=[]))
+
+        # If we found topics, return them
+        if topics:
+            return topics
+
+    except Exception:
+        # Fallback to original logic if this fails
+        pass
+
     try:
         # Look for course details section with more comprehensive selectors
         details_selectors = [
+            '.tabs-panels',      # Tertiary Courses tabbed content
             '.course-details',
             '#course-details',
             '.course-outline',
@@ -694,48 +876,84 @@ def extract_course_topics_with_subtopics(soup):
             for heading in topic_headings:
                 title = heading.get_text().strip()
 
-                # Filter out non-topic headings (but keep Final Assessment and Learning Units)
+                # Filter out non-topic headings and junk content
                 excluded_terms = [
                     'requirements', 'entry requirements', 'minimum requirements',
                     'prerequisites', 'eligibility', 'certification', 'certificate',
-                    'funding', 'fees', 'pricing'
+                    'funding', 'fees', 'pricing', 'sponsored', 'trainee', 'citizens',
+                    'skillsfuture', 'credit', 'review', 'nickname', 'captcha',
+                    'about us', 'contact', 'payment', 'refund', 'policy', 'disclaimer',
+                    'singapore', 'permanent residents', 'attendance', 'singpass',
+                    'employer', 'employee', 'individual', 'course cancellation'
                 ]
 
-                # Accept Learning Units (LU1, LU2, etc.) and Final Assessment specifically
+                # Accept Learning Units (LU1, LU2, etc.), Topics (Topic 1:, etc.), and Final Assessment
                 is_learning_unit = title.lower().startswith('lu') and any(char.isdigit() for char in title)
+                is_topic_format = title.lower().startswith('topic') and any(char.isdigit() for char in title)
                 is_final_assessment = 'final assessment' in title.lower() or 'final assement' in title.lower()
 
-                if (len(title) > 5 and
-                    (is_learning_unit or is_final_assessment or
-                     not any(term in title.lower() for term in excluded_terms))):  # Valid topic title
+                # Only accept if it's specifically a topic/LU format or Final Assessment
+                if (len(title) > 8 and
+                    (is_learning_unit or is_topic_format or is_final_assessment)):  # Only valid topic formats
 
                     subtopics = []
 
-                    # Find subtopics (usually in the next ul/ol)
+                    # Find subtopics - try multiple approaches
+                    # Method 1: Look for next ul/ol
                     next_list = heading.find_next(['ul', 'ol'])
                     if next_list:
                         items = next_list.find_all('li')
                         for item in items:
                             subtopic_text = item.get_text().strip()
-
-                            # Filter out entry requirements and assessment methods from subtopics
-                            excluded_subtopic_terms = [
-                                'gce', 'o levels', 'computer literacy', 'minimum', 'able to operate',
-                                'written assessment', 'short answer questions', 'wa-saq', 'practical performance',
-                                'pp)', 'assessment method', 'evaluation', 'test', 'exam'
-                            ]
-
-                            # For Final Assessment, allow shorter terms like "MCQ"
-                            min_length = 2 if 'final assessment' in title.lower() else 3
-
-                            if (len(subtopic_text) > min_length and
-                                not any(term in subtopic_text.lower() for term in excluded_subtopic_terms)):
+                            if len(subtopic_text) > 2:  # Very minimal filter
                                 subtopics.append(subtopic_text)
+
+                    # Method 2: Look in parent/sibling elements
+                    if not subtopics:
+                        parent = heading.parent
+                        if parent:
+                            # Look for lists in the same parent container
+                            lists_in_parent = parent.find_all(['ul', 'ol'])
+                            for list_elem in lists_in_parent:
+                                items = list_elem.find_all('li')
+                                for item in items:
+                                    subtopic_text = item.get_text().strip()
+                                    if len(subtopic_text) > 2:
+                                        subtopics.append(subtopic_text)
+
+                    # Method 3: Look for next siblings that are lists
+                    if not subtopics:
+                        current = heading
+                        for _ in range(5):  # Check next 5 siblings
+                            current = current.find_next_sibling()
+                            if not current:
+                                break
+                            if current.name in ['ul', 'ol']:
+                                items = current.find_all('li')
+                                for item in items:
+                                    subtopic_text = item.get_text().strip()
+                                    if len(subtopic_text) > 2:
+                                        subtopics.append(subtopic_text)
+                                break
+
+                    # Final cleanup - remove excluded terms
+                    excluded_subtopic_terms = [
+                        'singapore citizens', 'permanent residents', 'aged 21 and above',
+                        'skillsfuture singapore', 'funded courses', 'attendance-taking',
+                        'singpass app', 'eligibility criteria', 'sponsored trainee',
+                        'direct employee', 'skillsfuture credit', 'nickname', 'summary of your review',
+                        'captcha is case sensitive', 'about us', 'contact us', 'payment methods',
+                        'refund policy', 'disclaimer', 'training partners', 'course cancellation',
+                        'written assessment', 'wa-saq', 'practical performance', 'pp)', '(pp'
+                    ]
+
+                    # Filter out excluded terms
+                    subtopics = [s for s in subtopics if not any(term in s.lower() for term in excluded_subtopic_terms)]
 
                     # Special handling for Final Assessment
                     if 'final assessment' in title.lower():
-                        # Always add Final Assessment, even without subtopics
-                        topics.append(CourseTopic(title=title, subtopics=subtopics))
+                        # Always add Final Assessment with NO subtopics
+                        topics.append(CourseTopic(title=title, subtopics=[]))
                     elif subtopics:  # Only add other topics that have subtopics
                         topics.append(CourseTopic(title=title, subtopics=subtopics))
     except:
@@ -750,7 +968,6 @@ def extract_course_topics_with_subtopics(soup):
         lu_patterns = re.findall(r'(LU\d+[^\n]*)', page_text)
 
         if lu_patterns:
-            print(f"Found {len(lu_patterns)} Learning Units in text, extracting with content...")
 
             # For each LU, try to find its content/subtopics
             for i, lu_text in enumerate(lu_patterns):
@@ -774,10 +991,10 @@ def extract_course_topics_with_subtopics(soup):
                                     items = next_sibling.find_all('li')
                                     for item in items:
                                         item_text = item.get_text().strip()
-                                        # Filter out assessment methods
-                                        if (len(item_text) > 3 and
+                                        # More lenient filtering - keep most content
+                                        if (len(item_text) > 2 and
                                             not any(term in item_text.lower() for term in [
-                                                'written assessment', 'practical performance', 'wa-saq', 'pp)'
+                                                'written assessment', 'practical performance', 'wa-saq', 'pp)', '(pp'
                                             ])):
                                             lu_subtopics.append(item_text)
                                 elif next_sibling.name in ['div', 'p']:
@@ -785,7 +1002,7 @@ def extract_course_topics_with_subtopics(soup):
                                     content_text = next_sibling.get_text().strip()
                                     if (len(content_text) > 10 and
                                         not any(term in content_text.lower() for term in [
-                                            'written assessment', 'practical performance'
+                                            'written assessment', 'practical performance', 'wa-saq', 'pp)', '(pp'
                                         ])):
                                         # Split into bullet points if it's a long text
                                         if len(content_text) > 100:
@@ -824,25 +1041,12 @@ def extract_course_topics_with_subtopics(soup):
 
                     topics.append(CourseTopic(
                         title=lu_text,
-                        subtopics=lu_subtopics[:5]  # Limit to 5 subtopics max
+                        subtopics=lu_subtopics[:20]  # Limit to 20 subtopics max
                     ))
 
-        # If still no topics, use generic fallback
+        # If still no topics found on website, leave empty - don't create fallback
         if not topics:
-            topics = [
-                CourseTopic(
-                    title="Introduction to Core Concepts",
-                    subtopics=["Overview of fundamental concepts", "Basic principles and theory", "Practical applications"]
-                ),
-                CourseTopic(
-                    title="Intermediate Implementation",
-                    subtopics=["Advanced techniques", "Best practices", "Real-world scenarios"]
-                ),
-                CourseTopic(
-                    title="Advanced Applications",
-                    subtopics=["Complex problem solving", "Industry applications", "Case studies"]
-                )
-            ]
+            topics = []
 
     # Clean up duplicate final assessments and fix typos
     final_assessment_topics = []
@@ -954,8 +1158,8 @@ def format_course_outline_table(topics):
         <tbody>
     """
     
-    # Process topics (limit to 3 main units for 5-page format)
-    for i, topic in enumerate(topics[:3]):
+    # Process all available topics
+    for i, topic in enumerate(topics):
         if isinstance(topic, dict):
             title = topic.get('title', f'Learning Unit {i+1}')
             subtopics = topic.get('subtopics', [])
@@ -1048,7 +1252,7 @@ def extract_topic_details_formatted(soup, index):
         items = section.find_all('li')
         if len(items) > 2:  # If we find a substantial list
             details = []
-            for item in items[:6]:  # Limit to 6 items per topic
+            for item in items:  # Show all subtopics found
                 text = item.get_text().strip()
                 if len(text) > 10:
                     details.append(text)
@@ -1106,34 +1310,42 @@ def extract_skills_framework_format(soup):
 def extract_fee_before_gst_format(soup):
     """Extract fee before GST in exact format"""
     text = soup.get_text()
+
+    # More flexible patterns to handle different spacing and formatting
     patterns = [
-        r'\$(\d+(?:,\d+)?(?:\.\d{2})?)\s*(?:\()?(?:Bef|Before).*?GST',
-        r'(?:Fee|Cost|Price)[:\s]+\$(\d+(?:,\d+)?(?:\.\d{2})?)',
-        r'\$(\d+(?:,\d+)?(?:\.\d{2})?)\s*(?:before|bef)',
+        r'\$\s*(\d+(?:,\d+)?(?:\.\d{2})?)\s*\(?\s*GST[- ]exclusive',  # GST-exclusive or GST exclusive
+        r'\$\s*(\d+(?:,\d+)?(?:\.\d{2})?)\s*\(?\s*(?:Bef|Before)\s*\.?\s*GST',
+        r'\$\s*(\d+(?:,\d+)?(?:\.\d{2})?)\s*\(?\s*(?:excl|excluding)\s*\.?\s*GST',
+        r'(?:Fee|Cost|Price)[:\s]+\$\s*(\d+(?:,\d+)?(?:\.\d{2})?)',
     ]
-    
+
     for pattern in patterns:
         match = re.search(pattern, text, re.IGNORECASE)
         if match:
-            return f"${match.group(1)}.00" if '.' not in match.group(1) else f"${match.group(1)}"
-    
+            amount = match.group(1).replace(',', '')  # Remove commas
+            return f"${amount}" if '.' in amount else f"${amount}.00"
+
     return "$900.00"
 
 
 def extract_fee_with_gst_format(soup):
     """Extract fee with GST in exact format"""
     text = soup.get_text()
+
+    # More flexible patterns to handle different spacing and formatting
     patterns = [
-        r'\$(\d+(?:,\d+)?(?:\.\d{2})?)\s*(?:\()?(?:Incl|Including).*?GST',
-        r'Total[:\s]+\$(\d+(?:,\d+)?(?:\.\d{2})?)',
-        r'\$(\d+(?:,\d+)?(?:\.\d{2})?)\s*(?:with|incl)',
+        r'\$\s*(\d+(?:,\d+)?(?:\.\d{2})?)\s*\(?\s*GST[- ]inclusive',  # GST-inclusive or GST inclusive
+        r'\$\s*(\d+(?:,\d+)?(?:\.\d{2})?)\s*\(?\s*(?:Incl|Including)\s*\.?\s*GST',
+        r'\$\s*(\d+(?:,\d+)?(?:\.\d{2})?)\s*\(?\s*with\s+GST',
+        r'Total[:\s]+\$\s*(\d+(?:,\d+)?(?:\.\d{2})?)',
     ]
-    
+
     for pattern in patterns:
         match = re.search(pattern, text, re.IGNORECASE)
         if match:
-            return f"${match.group(1)}.00" if '.' not in match.group(1) else f"${match.group(1)}"
-    
+            amount = match.group(1).replace(',', '')  # Remove commas
+            return f"${amount}" if '.' in amount else f"${amount}.00"
+
     # Calculate GST if we have before GST amount
     before_gst = extract_fee_before_gst_format(soup)
     if before_gst != "$900.00":
@@ -1418,7 +1630,24 @@ def populate_brochure_template(course_data: CourseData) -> str:
 
         # Replace the entire Skills Framework line including HTML structure
         old_skills_framework = '<strong>User Interface Design ICT-DES-3008-1.1 TSC</strong> under ICT Skills Framework'
-        new_skills_framework = f"<strong>{tsc_info}</strong> under {data_dict.get('tsc_framework', 'ICT')} Skills Framework"
+
+        # Build skills framework text, remove "Not Applicable" text but keep the actual values
+        framework_name = data_dict.get('tsc_framework', 'ICT')
+
+        # Clean up the TSC info and framework name by removing "Not Applicable" text
+        clean_tsc_info = tsc_info.replace("Not Applicable", "").strip() if tsc_info else ""
+        clean_framework_name = framework_name.replace("Not Applicable", "").strip() if framework_name != "Not Applicable" else "ICT"
+
+        # Build the skills framework line
+        if clean_tsc_info:
+            new_skills_framework = f"<strong>{clean_tsc_info}</strong> under {clean_framework_name} Skills Framework"
+        else:
+            tsc_code = data_dict.get('tsc_code', '').replace("Not Applicable", "").strip()
+            if tsc_code:
+                new_skills_framework = f"<strong>{tsc_code} TSC</strong> under {clean_framework_name} Skills Framework"
+            else:
+                new_skills_framework = f"<strong>TSC</strong> under {clean_framework_name} Skills Framework"
+
         template_content = template_content.replace(old_skills_framework, new_skills_framework)
         
         # Replace fees
@@ -1521,14 +1750,32 @@ def generate_pdf_output(html_content: str, output_path: str) -> bool:
             st.warning("WeasyPrint not available")
         except Exception as e:
             st.warning(f"WeasyPrint failed: {e}")
-                
+
+        # Fallback to pdfkit (uses wkhtmltopdf)
+        if PDF_GENERATOR == 'pdfkit':
+            try:
+                import pdfkit
+                pdfkit.from_string(html_content, output_path, options={
+                    'page-size': 'A4',
+                    'margin-top': '0.75in',
+                    'margin-right': '0.75in',
+                    'margin-bottom': '0.75in',
+                    'margin-left': '0.75in',
+                    'encoding': "UTF-8",
+                    'no-outline': None,
+                    'enable-local-file-access': None
+                })
+                return True
+            except Exception as e:
+                st.warning(f"pdfkit failed: {e}")
+
         # Fallback to xhtml2pdf
         if PDF_GENERATOR == 'xhtml2pdf':
             try:
                 with open(output_path, 'wb') as output_file:
                     pisa_status = pisa.CreatePDF(
-                        html_content, 
-                        dest=output_file, 
+                        html_content,
+                        dest=output_file,
                         link_callback=_xhtml2pdf_link_callback,
                         encoding='UTF-8',
                         show_error_as_pdf=True
@@ -1536,7 +1783,7 @@ def generate_pdf_output(html_content: str, output_path: str) -> bool:
                     return not pisa_status.err
             except Exception as e:
                 st.warning(f"xhtml2pdf failed: {e}")
-        
+
         # Final fallback - simple text PDF
         try:
             from reportlab.pdfgen import canvas
