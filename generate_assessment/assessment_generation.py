@@ -189,6 +189,25 @@ def get_pdf_page_count(pdf_path):
 # Parse Facilitator Guide Document
 ################################################################################
 def parse_fg(fg_path, LLAMA_API_KEY):
+    import hashlib
+
+    # Create cache directory
+    cache_dir = "data/fg_cache"
+    os.makedirs(cache_dir, exist_ok=True)
+
+    # Generate cache key from file content hash
+    with open(fg_path, 'rb') as f:
+        file_hash = hashlib.md5(f.read()).hexdigest()
+    cache_path = os.path.join(cache_dir, f"{file_hash}.json")
+
+    # Check cache first
+    if os.path.exists(cache_path):
+        print(f"✅ Found cached FG parse result (hash: {file_hash})")
+        with open(cache_path, 'r', encoding='utf-8') as f:
+            return f.read()
+
+    # Not cached - parse with LlamaParse
+    print(f"⏳ Parsing FG with LlamaParse (this may take 1-2 minutes)...")
     parser = LlamaParse(
         api_key=LLAMA_API_KEY,
         result_type="markdown",
@@ -198,7 +217,14 @@ def parse_fg(fg_path, LLAMA_API_KEY):
         # parsing_instruction is deprecated, use content_guideline_instruction instead
     )
     parsed_content = parser.get_json_result(fg_path)
-    return json.dumps(parsed_content)
+    result_json = json.dumps(parsed_content)
+
+    # Save to cache
+    with open(cache_path, 'w', encoding='utf-8') as f:
+        f.write(result_json)
+    print(f"✅ Cached FG parse result for future use (hash: {file_hash})")
+
+    return result_json
 
 def extract_master_k_a_list(fg_markdown):
     """
@@ -724,8 +750,84 @@ def app():
         try:
             with st.spinner("Auto-parsing Facilitator Guide..."):
                 fg_filepath = utils.save_uploaded_file(fg_doc_file, "data")
-                fg_data = parse_fg(fg_filepath, LLAMA_API_KEY)
-                interpreted_data = asyncio.run(interpret_fg(fg_data, structured_model_client))
+                fg_data = parse_fg(fg_filepath, LLAMA_API_KEY)  # Now cached!
+
+                # Cache LLM interpretation too
+                import hashlib
+                fg_hash = hashlib.md5(fg_data.encode()).hexdigest()
+                interp_cache_path = f"data/fg_cache/{fg_hash}_interpreted.json"
+
+                if os.path.exists(interp_cache_path):
+                    print(f"✅ Found cached FG interpretation")
+                    with open(interp_cache_path, 'r', encoding='utf-8') as f:
+                        interpreted_data = json.load(f)
+
+                    # Apply filter to cached data too (in case cache was created before filter was added)
+                    if "assessments" in interpreted_data and isinstance(interpreted_data["assessments"], list):
+                        original_count = len(interpreted_data["assessments"])
+                        filtered_assessments = []
+                        seen_durations = {}
+
+                        for assessment in interpreted_data["assessments"]:
+                            code = assessment.get("code", "")
+                            duration = assessment.get("duration", "")
+                            is_suspicious = False
+
+                            # Filter CS with duplicate duration
+                            if duration in seen_durations and code in ["CS", "CASE STUDY"]:
+                                print(f"⚠️ Filtering suspicious {code} from cache (duplicate duration: {duration})")
+                                is_suspicious = True
+
+                            if code == "CS" and duration in [a.get("duration") for a in filtered_assessments]:
+                                print(f"⚠️ Filtering suspicious CS from cache (matches existing duration: {duration})")
+                                is_suspicious = True
+
+                            if not is_suspicious:
+                                filtered_assessments.append(assessment)
+                                seen_durations[duration] = code
+
+                        if original_count != len(filtered_assessments):
+                            interpreted_data["assessments"] = filtered_assessments
+                            print(f"✅ Filtered {original_count - len(filtered_assessments)} suspicious assessment(s) from cache")
+                else:
+                    print(f"⏳ Interpreting FG with LLM (this may take 10-30 seconds)...")
+                    interpreted_data = asyncio.run(interpret_fg(fg_data, structured_model_client))
+
+                    # Validate and filter hallucinated assessments
+                    if "assessments" in interpreted_data and isinstance(interpreted_data["assessments"], list):
+                        original_count = len(interpreted_data["assessments"])
+                        filtered_assessments = []
+                        seen_durations = {}
+
+                        for assessment in interpreted_data["assessments"]:
+                            code = assessment.get("code", "")
+                            duration = assessment.get("duration", "")
+
+                            # Check for suspicious patterns
+                            is_suspicious = False
+
+                            # Pattern 1: Same duration as another assessment (sign of hallucination)
+                            if duration in seen_durations and code in ["CS", "CASE STUDY"]:
+                                print(f"⚠️ Filtering suspicious {code} assessment (duplicate duration: {duration})")
+                                is_suspicious = True
+
+                            # Pattern 2: CS with same duration as PP or SAQ
+                            if code == "CS" and duration in [a.get("duration") for a in filtered_assessments]:
+                                print(f"⚠️ Filtering suspicious CS assessment (matches existing duration: {duration})")
+                                is_suspicious = True
+
+                            if not is_suspicious:
+                                filtered_assessments.append(assessment)
+                                seen_durations[duration] = code
+
+                        interpreted_data["assessments"] = filtered_assessments
+                        if original_count != len(filtered_assessments):
+                            print(f"✅ Filtered {original_count - len(filtered_assessments)} suspicious assessment(s)")
+
+                    # Save interpretation to cache
+                    with open(interp_cache_path, 'w', encoding='utf-8') as f:
+                        json.dump(interpreted_data, f, indent=2)
+                    print(f"✅ Cached FG interpretation")
 
                 # Validate the interpreted data is a dictionary
                 if interpreted_data is None or not isinstance(interpreted_data, dict):

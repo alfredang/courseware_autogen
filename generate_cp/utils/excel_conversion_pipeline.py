@@ -534,6 +534,15 @@ def enrich_assessment_dataframe_ka_descriptions(df, excel_data_json_path):
         print(f"Error: excel_data.json file not found at: {excel_data_json_path}")
         return df  # Return original DataFrame if JSON not found
 
+    # Safety check: ensure excel_data has at least 2 elements and index 1 is not None
+    if not isinstance(excel_data, list) or len(excel_data) < 2:
+        print(f"⚠️ Warning: excel_data is not a list or has less than 2 elements. Skipping KA enrichment.")
+        return df
+
+    if excel_data[1] is None:
+        print(f"⚠️ Warning: excel_data[1] is None. Skipping KA enrichment.")
+        return df
+
     ka_analysis_data = excel_data[1].get("KA_Analysis", {}) # Access KA_Analysis data
 
     enriched_ka_values = []
