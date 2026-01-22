@@ -48,7 +48,7 @@ def init_organizations_table():
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS organizations (
                     id SERIAL PRIMARY KEY,
-                    name VARCHAR(255) NOT NULL,
+                    name VARCHAR(255) NOT NULL UNIQUE,
                     uen VARCHAR(50),
                     address TEXT,
                     logo_url TEXT,
@@ -56,6 +56,21 @@ def init_organizations_table():
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
+            """)
+            # Ensure unique constraint exists (for tables created before this update)
+            cur.execute("""
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM pg_constraint
+                        WHERE conname = 'organizations_name_key'
+                    ) THEN
+                        ALTER TABLE organizations ADD CONSTRAINT organizations_name_key UNIQUE (name);
+                    END IF;
+                EXCEPTION WHEN duplicate_table THEN
+                    -- Constraint already exists, ignore
+                    NULL;
+                END $$;
             """)
             conn.commit()
     except Exception as e:

@@ -23,6 +23,7 @@ try:
         insert_organization as neon_insert,
         update_organization as neon_update,
         delete_organization as neon_delete,
+        upsert_organization as neon_upsert,
         init_organizations_table
     )
     NEON_AVAILABLE = True
@@ -119,16 +120,12 @@ def get_organizations() -> List[Dict[str, Any]]:
     return get_organizations_from_json()
 
 def save_organization_to_neon(org: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-    """Save a single organization to Neon (insert or update)"""
+    """Save a single organization to Neon (upsert by name)"""
     try:
         data = _convert_to_neon_format(org)
-
-        if "id" in org and org["id"]:
-            # Update existing
-            result = neon_update(org["id"], data)
-        else:
-            # Insert new
-            result = neon_insert(data)
+        # Always use upsert to handle both insert and update cases
+        # This works even when the local data doesn't have the database ID
+        result = neon_upsert(data)
 
         if result:
             return _convert_neon_org(result)
