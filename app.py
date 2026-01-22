@@ -83,16 +83,19 @@ with st.sidebar:
                 default_company_idx = i
                 break
 
+        # Use default on first load, then respect user selection
+        if 'selected_company_idx' not in st.session_state:
+            st.session_state['selected_company_idx'] = default_company_idx
+
         # Validate stored index to prevent out-of-range errors
-        stored_idx = st.session_state.get('selected_company_idx', default_company_idx)
-        if stored_idx >= len(organizations):
-            stored_idx = default_company_idx
+        if st.session_state['selected_company_idx'] >= len(organizations):
+            st.session_state['selected_company_idx'] = default_company_idx
 
         selected_company_idx = st.selectbox(
             "🏢 Select Company:",
             range(len(company_names)),
             format_func=lambda x: company_names[x],
-            index=stored_idx
+            index=st.session_state['selected_company_idx']
         )
 
         # Store selection in session state
