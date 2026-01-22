@@ -11,6 +11,7 @@ Date: 3 March 2025
 
 import streamlit as st
 from typing import Dict, Any
+import copy
 
 # Get API keys from the new API management system
 from settings.api_manager import load_api_keys
@@ -20,128 +21,73 @@ def get_openrouter_key():
     keys = load_api_keys()
     return keys.get("OPENROUTER_API_KEY", "")
 
-# Get initial API key
-OPENROUTER_API_KEY = get_openrouter_key()
-
-# OpenRouter DeepSeek (Default for all modules)
-deepseek_config = {
-    "provider": "OpenAIChatCompletionClient",
-    "config": {
-        "model": "deepseek/deepseek-chat",
-        "base_url": "https://openrouter.ai/api/v1",
-        "api_key": OPENROUTER_API_KEY,
-        "temperature": 0.2,
-        "model_info": {
-            "family": "unknown",
-            "function_calling": False,
-            "json_output": True,
-            "vision": False
+def _build_model_config(model: str, family: str, function_calling: bool = False, vision: bool = False) -> Dict[str, Any]:
+    """Build a model config with fresh API key"""
+    return {
+        "provider": "OpenAIChatCompletionClient",
+        "config": {
+            "model": model,
+            "base_url": "https://openrouter.ai/api/v1",
+            "api_key": get_openrouter_key(),
+            "temperature": 0.2,
+            "model_info": {
+                "family": family,
+                "function_calling": function_calling,
+                "json_output": True,
+                "vision": vision
+            }
         }
     }
-}
 
-# OpenRouter GPT-4o-Mini
-gpt4o_mini_config = {
-    "provider": "OpenAIChatCompletionClient",
-    "config": {
-        "model": "openai/gpt-4o-mini",
-        "base_url": "https://openrouter.ai/api/v1",
-        "api_key": OPENROUTER_API_KEY,
-        "temperature": 0.2,
-        "model_info": {
-            "family": "openai",
-            "function_calling": True,
-            "json_output": True,
-            "vision": False
-        }
-    }
-}
+def _get_deepseek_config():
+    return _build_model_config("deepseek/deepseek-chat", "unknown", False, False)
 
-# OpenRouter Claude Sonnet 3.5
-claude_sonnet_config = {
-    "provider": "OpenAIChatCompletionClient",
-    "config": {
-        "model": "anthropic/claude-3.5-sonnet",
-        "base_url": "https://openrouter.ai/api/v1",
-        "api_key": OPENROUTER_API_KEY,
-        "temperature": 0.2,
-        "model_info": {
-            "family": "anthropic",
-            "function_calling": True,
-            "json_output": True,
-            "vision": True
-        }
-    }
-}
+def _get_gpt4o_mini_config():
+    return _build_model_config("openai/gpt-4o-mini", "openai", True, False)
 
-# OpenRouter Gemini Flash
-gemini_flash_config = {
-    "provider": "OpenAIChatCompletionClient",
-    "config": {
-        "model": "google/gemini-2.0-flash-001",
-        "base_url": "https://openrouter.ai/api/v1",
-        "api_key": OPENROUTER_API_KEY,
-        "temperature": 0.2,
-        "model_info": {
-            "family": "google",
-            "function_calling": False,
-            "json_output": True,
-            "vision": True
-        }
-    }
-}
+def _get_claude_sonnet_config():
+    return _build_model_config("anthropic/claude-3.5-sonnet", "anthropic", True, True)
 
-# OpenRouter Gemini Pro
-gemini_pro_config = {
-    "provider": "OpenAIChatCompletionClient",
-    "config": {
-        "model": "google/gemini-pro-1.5",
-        "base_url": "https://openrouter.ai/api/v1",
-        "api_key": OPENROUTER_API_KEY,
-        "temperature": 0.2,
-        "model_info": {
-            "family": "google",
-            "function_calling": False,
-            "json_output": True,
-            "vision": True
-        }
-    }
-}
+def _get_gemini_flash_config():
+    return _build_model_config("google/gemini-2.0-flash-001", "google", False, True)
 
-# Set default config to DeepSeek
-default_config = deepseek_config
-
-# Model choices (All via OpenRouter)
-MODEL_CHOICES = {
-    "DeepSeek-Chat": deepseek_config,
-    "GPT-4o-Mini": gpt4o_mini_config,
-    "Claude-Sonnet-3.5": claude_sonnet_config,
-    "Gemini-Flash": gemini_flash_config,
-    "Gemini-Pro": gemini_pro_config
-}
+def _get_gemini_pro_config():
+    return _build_model_config("google/gemini-pro-1.5", "google", False, True)
 
 def get_model_config(choice: str) -> Dict[str, Any]:
     """
     Return the chosen model config dict, or default_config if unknown.
-    
+
     Args:
         choice: The model choice string
-        
+
     Returns:
-        Model configuration dictionary
+        Model configuration dictionary with fresh API key
     """
-    # Use static model configurations only (bypassing UI API manager)
-    return MODEL_CHOICES.get(choice, default_config)
+    configs = {
+        "DeepSeek-Chat": _get_deepseek_config,
+        "GPT-4o-Mini": _get_gpt4o_mini_config,
+        "Claude-Sonnet-3.5": _get_claude_sonnet_config,
+        "Gemini-Flash": _get_gemini_flash_config,
+        "Gemini-Pro": _get_gemini_pro_config
+    }
+    config_func = configs.get(choice, _get_deepseek_config)
+    return config_func()
 
 def get_all_model_choices() -> Dict[str, Dict[str, Any]]:
     """
-    Get all available model choices using static configurations only
-    
+    Get all available model choices with fresh API keys
+
     Returns:
         Dictionary of all available models
     """
-    # Return static model configurations only (bypassing UI API manager)
-    return MODEL_CHOICES
+    return {
+        "DeepSeek-Chat": _get_deepseek_config(),
+        "GPT-4o-Mini": _get_gpt4o_mini_config(),
+        "Claude-Sonnet-3.5": _get_claude_sonnet_config(),
+        "Gemini-Flash": _get_gemini_flash_config(),
+        "Gemini-Pro": _get_gemini_pro_config()
+    }
 
 def get_assessment_default_config() -> Dict[str, Any]:
     """
@@ -150,7 +96,7 @@ def get_assessment_default_config() -> Dict[str, Any]:
     Returns:
         Model configuration optimized for content generation
     """
-    return deepseek_config
+    return _get_deepseek_config()
 
 def get_courseware_default_config() -> Dict[str, Any]:
     """
@@ -159,4 +105,16 @@ def get_courseware_default_config() -> Dict[str, Any]:
     Returns:
         Model configuration optimized for document generation
     """
-    return deepseek_config
+    return _get_deepseek_config()
+
+# Backward compatibility - these now call functions to get fresh configs
+# WARNING: These are evaluated at import time, may have empty keys
+# Use the get_* functions instead for guaranteed fresh keys
+OPENROUTER_API_KEY = get_openrouter_key()
+deepseek_config = _get_deepseek_config()
+gpt4o_mini_config = _get_gpt4o_mini_config()
+claude_sonnet_config = _get_claude_sonnet_config()
+gemini_flash_config = _get_gemini_flash_config()
+gemini_pro_config = _get_gemini_pro_config()
+default_config = deepseek_config
+MODEL_CHOICES = get_all_model_choices()
