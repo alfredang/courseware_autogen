@@ -22,16 +22,7 @@ def _get_secret(key: str, default: str = "") -> str:
 
 def load_api_keys() -> Dict[str, str]:
     """Load API keys from file or session state, with secrets.toml as fallback for missing keys"""
-    # First try session state
-    if 'api_keys' in st.session_state:
-        keys = st.session_state['api_keys']
-        # Ensure LLAMA_CLOUD_API_KEY is present (might be missing in old cached data)
-        if not keys.get("LLAMA_CLOUD_API_KEY"):
-            keys["LLAMA_CLOUD_API_KEY"] = _get_secret("LLAMA_CLOUD_API_KEY", "")
-            st.session_state['api_keys'] = keys
-        return keys
-
-    # Start with secrets.toml as base
+    # Always start with secrets as the base (this ensures secrets are always checked)
     base_keys = {
         "OPENAI_API_KEY": _get_secret("OPENAI_API_KEY", ""),
         "DEEPSEEK_API_KEY": _get_secret("DEEPSEEK_API_KEY", ""),
@@ -53,6 +44,13 @@ def load_api_keys() -> Dict[str, str]:
                         base_keys[key] = value
         except Exception as e:
             print(f"Error loading API keys from file: {e}")
+
+    # Check session state - use session values if they're not empty
+    if 'api_keys' in st.session_state:
+        session_keys = st.session_state['api_keys']
+        for key, value in session_keys.items():
+            if value:  # Only use session value if it's not empty
+                base_keys[key] = value
 
     st.session_state['api_keys'] = base_keys
     return base_keys
