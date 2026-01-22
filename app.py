@@ -146,6 +146,42 @@ with st.sidebar:
         """,
         unsafe_allow_html=True
     )
+
+    # Model Selection
+    st.markdown("---")
+    from settings.api_manager import get_all_available_models
+    all_models = get_all_available_models()
+    model_names = list(all_models.keys())
+
+    # Find default model index (DeepSeek-V3.1 or first available)
+    default_model_idx = 0
+    for i, name in enumerate(model_names):
+        if "deepseek" in name.lower() and "v3" in name.lower():
+            default_model_idx = i
+            break
+
+    # Use default on first load, then respect user selection
+    if 'selected_model_idx' not in st.session_state:
+        st.session_state['selected_model_idx'] = default_model_idx
+
+    # Validate stored index
+    if st.session_state['selected_model_idx'] >= len(model_names):
+        st.session_state['selected_model_idx'] = default_model_idx
+
+    selected_model_idx = st.selectbox(
+        "🤖 Select Model:",
+        range(len(model_names)),
+        format_func=lambda x: model_names[x],
+        index=st.session_state['selected_model_idx']
+    )
+
+    # Store selection in session state
+    st.session_state['selected_model_idx'] = selected_model_idx
+    st.session_state['selected_model'] = model_names[selected_model_idx]
+    st.session_state['selected_model_config'] = all_models[model_names[selected_model_idx]]
+
+    st.markdown("---")
+
     # Initialize settings expansion state
     if 'settings_expanded' not in st.session_state:
         st.session_state.settings_expanded = False
