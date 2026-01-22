@@ -216,10 +216,10 @@
         }
     },
     {
-        "name": "xin ping example v2",
-        "uen": "202116663E",
+        "name": "Wise Oaks International School",
+        "uen": "202033658K",
         "address": "",
-        "logo": "common/logo/xin_ping_example_v2.png",
+        "logo": "common/logo/wise_oaks_international_school.png",
         "templates": {
             "course_proposal": "",
             "courseware": "",
