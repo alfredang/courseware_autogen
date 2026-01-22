@@ -36,6 +36,19 @@ def lazy_import_settings():
 
 st.set_page_config(layout="wide")
 
+# Custom CSS to increase sidebar width
+st.markdown("""
+<style>
+    [data-testid="stSidebar"] {
+        min-width: 350px;
+        max-width: 350px;
+    }
+    [data-testid="stSidebar"] > div:first-child {
+        width: 350px;
+    }
+</style>
+""", unsafe_allow_html=True)
+
 @st.cache_data
 def get_base64_image(image_path):
     try:
