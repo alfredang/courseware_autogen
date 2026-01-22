@@ -2,6 +2,12 @@
 
 A comprehensive AI-powered courseware generation platform built with AutoGen agents and Streamlit. This system automates the creation of educational documents including Course Proposals, Assessment Plans, Learning Guides, and more for workforce skills qualification (WSQ) training programs.
 
+## 🌐 Live Demo
+
+**Try it now:** [https://courseware-generator-autogen.streamlit.app/](https://courseware-generator-autogen.streamlit.app/)
+
+Experience the full platform with all features available online. No installation required!
+
 ## 🚀 Quick Start for New Users
 
 ### 1. System Requirements
