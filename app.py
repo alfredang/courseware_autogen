@@ -170,55 +170,62 @@ with st.sidebar:
         default_index=0,  # Default selected item
     )
 
-    # Separate Settings section
+    # Separate Settings section using buttons
     st.markdown("---")
-    st.markdown("##### Settings")
+    st.markdown("##### ⚙️ Settings")
 
-    settings_options = ["API & LLM Models", "Company Management"]
-    settings_icons = ["cpu", "building"]
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("🔧 API & Models", use_container_width=True):
+            st.session_state['settings_page'] = "API & LLM Models"
+    with col2:
+        if st.button("🏢 Companies", use_container_width=True):
+            st.session_state['settings_page'] = "Company Management"
 
-    settings_selected = option_menu(
-        "",
-        settings_options,
-        icons=settings_icons,
-        menu_icon="gear",
-        default_index=None,
-        key="settings_menu"
-    )
-
-    # If a settings option is selected, override main selection
-    if settings_selected:
-        selected = settings_selected
+# Check if a settings page is selected (takes priority)
+settings_page = st.session_state.get('settings_page', None)
 
 # Display the selected app - using lazy loading for performance
-if selected == "Generate CP":
+if settings_page == "API & LLM Models":
+    settings = lazy_import_settings()
+    settings.llm_settings_app()
+    # Clear settings page when main menu is clicked
+    if selected:
+        st.session_state['settings_page'] = None
+
+elif settings_page == "Company Management":
+    settings = lazy_import_settings()
+    settings.company_management_app()
+    # Clear settings page when main menu is clicked
+    if selected:
+        st.session_state['settings_page'] = None
+
+elif selected == "Generate CP":
+    st.session_state['settings_page'] = None
     course_proposal_app = lazy_import_course_proposal()
-    course_proposal_app.app()  # Display CP Generation app
+    course_proposal_app.app()
 
 elif selected == "Generate AP/FG/LG/LP":
+    st.session_state['settings_page'] = None
     courseware_generation = lazy_import_courseware()
-    courseware_generation.app()  # Display Courseware Generation app
+    courseware_generation.app()
 
 elif selected == "Generate Assessment":
+    st.session_state['settings_page'] = None
     assessment_generation = lazy_import_assessment()
     assessment_generation.app()
 
 elif selected == "Check Documents":
+    st.session_state['settings_page'] = None
     sup_doc = lazy_import_docs()
     sup_doc.app()
 
 elif selected == "Generate Brochure v2":
+    st.session_state['settings_page'] = None
     brochure_generation_v2 = lazy_import_brochure_v2()
     brochure_generation_v2.app()
 
 elif selected == "Add Assessment to AP":
+    st.session_state['settings_page'] = None
     annex_assessment_v2 = lazy_import_annex_v2()
-    annex_assessment_v2.app()  # Display Annex Assessment app (local upload)
-
-elif selected == "API & LLM Models":
-    settings = lazy_import_settings()
-    settings.llm_settings_app()  # Display only API & LLM Models page
-
-elif selected == "Company Management":
-    settings = lazy_import_settings()
-    settings.company_management_app()  # Display only Company Management page
+    annex_assessment_v2.app()
